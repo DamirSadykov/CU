@@ -7,7 +7,10 @@ fn app_dir() -> std::path::PathBuf {
     if let Ok(d) = std::env::var("CUT_APP_DIR") {
         return std::path::PathBuf::from(d);
     }
-    std::path::PathBuf::from(std::env::var("APPDATA").unwrap()).join("com.claude-usage-tracker.app")
+    claude_usage_tracker_lib::data_dir::selected_data_dir(
+        &std::path::PathBuf::from(std::env::var("APPDATA").unwrap()),
+        "com.cu.app",
+    )
 }
 
 /// The preview instance has its own board but no database of its own until it

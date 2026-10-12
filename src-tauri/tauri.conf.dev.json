@@ -1,5 +1,5 @@
 {
-  "identifier": "com.claude-usage-tracker.dev",
+  "identifier": "com.cu.dev",
   "plugins": {
     "updater": {
       "active": false

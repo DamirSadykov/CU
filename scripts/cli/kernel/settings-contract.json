@@ -1,5 +1,6 @@
 {
-  "file": "%APPDATA%/com.claude-usage-tracker.app/settings.json",
+  "file": "%APPDATA%/<selected-data-dir>/settings.json",
+  "selection": "Within the explicit app/dev/preview identifier pair: new when it contains migrated-from or old is absent; otherwise old",
   "writer": "app",
   "scopes": {
     "ui": "читает только приложение (UI или Rust); CLI ключ не знает",

@@ -69,7 +69,8 @@ import {
 } from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { appDataFile, writeJsonAtomic } from "../kernel/appdata.mjs";
+import { writeJsonAtomic } from "../kernel/appdata.mjs";
+import { withDataDir } from "../kernel/board-lock.mjs";
 
 // Versioned wire contract for every `--json` output. Bump on a BREAKING change
 // (removed/renamed/retyped field); additive fields do not bump it.
@@ -694,10 +695,6 @@ function cmdEval(args) {
 // Same app data dir the tracker, todos CLI, and hook use; the metrics file lives
 // next to todos.json so the app (and any external consumer) finds it without
 // extra config.
-function metricsPath() {
-  return appDataFile("corrections-metrics.json");
-}
-
 // `publish` computes the metric over a scope and writes it to the sink file the
 // app watches. This is what turns `scan` (stdout-only) into an actual OUTPUT.
 // Scope: default = current project, --all = every project, --project <name>.
@@ -776,8 +773,11 @@ function cmdPublish(args) {
     sessions: analyzed,
   };
 
-  const file = metricsPath();
-  writeJsonAtomic(file, doc);
+  const file = withDataDir((dir) => {
+    const target = path.join(dir, "corrections-metrics.json");
+    writeJsonAtomic(target, doc);
+    return target;
+  });
   process.stdout.write(
     `ok: published metrics (${totals.sessions} session(s), ` +
       `${totals.candidate_corrections} candidate(s)) -> ${file}\n`,

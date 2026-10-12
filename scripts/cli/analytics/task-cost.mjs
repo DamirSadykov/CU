@@ -38,7 +38,8 @@
 import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { appDataFile, writeJsonAtomic } from "../kernel/appdata.mjs";
+import { writeJsonAtomic } from "../kernel/appdata.mjs";
+import { withDataDir } from "../kernel/board-lock.mjs";
 
 // ── transcript location (mirrors corrections.mjs) ────────────────────────────
 function claudeProjectsDir() {
@@ -332,10 +333,6 @@ function parseFlags(args) {
   return f;
 }
 
-function sinkPath() {
-  return appDataFile("task-attribution.json");
-}
-
 function buildDoc(f, sessions) {
   return {
     version: 2, // on-disk schema (mirrored by src-tauri/src/task_cost.rs); v2 added touched/mentions
@@ -367,8 +364,11 @@ function cmdScan(args) {
 function cmdPublish(args) {
   const f = parseFlags(args);
   const sessions = analyze(resolveTranscripts(f));
-  const file = sinkPath();
-  writeJsonAtomic(file, buildDoc(f, sessions));
+  const file = withDataDir((dir) => {
+    const target = path.join(dir, "task-attribution.json");
+    writeJsonAtomic(target, buildDoc(f, sessions));
+    return target;
+  });
   process.stdout.write(
     `ok: published attribution (${sessions.length} session(s) with evidence) -> ${file}\n`,
   );

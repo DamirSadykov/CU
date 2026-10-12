@@ -328,7 +328,7 @@ const tailLines = (s, n) => {
   return lines.length <= n ? t : lines.slice(-n).join("\n");
 };
 
-export async function runRedGate({ task, cwd, timeoutMs, appDataDir, runCmd }) {
+export async function runRedGate({ task, cwd, timeoutMs, appDataDir, withMarkerDir, runCmd }) {
   const base = task.step_base;
   if (!base)
     return {
@@ -351,7 +351,9 @@ export async function runRedGate({ task, cwd, timeoutMs, appDataDir, runCmd }) {
     };
 
   const startedAt = new Date().toISOString();
-  const { dir, marker } = writeMarker({ appDataDir, task, cwd, base, files, startedAt });
+  const inMarkerDir = withMarkerDir || ((fn) => fn(appDataDir));
+  const { marker } = inMarkerDir((root) =>
+    writeMarker({ appDataDir: root, task, cwd, base, files, startedAt }));
   const markedFiles = marker.files;
 
   let result;
@@ -371,8 +373,13 @@ export async function runRedGate({ task, cwd, timeoutMs, appDataDir, runCmd }) {
           }
         : { ok: true, field: "failed-on-base", reason: null };
   } finally {
-    const errors = restoreWorker({ dir, cwd, files: markedFiles });
-    const rmErr = removeMarkerDir(dir);
+    const { errors, rmErr } = inMarkerDir((root) => {
+      const currentDir = markerDir(root, task.id);
+      return {
+        errors: restoreWorker({ dir: currentDir, cwd, files: markedFiles }),
+        rmErr: removeMarkerDir(currentDir),
+      };
+    });
     const problems = [...errors, rmErr ? `marker cleanup: ${rmErr.message || rmErr}` : null].filter(
       Boolean,
     );

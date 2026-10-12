@@ -1,6 +1,6 @@
 import { appendFileSync, mkdirSync, readFileSync, statSync, watch } from "node:fs";
 import path from "node:path";
-import { appDataFile } from "../kernel/appdata.mjs";
+import { withDataDir } from "../kernel/board-lock.mjs";
 
 const changeId = (value) => {
   const text = String(value?.number ?? value ?? "").trim();
@@ -16,12 +16,17 @@ export function runEventsPath(runLogFile) {
   return path.join(path.dirname(runLogFile), "run-events.jsonl");
 }
 
-function defaultEventsPath() {
-  return appDataFile("run-events.jsonl");
+export function appendRunEvent(event, file) {
+  if (!event) return false;
+  if (file) return appendRunEventFile(event, file);
+  try {
+    return withDataDir((dir) => appendRunEventFile(event, path.join(dir, "run-events.jsonl")));
+  } catch {
+    return false;
+  }
 }
 
-export function appendRunEvent(event, file = defaultEventsPath()) {
-  if (!event || !file) return false;
+function appendRunEventFile(event, file) {
   try {
     mkdirSync(path.dirname(file), { recursive: true });
     appendFileSync(file, `${JSON.stringify({ ts: new Date().toISOString(), ...event })}\n`);

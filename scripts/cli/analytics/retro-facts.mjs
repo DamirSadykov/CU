@@ -8,6 +8,7 @@ import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { appDataDir, appDataFile, writeJsonAtomic } from "../kernel/appdata.mjs";
+import { withDataDir } from "../kernel/board-lock.mjs";
 import { boardPath, changeAddress, findChange, loadBoard } from "../kernel/board-io.mjs";
 
 const SHORT_INTERVAL_SECONDS = 30;
@@ -588,10 +589,14 @@ export function collectSessionRetroFacts({ session, appData, transcriptRoot, wri
       interruptions: parsed.interruptions.length,
     },
   };
-  const file = sessionRetroFactsPath(id, appData);
+  let file = sessionRetroFactsPath(id, appData);
   if (write) {
-    mkdirSync(path.dirname(file), { recursive: true });
-    writeJsonAtomic(file, facts);
+    file = withDataDir((dir) => {
+      const target = path.join(dir, "retro", `session-${id}-facts.json`);
+      mkdirSync(path.dirname(target), { recursive: true });
+      writeJsonAtomic(target, facts);
+      return target;
+    }, { appData });
   }
   return { facts, file, summary: facts.summary };
 }
@@ -615,10 +620,14 @@ export function collectRetroFacts({ board = loadBoard(boardPath()), change, appD
     transcripts,
     commits: commitsFor(change.number, repo),
   });
-  const file = retroFactsPath(change.number, appData);
+  let file = retroFactsPath(change.number, appData);
   if (write) {
-    mkdirSync(path.dirname(file), { recursive: true });
-    writeJsonAtomic(file, facts);
+    file = withDataDir((dir) => {
+      const target = path.join(dir, "retro", `c${change.number}-facts.json`);
+      mkdirSync(path.dirname(target), { recursive: true });
+      writeJsonAtomic(target, facts);
+      return target;
+    }, { appData });
   }
   return { facts, file, summary: facts.summary };
 }

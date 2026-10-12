@@ -1,9 +1,8 @@
 import { readFileSync } from "node:fs";
-import path from "node:path";
-import { roamingBase } from "../kernel/settings.mjs";
+import { appDataFile } from "../kernel/appdata.mjs";
 
 export function meterFile() {
-  return path.join(roamingBase(), "com.claude-usage-tracker.app", "spec-match.jsonl");
+  return appDataFile("spec-match.jsonl");
 }
 
 export function readAsks(file = meterFile()) {

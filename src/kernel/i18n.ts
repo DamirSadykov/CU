@@ -799,18 +799,13 @@ const messages = {
       "## Rework after “done”\nShare of the assistant's “done” claims that the user corrected right after. This operationalizes the completion-signal invariant: claiming done and then being corrected is the failure to drive down.\n\n- The cleanest **LLM-fault** proxy here — a false signal of completion.",
     corrCandidatesHelp:
       "## Candidates\nLayer-1 flagged user turns in range, split by likely fault:\n\n- **LLM** — a structural signal (the user rejected a tool or interrupted the assistant): almost always the assistant's miss.\n- **amb.** — only a lexical signal (negation / corrective wording): could be the user changing direction, not a miss.\n\nCounts come from the last `corrections publish`; run it again to refresh.",
-    migrateTitle: "Task references (#N → t#N)",
-    migrateDesc:
-      "A bare #N reads as a GitHub PR/issue and no longer links to a task — only the explicit t#N form does. Genuine #N task references in stored text are rewritten to t#N on startup, so a board never carries both spellings at once. The rewrite has to guess (a number that matches a task, with no PR word in front), so todos.json is backed up before it and Restore undoes it.",
     migrateRestore: "Restore",
     migrateRestoring: "Restoring…",
-    migrateRestored: "Restored from the latest backup.",
     migrateRestoreConfirm:
       "Restore todos.json from the latest backup? Any changes made after that backup will be lost.",
-    migrateBackupAt: "Latest backup: {date}",
     ioTitle: "Import / export tasks",
     ioDesc:
-      "Move your board between machines. Import MERGES — it never overwrites and never drops: a task number already taken here is reassigned, and an incoming task that also exists locally is added as a NEW task (marked «import») instead of replacing yours. A backup is taken first, so Restore above undoes an import too.",
+      "Move your board between machines. Import MERGES — it never overwrites and never drops: a task number already taken here is reassigned, and an incoming task that also exists locally is added as a NEW task (marked «import») instead of replacing yours. A backup is taken before writing.",
     ioExport: "Export…",
     ioExporting: "Exporting…",
     ioExported: "Exported {count} task(s).",
@@ -1663,18 +1658,13 @@ const messages = {
       "## Правки после «готово»\nДоля заявлений ассистента «готово», которые пользователь сразу поправил. Это операционализация инварианта сигнала завершения: заявил готово и тут же получил правку — та самая ошибка, которую надо снижать.\n\n- Самый чистый прокси **вины LLM** — ложный сигнал завершения.",
     corrCandidatesHelp:
       "## Кандидаты\nПомеченные слоем 1 ходы пользователя в диапазоне, разбивка по вероятной вине:\n\n- **LLM** — структурный сигнал (пользователь отклонил инструмент или прервал ассистента): почти всегда промах ассистента.\n- **неодн.** — только лексический сигнал (отрицание / корректирующая формулировка): может быть сменой курса пользователя, а не промахом.\n\nЧисла берутся из последнего `corrections publish`; запусти снова, чтобы обновить.",
-    migrateTitle: "Ссылки на задачи (#N → t#N)",
-    migrateDesc:
-      "Голый #N трактуется как PR/issue на GitHub и не ведёт на задачу — линкуется только явная форма t#N. Настоящие #N-ссылки в сохранённых текстах переписываются в t#N при запуске, поэтому на доске никогда не живут обе формы сразу. Переписывание угадывает (номер совпал с задачей, а слова про PR перед ним нет), поэтому перед ним делается бэкап todos.json, а «Откатить» его возвращает.",
     migrateRestore: "Откатить",
     migrateRestoring: "Восстановление…",
-    migrateRestored: "Восстановлено из последнего бэкапа.",
     migrateRestoreConfirm:
       "Восстановить todos.json из последнего бэкапа? Изменения, сделанные после этого бэкапа, будут потеряны.",
-    migrateBackupAt: "Последний бэкап: {date}",
     ioTitle: "Импорт / экспорт задач",
     ioDesc:
-      "Перенос доски между компьютерами. Импорт СЛИВАЕТ, а не перезаписывает: занятый здесь номер задачи переприсваивается, а входящая задача, которая есть и тут, добавляется НОВОЙ (с меткой «импорт»), — ваша версия остаётся нетронутой. Перед записью снимается бэкап, поэтому «Откатить» выше отменяет и импорт.",
+      "Перенос доски между компьютерами. Импорт СЛИВАЕТ, а не перезаписывает: занятый здесь номер задачи переприсваивается, а входящая задача, которая есть и тут, добавляется НОВОЙ (с меткой «импорт»), — ваша версия остаётся нетронутой. Перед записью снимается бэкап.",
     ioExport: "Экспорт…",
     ioExporting: "Экспорт…",
     ioExported: "Выгружено задач: {count}.",

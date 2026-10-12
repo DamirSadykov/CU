@@ -22,7 +22,7 @@ import path from "node:path";
 
 import { parseYamlSubset } from "../kernel/yaml-subset.mjs";
 import { specRoot as specRootSetting, specRepoPath } from "../kernel/settings.mjs";
-import { withBoardLock } from "../kernel/board-lock.mjs";
+import { withBoardLock, withDataDir } from "../kernel/board-lock.mjs";
 import { readAsks, coverageOf } from "./spec-meter.mjs";
 import {
   boardPath,
@@ -1543,7 +1543,7 @@ export async function run(args) {
       cmdDomains(rest);
       break;
     case "answer":
-      await cmdAnswer(rest);
+      await withDataDir(() => cmdAnswer(rest));
       break;
     case "new":
       cmdNew(rest);

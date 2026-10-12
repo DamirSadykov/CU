@@ -1493,7 +1493,7 @@ describe("beginStep", () => {
       const absent = auto(3);
       await beginStep(makeCtx(flowing), flowing);
       await beginStep(makeCtx(absent), absent);
-      const events = readFileSync(path.join(appData, "com.claude-usage-tracker.app", "run-events.jsonl"), "utf8")
+      const events = readFileSync(path.join(appData, "com.cu.app", "run-events.jsonl"), "utf8")
         .trim().split("\n").map((line) => JSON.parse(line));
       expect(events.map((event) => event.flow)).toEqual([{ file: "src/Notifier.cs", method: "Send" }, "n/a"]);
     } finally {

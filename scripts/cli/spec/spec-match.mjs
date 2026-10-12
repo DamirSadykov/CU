@@ -23,6 +23,7 @@ import { listDomainIds, loadDomain, resolveRoot, resolveAddress } from "./spec.m
 import { roamingBase } from "../kernel/settings.mjs";
 import { meterFile, readAsks, coverageOf } from "./spec-meter.mjs";
 import { changeRootsFor, loadBoard, resolveTask, specAddressesForManual } from "../kernel/board-io.mjs";
+import { withDataDir } from "../kernel/board-lock.mjs";
 
 // Letters and digits only, the same normalisation the handoff guard uses on a
 // baton (`stop-hook.mjs::norm`) — punctuation, markdown and code fences all
@@ -342,9 +343,11 @@ const QUERY_KEPT = 120;
 
 export function noteAsk(fields) {
   try {
-    const file = meterFile();
-    mkdirSync(path.dirname(file), { recursive: true });
-    appendFileSync(file, JSON.stringify({ ts: new Date().toISOString(), ...fields }) + "\n");
+    withDataDir((dir) => {
+      const file = path.join(dir, "spec-match.jsonl");
+      mkdirSync(path.dirname(file), { recursive: true });
+      appendFileSync(file, JSON.stringify({ ts: new Date().toISOString(), ...fields }) + "\n");
+    });
   } catch {
     // measuring must never break the thing it measures
   }

@@ -1,6 +1,7 @@
 import { writeFileSync } from "node:fs";
-import { renameWithRetry } from "./board-lock.mjs";
-import { appDataFile } from "./appdata.mjs";
+import path from "node:path";
+import { renameWithRetry, withDataDir } from "./board-lock.mjs";
+import { appDataFile, appDataLocation } from "./appdata.mjs";
 import {
   CURRENT,
   BoardUnreadableError,
@@ -85,7 +86,7 @@ export function migrateToV3(data) {
 
 let deferred = null;
 
-export function save(file, data) {
+function saveFile(file, data) {
   const issue = data && data.__boardIssue;
   if (issue) throw refusalFor(issue);
   if (deferred) {
@@ -99,6 +100,17 @@ export function save(file, data) {
   const tmp = `${file}.${process.pid}.tmp`;
   writeFileSync(tmp, JSON.stringify(wire, null, 2) + "\n");
   renameWithRetry(tmp, file);
+}
+
+export function save(file, data) {
+  const location = path.basename(file) === "todos.json" ? appDataLocation(file) : null;
+  if (location) {
+    return withDataDir(
+      (dir) => saveFile(path.join(dir, "todos.json"), data),
+      location,
+    );
+  }
+  return saveFile(file, data);
 }
 
 export function withDeferredSave(file, data, fn) {

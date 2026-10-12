@@ -1,6 +1,6 @@
 import { createChange, changeAddress, findChangeByTitle, parseArgs } from "./change.mjs";
 import { boardPath, loadBoard, loadBoardForWrite, saveBoard } from "../kernel/board-io.mjs";
-import { withBoardLock } from "../kernel/board-lock.mjs";
+import { withBoardLock, withDataDir } from "../kernel/board-lock.mjs";
 
 const isLegacyRoot = (t) => !!(t && (t.change ?? t.theme));
 
@@ -100,8 +100,13 @@ export function describe(data) {
 
 export function run(args) {
   const { flags } = parseArgs(args);
+  if (flags.go) return withDataDir(() => migrateRun(flags));
+  return migrateRun(flags);
+}
+
+function migrateRun(flags) {
   const file = boardPath();
-  withBoardLock(file, () => {
+  return withBoardLock(file, () => {
     const data = flags.go ? loadBoardForWrite(file) : loadBoard(file);
     const lines = describe(data);
     if (!lines.length) {

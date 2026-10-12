@@ -13,7 +13,7 @@ pub use analytics::{
 };
 pub use board::{cache, graph, graph_cache, payload, task_sessions, todos};
 pub use external::{enroll, identity};
-pub use kernel::{board_lock, report, sysmon};
+pub use kernel::{board_lock, data_dir, report, sysmon};
 
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -80,8 +80,8 @@ fn set_pin(pinned: bool) {
 /// identifier; this maps it to a short badge shared by setup() and the frontend.
 fn env_label(identifier: &str) -> Option<&'static str> {
     match identifier {
-        "com.claude-usage-tracker.dev" => Some("Dev"),
-        "com.claude-usage-tracker.preview" => Some("Preview"),
+        "com.cu.dev" => Some("Dev"),
+        "com.cu.preview" => Some("Preview"),
         _ => None,
     }
 }
@@ -3314,6 +3314,26 @@ fn spawn_todos_watch(app: AppHandle) {
 pub fn run() {
     report::install_panic_hook();
 
+    let context = tauri::generate_context!();
+    let identifier = context.config().identifier.clone();
+    if let Some(roaming) = dirs::data_dir() {
+        if let Err(error) = data_dir::migrate(&roaming, &identifier, env!("CARGO_PKG_VERSION")) {
+            show_migration_failure(&error);
+            return;
+        }
+    } else {
+        let paths = data_dir::DataDirPaths::for_identifier(Path::new("%APPDATA%"), &identifier);
+        if let Some(paths) = paths {
+            let error = data_dir::MigrationError::startup(
+                paths.source,
+                paths.destination,
+                "the roaming data folder is not available; refusing to start before the data directory is known",
+            );
+            show_migration_failure(&error);
+            return;
+        }
+    }
+
     tauri::Builder::default()
         .plugin(
             tauri_plugin_log::Builder::new()
@@ -3621,8 +3641,59 @@ pub fn run() {
             poll_external,
             get_external_tasks,
         ])
-        .run(tauri::generate_context!())
+        .run(context)
         .expect("error while running tauri application");
+}
+
+fn migration_error_log(error: &data_dir::MigrationError) -> PathBuf {
+    let base = std::env::var_os("LOCALAPPDATA")
+        .map(PathBuf::from)
+        .unwrap_or_else(std::env::temp_dir);
+    let dir = base.join("com.cu.app").join("logs");
+    let _ = std::fs::create_dir_all(&dir);
+    let file = dir.join("data-dir-migration.log");
+    let line = format!(
+        "{} source={} destination={} error={}\n",
+        chrono::Utc::now().to_rfc3339(),
+        error.source.display(),
+        error.destination.display(),
+        error
+    );
+    let _ = std::fs::write(&file, line);
+    file
+}
+
+fn show_migration_failure(error: &data_dir::MigrationError) {
+    let log = migration_error_log(error);
+    let message = format!(
+        "Claude Usage Tracker could not copy its data and will not start.\n\nOld data remains at:\n{}\n\nError log:\n{}\n\n{}",
+        error.source.display(),
+        log.display(),
+        error
+    );
+    #[cfg(windows)]
+    {
+        use std::os::windows::ffi::OsStrExt;
+        use windows_sys::Win32::UI::WindowsAndMessaging::{MessageBoxW, MB_ICONERROR, MB_OK};
+        let text: Vec<u16> = std::ffi::OsStr::new(&message)
+            .encode_wide()
+            .chain(std::iter::once(0))
+            .collect();
+        let title: Vec<u16> = std::ffi::OsStr::new("Claude Usage Tracker")
+            .encode_wide()
+            .chain(std::iter::once(0))
+            .collect();
+        unsafe {
+            MessageBoxW(
+                std::ptr::null_mut(),
+                text.as_ptr(),
+                title.as_ptr(),
+                MB_OK | MB_ICONERROR,
+            );
+        }
+    }
+    #[cfg(not(windows))]
+    eprintln!("{message}");
 }
 
 #[cfg(test)]

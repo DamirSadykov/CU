@@ -48,7 +48,7 @@ import { fileURLToPath } from "node:url";
 import { matchPlanCli, specsEnabled } from "../kernel/settings.mjs";
 import { appDataFile } from "../kernel/appdata.mjs";
 import { findChange, changeAddress, CURRENT, BoardUnreadableError, STATUSES, col, isDone, isChangeRoot, normalizeLimit, todosPath, load, save, boardPath, loadBoard, assertBoardWritable, loadBoardForWrite, saveBoard, withDeferredSave, resolveTask, changeRootsFor, changeAsRoot, specAddressesForManual } from "../kernel/board-io.mjs";
-import { withBoardLock } from "../kernel/board-lock.mjs";
+import { withBoardLock, withDataDir } from "../kernel/board-lock.mjs";
 
 let specPort = null;
 let closePort = null;
@@ -198,10 +198,12 @@ export function appendTaskSessionEvent({ session, task, event, source, project, 
   if (agent) rec.agent = String(agent);
   if (model) rec.model = String(model);
   try {
-    const file = taskSessionsPath();
-    mkdirSync(path.dirname(file), { recursive: true });
-    appendFileSync(file, JSON.stringify(rec) + "\n");
-    return true;
+    return withDataDir((dir) => {
+      const file = path.join(dir, "task-sessions.jsonl");
+      mkdirSync(path.dirname(file), { recursive: true });
+      appendFileSync(file, JSON.stringify(rec) + "\n");
+      return true;
+    });
   } catch {
     return false;
   }
@@ -1199,11 +1201,12 @@ async function cmdSet(args) {
       }
       close = { session: changeSession.session, verdict };
     }
-    return withBoardLock(file, () => {
-      const data = loadBoardForWrite(file);
+    return withDataDir((dir) => {
+      const currentFile = path.join(dir, "todos.json");
+      const data = loadBoardForWrite(currentFile);
       const todo = resolveTask(data, task);
       if (!todo) fail(`no todo with id ${task}`);
-      return setStatus({ data, file, todo, value, flags, changeSession, close });
+      return setStatus({ data, file: currentFile, todo, value, flags, changeSession, close });
     });
   }
   return withBoardLock(file, () => {
@@ -2422,7 +2425,7 @@ export const MUTATING = new Set([
 export function run(args) {
   const [cmd, ...rest] = args;
   if (cmd === "set") return cmdSet(rest);
-  if (MUTATING.has(cmd)) return withBoardLock(todosPath(), () => dispatch(cmd, rest));
+  if (MUTATING.has(cmd)) return withDataDir(() => dispatch(cmd, rest));
   return dispatch(cmd, rest);
 }
 

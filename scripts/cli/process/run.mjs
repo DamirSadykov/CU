@@ -82,7 +82,7 @@ import {
 } from "../board/todos.mjs";
 import { findChange } from "../board/change.mjs";
 import { resolveDuty } from "../agents/agents.mjs";
-import { withBoardLock } from "../kernel/board-lock.mjs";
+import { withDataDir } from "../kernel/board-lock.mjs";
 import { appDataFile } from "../kernel/appdata.mjs";
 import {
   gitHead,
@@ -171,12 +171,8 @@ function fail(msg) {
   process.exit(1);
 }
 
-function redGateDir() {
-  return appDataFile("red-gate");
-}
-
 function recoverRedGate(cwd) {
-  recoverMarkers({ appDataDir: redGateDir(), cwd });
+  withDataDir((dir) => recoverMarkers({ appDataDir: path.join(dir, "red-gate"), cwd }));
 }
 
 // ── the node ─────────────────────────────────────────────────────────────────
@@ -369,8 +365,8 @@ export function liveEffects({ cwd } = {}) {
       };
     },
     recordIssue: async ({ task, comment }) => {
-      const file = appDataFile("todos.json");
-      return withBoardLock(file, () => {
+      return withDataDir((dir) => {
+        const file = path.join(dir, "todos.json");
         const data = loadBoardForWrite(file);
         const todo = data.todos.find((t) => t && t.id === task.id);
         if (!todo) return { written: false, error: `task ${task.id} not found on the board` };
@@ -383,8 +379,8 @@ export function liveEffects({ cwd } = {}) {
     },
     recordFlowDiagram: async ({ task, diagram }) => {
       const result = typeof diagram === "string" && diagram.trim() ? diagram : null;
-      const file = appDataFile("todos.json");
-      return withBoardLock(file, () => {
+      return withDataDir((dir) => {
+        const file = path.join(dir, "todos.json");
         const data = loadBoardForWrite(file);
         const todo = data.todos.find((t) => t && t.id === task.id);
         if (!todo) return { written: false, error: `task ${task.id} not found on the board` };
@@ -399,8 +395,8 @@ export function liveEffects({ cwd } = {}) {
     stepBase: async ({ task, cwd }) => {
       const based = gitBase(cwd);
       if (!based.ok) return { ok: false, error: based.error };
-      const file = appDataFile("todos.json");
-      const write = withBoardLock(file, () => {
+      const write = withDataDir((dir) => {
+        const file = path.join(dir, "todos.json");
         const data = loadBoardForWrite(file);
         const todo = data.todos.find((t) => t && t.id === task.id);
         if (!todo) return { written: false, error: `task ${task.id} not found on the board` };
@@ -415,8 +411,8 @@ export function liveEffects({ cwd } = {}) {
     recordAttempt: async ({ task, cwd, entry }) => {
       const snap = snapshotTree(cwd);
       const saved = { ...entry, snapshot: snap.ok ? snap.sha : null };
-      const file = appDataFile("todos.json");
-      return withBoardLock(file, () => {
+      return withDataDir((dir) => {
+        const file = path.join(dir, "todos.json");
         const data = loadBoardForWrite(file);
         const todo = data.todos.find((t) => t && t.id === task.id);
         if (!todo) return { written: false, error: `task ${task.id} not found on the board` };
@@ -490,7 +486,13 @@ export function liveEffects({ cwd } = {}) {
           })`,
         };
       }
-      return runRedGate({ task, cwd, timeoutMs, appDataDir: redGateDir(), runCmd: mod.runVerify });
+      return runRedGate({
+        task,
+        cwd,
+        timeoutMs,
+        withMarkerDir: (fn) => withDataDir((dir) => fn(path.join(dir, "red-gate"))),
+        runCmd: mod.runVerify,
+      });
     },
     flowGate: async ({ task, cwd, timeoutMs }) => {
       const settings = readSettings();
@@ -526,11 +528,18 @@ export function runLogPath() {
 function emitRunEvent(ctx, event) {
   if (ctx.dry || !ctx.events) return;
   const task = event.task == null ? null : `t#${String(event.task).replace(/^t?#/, "")}`;
-  appendRunEvent({ run: ctx.runId, change: `c#${ctx.root.number}`, ...event, task }, runEventsPath(runLogPath()));
+  appendRunEvent({ run: ctx.runId, change: `c#${ctx.root.number}`, ...event, task });
 }
 
-export function appendRunRecord(rec, file = runLogPath()) {
+export function appendRunRecord(rec, file) {
   if (!rec) return false;
+  if (!file) {
+    try {
+      return withDataDir((dir) => appendRunRecord(rec, path.join(dir, "runs.jsonl")));
+    } catch {
+      return false;
+    }
+  }
   try {
     mkdirSync(path.dirname(file), { recursive: true });
     appendFileSync(file, `${JSON.stringify({ ts: new Date().toISOString(), ...rec })}\n`);
@@ -2042,7 +2051,8 @@ export async function run(args) {
     const change = f.positional[1];
     if (!change || f.positional.length > 2) usage(1);
     if (f.from !== undefined && f.from !== "start") fail('--from takes "start"');
-    return watchRunEvents({ change, file: runEventsPath(runLogPath()), from: f.from });
+    return withDataDir((dir) =>
+      watchRunEvents({ change, file: path.join(dir, "run-events.jsonl"), from: f.from }));
   }
   const ref = f.positional[0];
   if (f.help) usage(0);
