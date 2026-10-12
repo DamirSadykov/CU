@@ -14,8 +14,8 @@
 
 use std::collections::HashMap;
 
-use claude_usage_tracker_lib::stats::{CcAgentRow, CcUsageRow, StatsDb};
-use claude_usage_tracker_lib::{task_sessions, todos};
+use cu_lib::stats::{CcAgentRow, CcUsageRow, StatsDb};
+use cu_lib::{task_sessions, todos};
 
 /// Per task number: how many messages the block gets and which agents split it.
 const SHAPE: &[(u32, i64, &[(&str, &str, &str, i64)])] = &[
@@ -54,7 +54,7 @@ const COST_PER_MSG: f64 = 0.17;
 fn app_dir() -> std::path::PathBuf {
     match std::env::var("CUT_APP_DIR") {
         Ok(d) => std::path::PathBuf::from(d),
-        Err(_) => claude_usage_tracker_lib::data_dir::selected_data_dir(
+        Err(_) => cu_lib::data_dir::selected_data_dir(
             &std::path::PathBuf::from(std::env::var("APPDATA").unwrap()),
             "com.cu.preview",
         ),

@@ -1,4 +1,4 @@
-// `cli.mjs hook` — Claude Code SessionStart hook for the Claude Usage Tracker.
+// `cli.mjs hook` — Claude Code SessionStart hook for CU.
 //
 // Surfaces the QUEUE — the tasks the user has lined up (status queue or
 // in_progress) that are a CURRENT ROOT of the dependency graph (every task in
@@ -377,7 +377,7 @@ function main(args = []) {
       // Nothing clears the bar — say so (don't dump the backlog), and point at the
       // levers: queue, priority, the threshold setting, the full board.
       const note = [
-        `The Claude Usage Tracker has ${active.length} open task(s) for project "${project}", but none clear the bar this session — none are due today, and no queued/unblocked task meets the "task priority in context" threshold.`,
+        `CU has ${active.length} open task(s) for project "${project}", but none clear the bar this session — none are due today, and no queued/unblocked task meets the "task priority in context" threshold.`,
         `Line up work, re-prioritize, or lower the threshold in the tracker's settings; via the CLI (${CLI_NOTE}):`,
         `· move a task into the queue: <cli> todos set status <id> queue`,
         `· raise a task's priority:    <cli> todos set priority <id> <high|medium|low|none>`,
@@ -500,7 +500,7 @@ function main(args = []) {
   // about the CLI or todos.json. The status/comment parts of the contract need
   // task ids, so they're omitted here.
   const note = [
-    `The Claude Usage Tracker is available in this environment — its todo list is the USER's task tracker (the source of truth). No active tasks for project "${project}" right now.`,
+    `CU is available in this environment — its todo list is the USER's task tracker (the source of truth). No active tasks for project "${project}" right now.`,
     `Use the CLI (${CLI_NOTE}), don't hand-edit the JSON (the tracker may write it concurrently):`,
     `· add a task: <cli> todos add "<subject>" [--project <name>] [--description <text>] — lands in backlog; only what the user explicitly wants tracked.`,
     `· see tasks: <cli> todos list — statuses: backlog | queue | in_progress | review | done.`,

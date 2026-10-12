@@ -1,8 +1,13 @@
 {
-  "productName": "Claude Usage Tracker (Preview)",
+  "productName": "CU (Preview)",
   "identifier": "com.cu.preview",
   "bundle": {
-    "createUpdaterArtifacts": false
+    "createUpdaterArtifacts": false,
+    "windows": {
+      "wix": {
+        "upgradeCode": null
+      }
+    }
   },
   "plugins": {
     "updater": {

@@ -847,7 +847,7 @@ async function openLink(href: string) {
 // User-facing guide (how tasks & analytics work). Published as the repo wiki's
 // Home page, so the short `/wiki` URL is stable regardless of page naming.
 const GUIDE_URL =
-  "https://github.com/DamirSadykov/Claude-Usage-Tracker-Windows/wiki";
+  "https://github.com/DamirSadykov/CU/wiki";
 function openGuide() {
   openLink(GUIDE_URL);
 }

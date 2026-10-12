@@ -60,7 +60,7 @@ const replacements = [
   },
   {
     file: p('src-tauri', 'Cargo.lock'),
-    pattern: /(\[\[package\]\]\r?\nname = "claude-usage-tracker"\r?\nversion = ")[^"]+(")/,
+    pattern: /(\[\[package\]\]\r?\nname = "cu"\r?\nversion = ")[^"]+(")/,
     replace: `$1${next}$2`,
   },
 ];

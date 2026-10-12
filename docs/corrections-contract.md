@@ -9,7 +9,7 @@
 >
 > **Интеграцию можно собрать самому** поверх этого контракта — см.
 > [гайд по интеграции](./corrections-integration.md) ·
-> [wiki](https://github.com/DamirSadykov/Claude-Usage-Tracker-Windows/wiki/Corrections-Integration).
+> [wiki](https://github.com/DamirSadykov/CU/wiki/Corrections-Integration).
 
 ## Как получить данные
 

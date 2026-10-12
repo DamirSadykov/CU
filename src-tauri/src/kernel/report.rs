@@ -17,10 +17,10 @@ use serde::{Deserialize, Serialize};
 
 /// Репозиторий, на который нацелена кнопка «Сообщить о проблеме».
 pub const ISSUE_NEW_URL: &str =
-    "https://github.com/DamirSadykov/Claude-Usage-Tracker-Windows/issues/new";
+    "https://github.com/DamirSadykov/CU/issues/new";
 
 /// Имя файла, в который пишет плагин логирования (внутри app log dir).
-pub const LOG_FILE_NAME: &str = "claude-usage-tracker.log";
+pub const LOG_FILE_NAME: &str = "cu.log";
 
 pub const LOG_RETENTION: Duration = Duration::from_secs(7 * 24 * 60 * 60);
 
@@ -273,9 +273,9 @@ mod tests {
         };
         let day = Duration::from_secs(86_400);
         touch(LOG_FILE_NAME, 30 * day);
-        touch("claude-usage-tracker_2026-08-01_10-00-00.log", 30 * day);
-        touch("claude-usage-tracker_2026-08-01_11-00-00.log.bak", 30 * day);
-        touch("claude-usage-tracker_2026-09-10_10-00-00.log", 1 * day);
+        touch("cu_2026-08-01_10-00-00.log", 30 * day);
+        touch("cu_2026-08-01_11-00-00.log.bak", 30 * day);
+        touch("cu_2026-09-10_10-00-00.log", 1 * day);
         touch("panic.txt", 30 * day);
 
         let removed = prune_rotated_logs(&dir, LOG_RETENTION);
@@ -285,7 +285,7 @@ mod tests {
             .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
             .collect();
         assert!(left.contains(&LOG_FILE_NAME.to_string()));
-        assert!(left.contains(&"claude-usage-tracker_2026-09-10_10-00-00.log".to_string()));
+        assert!(left.contains(&"cu_2026-09-10_10-00-00.log".to_string()));
         assert!(left.contains(&"panic.txt".to_string()));
         assert_eq!(left.len(), 3);
         std::fs::remove_dir_all(&dir).unwrap();

@@ -11,8 +11,8 @@
 
 use std::path::{Path, PathBuf};
 
-use claude_usage_tracker_lib::cc;
-use claude_usage_tracker_lib::stats::StatsDb;
+use cu_lib::cc;
+use cu_lib::stats::StatsDb;
 
 fn fixtures_base() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures")

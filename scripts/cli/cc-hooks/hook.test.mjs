@@ -524,7 +524,7 @@ describe("cli.mjs hook (stdin payload)", () => {
     });
     expect(r.status).toBe(0);
     expect(r.stderr).toMatch(/board recovery:.*unreadable/);
-    expect(r.stdout).toContain("The Claude Usage Tracker is available");
+    expect(r.stdout).toContain("CU is available");
     expect(written()).toHaveLength(0);
   });
 });

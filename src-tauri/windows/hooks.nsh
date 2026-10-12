@@ -1,16 +1,45 @@
-; Tauri NSIS installer hooks.
-;
-; The launch-on-login feature (formerly tauri-plugin-autostart) has been
-; removed, but earlier versions wrote an HKCU Run value named after the product
-; name. We delete it here so that value can't outlive the feature: an upgrade
-; install runs the previous version's uninstaller (firing this hook), and a
-; plain uninstall clears it too. Without this, users who had enabled autostart
-; would keep auto-launching the app at login after upgrading.
-;
-; The value name matches what the old plugin wrote (auto-launch used
-; PackageInfo.name == productName), so we key off ${PRODUCTNAME}. The HKCU Run
-; path is the standard per-user startup location.
+!define OLD_PRODUCT_NAME "Claude Usage Tracker"
+!define OLD_UNINSTALL_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${OLD_PRODUCT_NAME}"
+
+Var OldUninstallString
+Var OldInstallLocation
+Var OldUninstallExitCode
+Var OldFirstChar
+
+!macro NSIS_HOOK_PREINSTALL
+!if "${PRODUCTNAME}" == "CU"
+  ClearErrors
+  ReadRegStr $OldUninstallString HKCU "${OLD_UNINSTALL_KEY}" "UninstallString"
+  ${If} $OldUninstallString != ""
+    ReadRegStr $OldInstallLocation HKCU "${OLD_UNINSTALL_KEY}" "InstallLocation"
+    StrCpy $OldFirstChar $OldInstallLocation 1
+    ${If} $OldFirstChar == '"'
+      StrCpy $OldInstallLocation $OldInstallLocation -1 1
+    ${EndIf}
+
+    ${If} $OldInstallLocation != ""
+      ClearErrors
+      ExecWait '$OldUninstallString /S _?=$OldInstallLocation' $OldUninstallExitCode
+      ${IfThen} ${Errors} ${|} StrCpy $OldUninstallExitCode 2 ${|}
+    ${Else}
+      StrCpy $OldUninstallExitCode 2
+    ${EndIf}
+
+    ClearErrors
+    ReadRegStr $OldUninstallString HKCU "${OLD_UNINSTALL_KEY}" "UninstallString"
+    ${If} $OldUninstallExitCode <> 0
+    ${OrIf} $OldUninstallString != ""
+      MessageBox MB_OK|MB_ICONSTOP "Не удалось удалить ${OLD_PRODUCT_NAME}. Установка CU остановлена, чтобы приложения не остались рядом." /SD IDOK
+      Abort
+    ${EndIf}
+
+    Delete "$OldInstallLocation\uninstall.exe"
+    RMDir "$OldInstallLocation"
+    DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "${OLD_PRODUCT_NAME}"
+  ${EndIf}
+!endif
+!macroend
 
 !macro NSIS_HOOK_PREUNINSTALL
-  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "${PRODUCTNAME}"
+  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "${OLD_PRODUCT_NAME}"
 !macroend

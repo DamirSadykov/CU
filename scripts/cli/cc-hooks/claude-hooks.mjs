@@ -39,10 +39,11 @@ function commandsIn(root) {
 // The CLI subcommand a wired command ends in — `… cli.mjs" plan-hook exit` →
 // "plan-hook exit". Anything that is not this tracker's CLI is not ours to read.
 function area(command) {
-  const marker = 'cli.mjs"';
+  const marker = "cli.mjs";
   const at = command.indexOf(marker);
-  if (at < 0 || !command.includes("claude-usage-tracker")) return "";
-  return command.slice(at + marker.length).trim();
+  if (at < 0) return "";
+  const suffix = command.slice(at + marker.length);
+  return (suffix.startsWith('"') ? suffix.slice(1) : suffix).trim();
 }
 
 export function wiredHookAreas(cwd = process.cwd()) {

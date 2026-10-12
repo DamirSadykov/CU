@@ -2,7 +2,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use claude_usage_tracker_lib::data_dir::{
+use cu_lib::data_dir::{
     self, DataDirPaths, MigrationMarker, MigrationStatus, MARKER_FILE,
 };
 use rusqlite::Connection;

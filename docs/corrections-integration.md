@@ -99,7 +99,7 @@ node scripts/cli.mjs corrections scan --json > scan.json
 
 # or the published aggregate the app also reads
 node scripts/cli.mjs corrections publish --all
-cat "$APPDATA/com.claude-usage-tracker.app/corrections-metrics.json"
+cat "$APPDATA/com.cu.app/corrections-metrics.json"
 ```
 
 ### 2. Classify the candidates (the layer you add)
