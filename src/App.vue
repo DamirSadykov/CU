@@ -842,7 +842,7 @@ onUnmounted(() => {
                     >
                         <circle cx="8" cy="8" r="6" />
                     </svg>
-                    Claude Usage<span v-if="envBadge" class="env-badge">{{
+                    CU<span v-if="envBadge" class="env-badge">{{
                         envBadge
                     }}</span>
                 </div>
@@ -1267,7 +1267,7 @@ onUnmounted(() => {
     color: var(--text-2);
 }
 
-/* Non-production environment badge next to "Claude Usage" in the header. */
+/* Non-production environment badge next to "CU" in the header. */
 .env-badge {
     margin-left: 6px;
     padding: 1px 5px;

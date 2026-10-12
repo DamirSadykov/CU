@@ -5,7 +5,7 @@ updated: 2026-09-21
 location: local
 ---
 
-# Спека: Claude Usage Tracker (обзор продукта)
+# Спека: CU (обзор продукта)
 
 > Обзорная спека: что продукт обещает пользователю. Правила жанра —
 > [README.md](../README.md). Детальная спека подсистемы задач — домен `tasks`
@@ -138,6 +138,29 @@ part: устройство
   артефакты подписаны (minisign), установка passive.
 - Релиз запускается из UI: бамп версии (`npm run bump`) → тег →
   release-workflow. master закрыт для прямых пушей — только PR.
+- Установщик CU замещает старую установку Claude Usage Tracker — NSIS на
+  текущего пользователя из наших релизов. Перед установкой хук NSIS читает
+  `UninstallString` и `InstallLocation` из ключа удаления в HKCU, запускает
+  старый деинсталлятор с `/S` и `_?=<старый каталог>` и ждёт его. Установка
+  продолжается только при коде возврата `0` и исчезнувшем ключе; иначе — окно
+  с ошибкой и отказ: две установки рядом не поддерживаются. После удаления хук
+  убирает оставшийся `uninstall.exe` и пустой старый каталог, а значение
+  автозапуска в `Run` — по жёстко прописанному имени `Claude Usage Tracker`.
+- Тихое удаление не трогает данные, из которых CU мигрирует. Все релизы
+  Claude Usage Tracker собраны `@tauri-apps/cli 2.11.2` (lockfile релизных
+  тегов, в CI — `npm ci`); в его
+  [`installer.nsi`](https://github.com/tauri-apps/tauri/blob/tauri-cli-v2.11.2/crates/tauri-bundler/src/bundle/windows/nsis/installer.nsi)
+  каталоги `%APPDATA%` и `%LOCALAPPDATA%\com.claude-usage-tracker.app`
+  удаляются, только когда пользователь отметил галку удаления данных. Галка
+  читается на странице подтверждения, которой при `/S` нет, поэтому каталог
+  данных доживает до первого старта CU.
+- MSI `v0.13.6` (SHA-256
+  `a075e06ce49cdf86b9dd5e5fbd1d2efeaca068049cf125f36c50223137618daa`)
+  ставится на всю машину (`ALLUSERS=1`) с кодом обновления
+  `{D5D60370-C04C-5A9B-8413-1D7D4FAA2FD6}`; код закреплён в
+  `bundle.windows.wix.upgradeCode`. Замена старого MSI новым работает, пока у CU
+  та же область установки (умолчание Tauri — на всю машину) и версия выше
+  `0.13.6`.
 - Три изолированных профиля (dev / preview / prod) задаются явными парами
   старого и нового identifier'а: `com.claude-usage-tracker.dev` →
   `com.cu.dev`, `com.claude-usage-tracker.preview` → `com.cu.preview`,

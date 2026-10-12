@@ -6,8 +6,8 @@ use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use claude_usage_tracker_lib::todos;
-use claude_usage_tracker_lib::{board_lock, data_dir};
+use cu_lib::todos;
+use cu_lib::{board_lock, data_dir};
 
 fn node_available() -> bool {
     Command::new("node")

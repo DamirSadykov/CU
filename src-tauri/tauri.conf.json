@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicegui/nicegui-tauri/v2/src-tauri/tauri.conf.json",
-  "productName": "Claude Usage Tracker",
+  "productName": "CU",
   "version": "0.13.6",
   "identifier": "com.cu.app",
   "build": {
@@ -14,7 +14,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Claude Usage Tracker",
+        "title": "CU",
         "width": 440,
         "height": 700,
         "resizable": false,
@@ -42,7 +42,7 @@
       "id": "main-tray",
       "iconPath": "icons/icon.png",
       "iconAsTemplate": false,
-      "tooltip": "Claude Usage Tracker"
+      "tooltip": "CU"
     },
     "security": {
       "csp": null
@@ -106,6 +106,9 @@
     "windows": {
       "nsis": {
         "installerHooks": "./windows/hooks.nsh"
+      },
+      "wix": {
+        "upgradeCode": "D5D60370-C04C-5A9B-8413-1D7D4FAA2FD6"
       }
     }
   },
@@ -113,7 +116,7 @@
     "updater": {
       "active": true,
       "endpoints": [
-        "https://github.com/DamirSadykov/Claude-Usage-Tracker-Windows/releases/latest/download/latest.json"
+        "https://github.com/DamirSadykov/CU/releases/latest/download/latest.json"
       ],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDI2OTAzMzYyRjZGQ0Y1RUUKUldUdTlmejJZak9RSmhBWGEyVkl1UndaK3ZBM1JrN2pBNzJncWx3VVdRQU9mbENKR0JLeCtqNmMK",
       "windows": {

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Unified CLI for the Claude Usage Tracker. ONE entry, area modules loaded
+// Unified CLI for CU. ONE entry, area modules loaded
 // LAZILY so adding an area never bloats this file or the startup cost:
 //
 //   node cli.mjs todos  <…>    → ./cli/board/todos.mjs       (mutate the todo list)
@@ -84,7 +84,7 @@ function inSandbox(from) {
 
 function usage(code) {
   process.stdout.write(
-    "cli - Claude Usage Tracker\n\n" +
+    "cli - CU\n\n" +
       "  todos   <…>   mutate the todo list (add / set / comment / list / …)\n" +
       "  change  <…>   changes as records (new / list / show / close); a task points at one\n" +
       "  corrections <…> user-corrections outcome metric, layer 1 (scan / label-template / eval)\n" +

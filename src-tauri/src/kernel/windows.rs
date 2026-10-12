@@ -34,7 +34,7 @@ pub fn open_analytics(app: &AppHandle) {
         "analytics",
         WebviewUrl::App("index.html#analytics".into()),
     )
-    .title("Claude Usage — Analytics")
+    .title("CU — Analytics")
     .inner_size(960.0, 720.0)
     .min_inner_size(720.0, 520.0)
     .resizable(true)
@@ -53,7 +53,7 @@ pub fn open_todos(app: &AppHandle) {
     }
     if let Err(error) =
         WebviewWindowBuilder::new(app, "todos", WebviewUrl::App("index.html#todos".into()))
-            .title("Claude Usage — Tasks")
+            .title("CU — Tasks")
             .inner_size(1040.0, 760.0)
             .min_inner_size(640.0, 480.0)
             .resizable(true)
@@ -79,7 +79,7 @@ pub fn open_settings(app: &AppHandle, tab: Option<String>) {
         "settings",
         WebviewUrl::App("index.html#settings".into()),
     )
-    .title("Claude Usage — Settings")
+    .title("CU — Settings")
     .inner_size(680.0, 780.0)
     .min_inner_size(560.0, 540.0)
     .resizable(true)

@@ -58,7 +58,7 @@
 //
 // BUILD YOUR OWN INTEGRATION on top of this contract (classifier, export, report)
 // — the data is meant to be consumed. Integration guide:
-//   https://github.com/DamirSadykov/Claude-Usage-Tracker-Windows/wiki/Corrections-Integration
+//   https://github.com/DamirSadykov/CU/wiki/Corrections-Integration
 
 import {
   readFileSync,
@@ -798,7 +798,7 @@ function usage(code) {
       "        (the sink the tracker watches; next to todos.json)\n\n" +
       "  --json emits the versioned wire contract (see docs/corrections-contract.md).\n" +
       "  Build your own integration: docs/corrections-integration.md\n" +
-      "  https://github.com/DamirSadykov/Claude-Usage-Tracker-Windows/wiki/Corrections-Integration\n",
+      "  https://github.com/DamirSadykov/CU/wiki/Corrections-Integration\n",
   );
   process.exit(code);
 }

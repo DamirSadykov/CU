@@ -1,13 +1,13 @@
 [package]
-name = "claude-usage-tracker"
+name = "cu"
 version = "0.13.6"
-description = "Claude AI Usage Tracker for Windows"
+description = "Desktop shell for AI coding agents"
 authors = ["Damir Sadykov <damir.it.work@gmail.com>"]
 edition = "2021"
 license = "Apache-2.0"
 
 [lib]
-name = "claude_usage_tracker_lib"
+name = "cu_lib"
 crate-type = ["lib", "cdylib", "staticlib"]
 
 [build-dependencies]

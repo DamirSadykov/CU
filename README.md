@@ -1,9 +1,9 @@
-# Claude Usage Tracker for Windows
+# CU
 
-[![CI](https://github.com/DamirSadykov/Claude-Usage-Tracker-Windows/actions/workflows/ci.yml/badge.svg)](https://github.com/DamirSadykov/Claude-Usage-Tracker-Windows/actions/workflows/ci.yml)
+[![CI](https://github.com/DamirSadykov/CU/actions/workflows/ci.yml/badge.svg)](https://github.com/DamirSadykov/CU/actions/workflows/ci.yml)
 
 <p align="center">
-  <img src="src-tauri/assets/mark-512.png" width="128" height="128" alt="Claude Usage Tracker">
+  <img src="src-tauri/assets/mark-512.png" width="128" height="128" alt="CU">
 </p>
 
 A Windows alternative to [Claude Usage Tracker](https://github.com/hamed-elfayome/Claude-Usage-Tracker) (macOS, Swift) — a native tray app for real-time monitoring of Claude AI usage limits.
@@ -96,7 +96,7 @@ Task manager (Kanban, synced with Claude Code):
 
 ### Download
 
-Grab the latest installer from the [Releases](https://github.com/DamirSadykov/Claude-Usage-Tracker-Windows/releases) page. The app auto-updates itself afterwards.
+Grab the latest installer from the [Releases](https://github.com/DamirSadykov/CU/releases) page. The app auto-updates itself afterwards.
 
 ### Build from Source
 
@@ -107,8 +107,8 @@ Grab the latest installer from the [Releases](https://github.com/DamirSadykov/Cl
 - Windows 10/11 with WebView2 (pre-installed on Win 11)
 
 ```bash
-git clone https://github.com/DamirSadykov/Claude-Usage-Tracker-Windows.git
-cd claude-usage-tracker-windows
+git clone https://github.com/DamirSadykov/CU.git
+cd CU
 npm install
 npm run tauri build
 ```
@@ -132,7 +132,7 @@ without clobbering each other — every storage path is derived from the Tauri
   `npm run tauri dev` would write to the **production** data directory.
 - **preview** — an optimized release build in isolation, for testing the real
   installer and first-run experience without touching production data. It installs
-  as a separate "Claude Usage Tracker (Preview)" program and its updater is
+  as a separate "CU (Preview)" program and its updater is
   disabled.
 - **prod** — what users get; built by CI on a release tag. The base
   `tauri.conf.json` is the production config and is never touched by the overlays.

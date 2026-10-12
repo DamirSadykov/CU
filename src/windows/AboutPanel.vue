@@ -55,7 +55,7 @@ const empty = computed(() => !loading.value && releases.value.length === 0);
         <!-- About -->
         <div class="card about-card">
             <div class="about-head">
-                <div class="about-title">Claude Usage Tracker</div>
+                <div class="about-title">CU</div>
                 <span class="about-ver" v-if="currentVersion"
                     >v{{ currentVersion }}</span
                 >

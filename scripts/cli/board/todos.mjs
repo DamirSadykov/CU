@@ -2273,7 +2273,7 @@ function cmdPipeline(args = []) {
       "    DELTA — what this round changes, and why now), plan = HOW (steps + order),\n" +
       "    handoff = the baton, comments = journal.\n" +
       "  - a change is worth a root from ~4-5 nodes.\n\n" +
-      "Full guide + rationale: docs/task-pipeline.md (claude-usage-tracker repo).\n",
+      "Full guide + rationale: docs/task-pipeline.md (CU repo).\n",
   );
   printBoardDeclarations(args);
 }
@@ -2330,7 +2330,7 @@ function printBoardDeclarations(args) {
 
 function usage(code) {
   process.stdout.write(
-    "cli todos - Claude Usage Tracker todo CLI\n\n" +
+    "cli todos - CU todo CLI\n\n" +
       '  add "<subject>" [--project <name> | --global] [--from <project>] [--status <status>]\n' +
       "                  [--description <text>] [--plan <text>] [--scheduled <YYYY-MM-DD>] [--kind auto|manual]\n" +
       "                  no --project → the current project (cwd); --global = project-less\n" +

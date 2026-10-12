@@ -239,7 +239,7 @@ async function loadCorrections() {
 // "Build your own integration" guide, opened in the OS browser (never navigate
 // the webview). Shown as a link beside the Outcome section header.
 const CORR_GUIDE_URL =
-  "https://github.com/DamirSadykov/Claude-Usage-Tracker-Windows/wiki/Corrections-Integration";
+  "https://github.com/DamirSadykov/CU/wiki/Corrections-Integration";
 async function openCorrGuide() {
   try {
     await invoke("open_url", { url: CORR_GUIDE_URL });

@@ -29,7 +29,7 @@ interface CacheEntry {
     releases: Release[];
 }
 
-const REPO = "DamirSadykov/Claude-Usage-Tracker-Windows";
+const REPO = "DamirSadykov/CU";
 export const REPO_URL = `https://github.com/${REPO}`;
 const API = `https://api.github.com/repos/${REPO}/releases?per_page=30`;
 const CACHE_KEY = "releasesCache";

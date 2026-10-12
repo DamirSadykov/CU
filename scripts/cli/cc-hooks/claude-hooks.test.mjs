@@ -31,12 +31,16 @@ describe("Claude Code hook wiring discovery", () => {
     mkdirSync(path.dirname(file), { recursive: true });
     writeFileSync(file, typeof value === "string" ? value : JSON.stringify(value));
   };
-  const tracker = (area) => `node "C:/tools/claude-usage-tracker/scripts/cli.mjs" ${area}`;
+  const tracker = (area) => `node "C:/Program Files/CU/resources/scripts/cli.mjs" ${area}`;
 
   it("finds this CLI's areas across user and project settings, ignoring foreign hooks", () => {
     write(path.join(home, ".claude", "settings.json"), { hooks: { PreToolUse: [{ hooks: [{ command: tracker("plan-guard") }] }] } });
-    write(path.join(cwd, ".claude", "settings.json"), { hooks: { UserPromptSubmit: [{ hooks: [{ command: tracker("plan-hook prompt") }, { command: "node knowledge-base-hook.mjs" }] }] } });
-    expect(wiredHookAreas(cwd)).toEqual(new Set(["plan-guard", "plan-hook prompt"]));
+    write(path.join(cwd, ".claude", "settings.json"), { hooks: { UserPromptSubmit: [{ hooks: [
+      { command: tracker("plan-hook prompt") },
+      { command: "node C:/CU/resources/scripts/cli.mjs plan-hook exit" },
+      { command: "node knowledge-base-hook.mjs" },
+    ] }] } });
+    expect(wiredHookAreas(cwd)).toEqual(new Set(["plan-guard", "plan-hook prompt", "plan-hook exit"]));
     expect(planGuardWired(cwd)).toBe(true);
   });
 

@@ -2813,6 +2813,32 @@ fn wire_codex_session_start(root: &mut serde_json::Value, command: &str) {
     }
 }
 
+fn heal_codex_hook_file(hooks_path: &Path, script: &str) -> Option<()> {
+    let mut root: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(hooks_path).ok()?).ok()?;
+    if !root.is_object() || !settings_has_cc_hook(&root, "SessionStart") {
+        return None;
+    }
+    let wired = wired_script_path(&root, "SessionStart")?;
+    if Path::new(&wired).exists() {
+        return None;
+    }
+
+    wire_codex_session_start(&mut root, &format!("node \"{script}\" hook --host codex"));
+    let json = serde_json::to_string_pretty(&root).ok()?;
+    let tmp = hooks_path.with_extension("json.tmp");
+    std::fs::write(&tmp, json.as_bytes()).ok()?;
+    std::fs::rename(&tmp, hooks_path).ok()?;
+    Some(())
+}
+
+fn heal_codex_hook(app: &AppHandle) -> Option<String> {
+    let hooks_path = codex_hooks_path(app).ok()?;
+    let script = cc_hook_script_path(app).ok()?;
+    heal_codex_hook_file(&hooks_path, &script)?;
+    Some(script)
+}
+
 #[derive(Serialize)]
 struct CodexHookStatus {
     installed: bool,
@@ -3339,7 +3365,7 @@ pub fn run() {
             tauri_plugin_log::Builder::new()
                 .targets([
                     tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::LogDir {
-                        file_name: Some("claude-usage-tracker".into()),
+                        file_name: Some("cu".into()),
                     }),
                     tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Stdout),
                     tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Webview),
@@ -3347,7 +3373,7 @@ pub fn run() {
                 .level(log::LevelFilter::Info)
                 // Our own modules are chattier on purpose — they hold the
                 // diagnostics for "data won't fetch" reports.
-                .level_for("claude_usage_tracker_lib", log::LevelFilter::Debug)
+                .level_for("cu_lib", log::LevelFilter::Debug)
                 .max_file_size(2 * 1024 * 1024)
                 .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepAll)
                 .build(),
@@ -3365,7 +3391,7 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .setup(|app| {
             let version = app.package_info().version.to_string();
-            info!("Claude Usage Tracker v{} starting", version);
+            info!("CU v{} starting", version);
 
             // Environment labelling for non-production profiles. A single
             // per-profile overlay (identifier) already isolates storage dirs and
@@ -3386,7 +3412,7 @@ pub fn run() {
                     }
                 }
                 if let Some(tray) = app.tray_by_id("main-tray") {
-                    let _ = tray.set_tooltip(Some(format!("Claude Usage Tracker{suffix}")));
+                    let _ = tray.set_tooltip(Some(format!("CU{suffix}")));
                 }
             }
 
@@ -3399,6 +3425,9 @@ pub fn run() {
             // there and its path is dead (see heal_cc_hook).
             if let Some(healed) = heal_cc_hook(app.handle()) {
                 info!("Re-pointed the Claude Code hooks at {healed} (the wired script was gone)");
+            }
+            if let Some(healed) = heal_codex_hook(app.handle()) {
+                info!("Re-pointed the Codex hook at {healed} (the wired script was gone)");
             }
 
             // Diagnostics: route panics to a marker file in the log dir, and pick
@@ -3666,7 +3695,7 @@ fn migration_error_log(error: &data_dir::MigrationError) -> PathBuf {
 fn show_migration_failure(error: &data_dir::MigrationError) {
     let log = migration_error_log(error);
     let message = format!(
-        "Claude Usage Tracker could not copy its data and will not start.\n\nOld data remains at:\n{}\n\nError log:\n{}\n\n{}",
+        "CU could not copy its data and will not start.\n\nOld data remains at:\n{}\n\nError log:\n{}\n\n{}",
         error.source.display(),
         log.display(),
         error
@@ -3679,7 +3708,7 @@ fn show_migration_failure(error: &data_dir::MigrationError) {
             .encode_wide()
             .chain(std::iter::once(0))
             .collect();
-        let title: Vec<u16> = std::ffi::OsStr::new("Claude Usage Tracker")
+        let title: Vec<u16> = std::ffi::OsStr::new("CU")
             .encode_wide()
             .chain(std::iter::once(0))
             .collect();
@@ -3792,6 +3821,44 @@ mod hook_install_tests {
             groups[0]["hooks"][0]["command"],
             "node \"C:/kb/hooks.mjs\" lifecycle codex SessionStart"
         );
+    }
+
+    #[test]
+    fn codex_hook_heals_a_dead_install_path_and_preserves_foreign_hooks() {
+        let dir = std::env::temp_dir().join("cu_codex_hook_heal_test");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let hooks_path = dir.join("hooks.json");
+        let foreign = r#"node "C:/kb/hooks.mjs" lifecycle codex SessionStart"#;
+        let root = serde_json::json!({
+            "hooks": { "SessionStart": [
+                { "matcher": "startup", "hooks": [ { "type": "command", "command": foreign } ] },
+                { "matcher": CODEX_SESSION_START_MATCHER, "hooks": [ {
+                    "type": "command",
+                    "command": r#"node "D:/removed-install/resources/scripts/cli.mjs" hook --host codex"#,
+                    "timeout": 5
+                } ] }
+            ] }
+        });
+        std::fs::write(&hooks_path, serde_json::to_vec(&root).unwrap()).unwrap();
+
+        let script = "C:/Program Files/CU/resources/scripts/cli.mjs";
+        assert_eq!(heal_codex_hook_file(&hooks_path, script), Some(()));
+        let healed: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(&hooks_path).unwrap()).unwrap();
+        assert_eq!(
+            commands_for(&healed, "SessionStart"),
+            vec![
+                foreign,
+                r#"node "C:/Program Files/CU/resources/scripts/cli.mjs" hook --host codex"#,
+            ]
+        );
+        assert_eq!(healed["hooks"]["SessionStart"].as_array().unwrap().len(), 2);
+        assert_eq!(
+            healed["hooks"]["SessionStart"][1]["hooks"][0]["timeout"],
+            CODEX_HOOK_TIMEOUT_SECS
+        );
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

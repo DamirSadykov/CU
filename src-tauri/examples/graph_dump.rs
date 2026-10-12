@@ -1,13 +1,13 @@
 use std::collections::{HashMap, HashSet};
 
-use claude_usage_tracker_lib::stats::StatsDb;
-use claude_usage_tracker_lib::{graph, task_cost, task_sessions, todos};
+use cu_lib::stats::StatsDb;
+use cu_lib::{graph, task_cost, task_sessions, todos};
 
 fn app_dir() -> std::path::PathBuf {
     if let Ok(d) = std::env::var("CUT_APP_DIR") {
         return std::path::PathBuf::from(d);
     }
-    claude_usage_tracker_lib::data_dir::selected_data_dir(
+    cu_lib::data_dir::selected_data_dir(
         &std::path::PathBuf::from(std::env::var("APPDATA").unwrap()),
         "com.cu.app",
     )

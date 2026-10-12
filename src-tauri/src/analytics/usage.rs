@@ -757,7 +757,7 @@ pub async fn ensure_project(
     let create_url = format!("https://claude.ai/api/organizations/{}/projects", org_id);
     let body = serde_json::json!({
         "name": TRACKER_PROJECT_NAME,
-        "description": "Auto-created by Claude Usage Tracker. Sessions here keep the 5-hour window active.",
+        "description": "Auto-created by CU. Sessions here keep the 5-hour window active.",
         "is_private": true
     });
     let resp = client
