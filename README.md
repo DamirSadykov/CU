@@ -165,7 +165,7 @@ On first launch the settings panel opens:
    - Open claude.ai → DevTools (F12) → Application → Cookies → `sessionKey`
 2. **Organization ID** — your organization UUID
    - Navigate to `claude.ai/api/organizations` and copy the `uuid`
-3. **Refresh interval** — how often to poll the API (10–300 sec, default 60)
+3. **Refresh interval** — how often to poll the API (60–300 sec, default 60)
 4. **Auto-start session** — optionally create a chat automatically when the limit resets
 
 Everything else (thresholds, alerts, quiet hours, analytics opt-in, daily budget, fonts, …) is optional and lives in the tabbed settings.
@@ -220,6 +220,10 @@ All automatic chats are isolated in a separate project and won't clutter your no
 - The Session Key is stored locally in the Tauri Store
 - No data is sent to third-party servers
 - The app only communicates with `claude.ai` and `status.claude.com`
+
+## Unofficial API
+
+Usage limits are read from claude.ai's internal web API with your own `sessionKey` cookie. This API is not documented or supported by Anthropic, and automated access to claude.ai may conflict with Anthropic's [Consumer Terms](https://www.anthropic.com/legal/consumer-terms). The app polls your usage at most once a minute; it writes to claude.ai only when **Auto-start session** is on, by creating one chat after a limit resets. The endpoint can change or stop working at any time. You use the app at your own risk.
 
 ## License
 

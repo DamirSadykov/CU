@@ -158,7 +158,7 @@ const emit = defineEmits<{
 
 const localSessionKey = ref(props.sessionKey);
 const localOrgId = ref(props.orgId);
-const localInterval = ref(props.refreshInterval);
+const localInterval = ref(Math.max(60, props.refreshInterval));
 const localAutoStart = ref(props.autoStartSession);
 const localS1 = ref(props.sessionThresholds[0] ?? 25);
 const localS2 = ref(props.sessionThresholds[1] ?? 50);
@@ -1045,7 +1045,7 @@ function handleSave() {
           v-model.number="localInterval"
           type="range"
           class="field-range"
-          min="10"
+          min="60"
           max="300"
           step="5"
         />
