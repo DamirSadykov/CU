@@ -30,6 +30,8 @@ import { useSettings } from "../kernel/settingsStore";
 import TodoFiltersBar from "../board/TodoFiltersBar.vue";
 import TodoDetailPane from "../board/TodoDetailPane.vue";
 import ChangeDetail from "../process/pipeline/ChangeDetail.vue";
+import ProjectOverview from "../board/ProjectOverview.vue";
+import BoardCrumbs, { type BoardCrumbPath } from "../board/BoardCrumbs.vue";
 import TodoTree from "../board/TodoTree.vue";
 import WorkTree from "../board/WorkTree.vue";
 import { buildBoardTree, findBoardTreeNode, type BoardTreeNode, type BoardTreeRow } from "../board/boardTree";
@@ -224,6 +226,19 @@ const selectedChange = computed(() => {
   const node = selectedTreeNode.value;
   return node?.kind === "change" ? changes.value.find((change) => change.id === node.id) ?? null : null;
 });
+const selectedProject = computed(() => selectedTreeNode.value?.kind === "group" ? selectedTreeNode.value.title : null);
+
+function openOverviewChange(id: string) {
+  const node = findBoardTreeNode(tree.value, id);
+  const change = changes.value.find((item) => item.id === id);
+  if (node) selectTreeNode(node);
+  else if (change) selectTreeNode({ kind: "change", id, number: change.number, title: change.title, status: null, progress: { done: 0, total: 0 }, cost: 0, children: [], closed: !!change.closed_at });
+}
+function openOverviewTask(id: string) {
+  const node = findBoardTreeNode(tree.value, id);
+  if (node) selectTreeNode(node);
+  else void openDetail({ id });
+}
 
 function selectTreeNode(node: BoardTreeNode) {
   selectedTreeNode.value = node;
@@ -518,10 +533,28 @@ function openDetailSibling(offset: number) {
   if (node) selectedTreeNode.value = node;
   void openDetail(target);
 }
-function selectDetailProject() {
-  if (!detail.value?.project) return;
-  projectFilter.value = detail.value.project;
-  closeDetail();
+const crumbPath = computed<BoardCrumbPath | null>(() => {
+  const current = detailId.value ? detail.value : null;
+  if (current) return { project: current.project ? canonicalOf(current.project) ?? current.project : null, change: detailChange.value, task: current.number ?? null };
+  const change = selectedChange.value;
+  if (change) {
+    const group = tree.value.find((node) => node.kind === "group" && findBoardTreeNode(node.children, change.id));
+    return { project: group?.title ?? change.project ?? null, change: { number: change.number, title: change.title }, task: null };
+  }
+  return selectedProject.value !== null ? { project: selectedProject.value, change: null, task: null } : null;
+});
+function crumbToProject() {
+  const project = crumbPath.value?.project ?? "";
+  const node = findBoardTreeNode(tree.value, `project:${project}`);
+  selectTreeNode(node ?? { kind: "group", id: `project:${project}`, number: null, title: project, status: null, progress: { done: 0, total: 0 }, cost: 0, children: [], closed: false });
+}
+function crumbToChange() {
+  if (detailChangeNode.value) return selectTreeNode(detailChangeNode.value);
+  const id = detailId.value ? detail.value?.change_id : selectedChange.value?.id;
+  if (id) openOverviewChange(id);
+}
+function crumbToTask() {
+  if (detail.value) void openDetail(detail.value);
 }
 
 // Transient "Saved ✓" confirmation shown after a successful detail save.
@@ -1662,18 +1695,13 @@ onUnmounted(() => {
       <div class="tw-tree-resize" @pointerdown.prevent="startTreeResize"></div>
       <div v-if="detailId" class="tw-tree-detail">
         <section v-if="detail && detailRecord && !detailLoading" class="tw-detail-main">
-          <nav class="tw-detail-crumbs" :aria-label="t('todoBreadcrumbs')">
-            <button class="tw-crumb" :disabled="!detail.project" @click="selectDetailProject">{{ detail.project || t('todoNoProject') }}</button>
-            <span class="tw-crumb-separator">›</span>
-            <button v-if="detailChange" class="tw-crumb tw-crumb-change" @click="detailChangeNode && selectTreeNode(detailChangeNode)">c#{{ detailChange.number }} {{ detailChange.title }}</button>
-            <span v-if="detailChange" class="tw-crumb-separator">›</span>
-            <button class="tw-crumb tw-crumb-current" @click="openDetail(detail)">#{{ detail.number }}</button>
+          <BoardCrumbs v-if="crumbPath" :path="crumbPath" @project="crumbToProject" @change="crumbToChange" @task="crumbToTask">
             <div class="tw-detail-pager">
               <button :disabled="detailSiblingIndex <= 0" :aria-label="t('todoPreviousTask')" @click="openDetailSibling(-1)">‹</button>
               <span>{{ detailSiblingIndex + 1 }} / {{ detailSiblings.length }}</span>
               <button :disabled="detailSiblingIndex < 0 || detailSiblingIndex >= detailSiblings.length - 1" :aria-label="t('todoNextTask')" @click="openDetailSibling(1)">›</button>
             </div>
-          </nav>
+          </BoardCrumbs>
           <div class="tw-detail-pane-head">
             <h2><span v-if="detail.number" class="tw-detail-num">#{{ detail.number }}</span>{{ detail.subject }}</h2>
             <div class="tw-detail-menu-wrap">
@@ -1736,14 +1764,26 @@ onUnmounted(() => {
         </section>
         <section v-else class="tw-detail-main tw-detail-empty">{{ detailLoading ? t('loading') : t('todoDetailLoadFailed') }}</section>
       </div>
-      <ChangeDetail
-        v-if="selectedChange && selectedTreeNode"
-        :address="`c#${selectedChange.number}`"
-        show-heading
-        @open="selectChangeTask"
-        @trace="selectChangeTaskTrace"
-      />
-      <div v-if="!detailId && !selectedChange" class="tw-empty">{{ t("tasks") }}</div>
+      <div v-if="!detailId && selectedChange && selectedTreeNode" class="tw-change-pane">
+        <BoardCrumbs v-if="crumbPath" :path="crumbPath" @project="crumbToProject" @change="crumbToChange" />
+        <ChangeDetail
+          :address="`c#${selectedChange.number}`"
+          show-heading
+          @open="selectChangeTask"
+          @trace="selectChangeTaskTrace"
+        />
+      </div>
+      <div v-if="!detailId && selectedProject !== null" class="tw-project-pane">
+        <BoardCrumbs v-if="crumbPath" :path="crumbPath" class="tw-project-crumbs" @project="crumbToProject" />
+        <ProjectOverview
+          :project="selectedProject"
+          :rows="treeRows"
+          :changes="changes"
+          @open-change="openOverviewChange"
+          @open-task="openOverviewTask"
+        />
+      </div>
+      <div v-if="!detailId && !selectedChange && selectedProject === null" class="tw-empty">{{ t("tasks") }}</div>
     </div>
     </template>
 
@@ -2740,15 +2780,11 @@ onUnmounted(() => {
 }
 .tw-tree-layout > :first-child { border-right: 1px solid var(--stroke-strong); }
 .tw-tree-layout > :last-child { min-height: 0; overflow: auto; padding: 14px 16px; }
+.tw-tree-layout > .tw-project-pane { padding: 0; }
+.tw-change-pane { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.tw-project-crumbs { padding: 0 28px; }
 .tw-tree-detail { display: flex; flex-direction: column; gap: 10px; }
 .tw-tree-detail > .tw-back { align-self: flex-start; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tw-detail-crumbs { align-items: center; border-bottom: 1px solid var(--stroke); display: flex; flex: 0 0 30px; gap: 6px; min-width: 0; }
-.tw-crumb { background: transparent; border: 0; color: var(--text-3); cursor: pointer; font-family: var(--mono); font-size: 12px; overflow: hidden; padding: 3px 0; text-overflow: ellipsis; white-space: nowrap; }
-.tw-crumb:hover:not(:disabled) { background: var(--layer); color: var(--text); }
-.tw-crumb:disabled { cursor: default; }
-.tw-crumb-change { color: var(--theme); max-width: 45%; }
-.tw-crumb-current { color: var(--text); }
-.tw-crumb-separator { color: var(--text-4); }
 .tw-detail-pager { align-items: center; display: flex; gap: 5px; margin-left: auto; font-family: var(--mono); font-size: 12px; white-space: nowrap; }
 .tw-detail-pager button, .tw-detail-menu-button { background: var(--layer); border: 1px solid var(--stroke); border-radius: 4px; color: var(--text-2); cursor: pointer; height: 24px; min-width: 26px; }
 .tw-detail-pager button:disabled { color: var(--text-4); cursor: default; }

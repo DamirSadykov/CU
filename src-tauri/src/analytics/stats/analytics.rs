@@ -223,6 +223,15 @@ pub struct AnalyticsExt {
     /// Productivity / ROI over the window: active time, $/active hour, $/commit,
     /// $/edit, tokens/active minute.
     pub productivity: Productivity,
+    pub by_vendor: Vec<VendorUsage>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct VendorUsage {
+    pub vendor: String,
+    pub total_tokens: i64,
+    pub cost: f64,
+    pub messages: i64,
 }
 
 /// Aggregate use of one tool (e.g. "Edit", "Bash", "Read") over a window:
@@ -970,6 +979,32 @@ impl StatsDb {
             }
         };
 
+        let by_vendor = {
+            let mut stmt = prepare_proj(
+                "SELECT CASE WHEN message_id LIKE 'codex:%' THEN 'codex' ELSE 'claude-code' END v,
+                        SUM(input+output+cache_create+cache_read), SUM(cost), COUNT(*)
+                 FROM cc_usage WHERE ts >= ?1 AND ts < ?2{proj}
+                 GROUP BY v ORDER BY 3 DESC"
+                    .to_string(),
+            )?;
+            let map_row = |r: &rusqlite::Row| {
+                Ok(VendorUsage {
+                    vendor: r.get(0)?,
+                    total_tokens: r.get(1)?,
+                    cost: r.get(2)?,
+                    messages: r.get(3)?,
+                })
+            };
+            match project {
+                Some(p) => stmt
+                    .query_map(params![from, to, p], map_row)?
+                    .collect::<Result<Vec<_>, _>>()?,
+                None => stmt
+                    .query_map(params![from, to], map_row)?
+                    .collect::<Result<Vec<_>, _>>()?,
+            }
+        };
+
         // --- by_model / by_project (always over the full window when no proj filter) ---
         let by_model = {
             let mut stmt = prepare_proj(
@@ -1264,6 +1299,7 @@ impl StatsDb {
             tier_breakdown,
             tool_error,
             productivity,
+            by_vendor,
         })
     }
 }
@@ -1776,4 +1812,43 @@ fn parse_duration_hours(start: &str, end: &str) -> Option<i64> {
         return Some(0);
     }
     Some(secs / 3600)
+}
+
+#[cfg(test)]
+mod vendor_tests {
+    use super::StatsDb;
+    use std::path::Path;
+
+    #[test]
+    fn analytics_ext_splits_cost_by_vendor() {
+        let db = StatsDb::open(Path::new(":memory:")).unwrap();
+        db.conn
+            .lock()
+            .unwrap()
+            .execute_batch(
+                "INSERT INTO cc_usage (message_id, ts, model, input, output, cache_create, cache_read, cost, session_id, project)
+                 VALUES ('codex:s1:1', '2026-01-01T10:00:00Z', 'gpt-5', 10, 5, 0, 0, 0.4, 's1', 'p'),
+                        ('codex:s1:2', '2026-01-01T11:00:00Z', 'gpt-5', 20, 5, 0, 0, 0.6, 's1', 'p'),
+                        ('msg_a', '2026-01-01T12:00:00Z', 'claude-opus-4-7', 100, 50, 0, 0, 2.0, 's2', 'p'),
+                        ('msg_b', '2026-01-01T12:00:00Z', 'claude-opus-4-7', 100, 50, 0, 0, 5.0, 's3', 'other');",
+            )
+            .unwrap();
+        let all = db
+            .analytics_ext("2026-01-01T00:00:00Z", "2026-01-02T00:00:00Z", None, 10)
+            .unwrap();
+        let pick = |a: &super::AnalyticsExt, v: &str| {
+            a.by_vendor
+                .iter()
+                .find(|u| u.vendor == v)
+                .map(|u| (u.cost, u.messages, u.total_tokens))
+        };
+        assert_eq!(pick(&all, "claude-code"), Some((7.0, 2, 300)));
+        assert_eq!(pick(&all, "codex"), Some((1.0, 2, 40)));
+        let scoped = db
+            .analytics_ext("2026-01-01T00:00:00Z", "2026-01-02T00:00:00Z", Some("p"), 10)
+            .unwrap();
+        assert_eq!(scoped.by_vendor[0].vendor, "claude-code");
+        assert_eq!(pick(&scoped, "claude-code"), Some((2.0, 1, 150)));
+        assert_eq!(pick(&scoped, "codex"), Some((1.0, 2, 40)));
+    }
 }
