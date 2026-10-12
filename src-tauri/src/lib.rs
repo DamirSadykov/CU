@@ -575,7 +575,7 @@ fn spawn_poll_loop(app: AppHandle, notify: Arc<Notify>) {
         info!("poll loop: started");
         loop {
             let cfg = { app.state::<Mutex<AppConfig>>().lock().unwrap().clone() };
-            let interval = cfg.refresh_interval.max(10);
+            let interval = cfg.refresh_interval.max(60);
             let next_deadline = if !cfg.session_key.is_empty() && !cfg.org_id.is_empty() {
                 run_cycle(&app, &cfg, &mut ctx).await
             } else {
