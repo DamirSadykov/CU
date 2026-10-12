@@ -300,8 +300,11 @@ export function transcriptPathFor(session, cwd) {
   return existsSync(p) ? p : "";
 }
 
-export function editedPathsOf(threadId, cwd) {
-  if (!threadId || !cwd) return null;
+export function claudeTranscriptPath(session, cwd) {
+  return session ? path.join(transcriptDirFor(cwd), `${session}.jsonl`) : "";
+}
+
+function codexRolloutFiles(threadId) {
   const sessions = path.join(process.env.CODEX_HOME || path.join(homedir(), ".codex"), "sessions");
   const suffix = `-${threadId}.jsonl`;
   const files = [];
@@ -322,7 +325,31 @@ export function editedPathsOf(threadId, cwd) {
     }
     return true;
   };
-  if (!visit(sessions) || !files.length) return null;
+  return visit(sessions) ? files.sort() : null;
+}
+
+export function codexRolloutPath(threadId) {
+  if (!threadId) return "";
+  const files = codexRolloutFiles(threadId);
+  return files && files.length ? path.resolve(files[0]) : "";
+}
+
+function sessionAnnouncer(onSession, cwd) {
+  const announced = new Set();
+  return (engine, session, transcript) => {
+    if (typeof onSession !== "function" || !session || !transcript || announced.has(session)) return false;
+    announced.add(session);
+    try {
+      onSession({ engine, session, cwd: path.resolve(cwd || "."), transcript });
+    } catch {}
+    return true;
+  };
+}
+
+export function editedPathsOf(threadId, cwd) {
+  if (!threadId || !cwd) return null;
+  const files = codexRolloutFiles(threadId);
+  if (!files || !files.length) return null;
   const root = path.resolve(cwd);
   const paths = new Set();
   try {
@@ -864,8 +891,10 @@ export async function executeStep({
   attempt,
   limit,
   priorChanges,
+  onSession,
 } = {}) {
   if (!task) return { sessionId: "", ok: false, error: "executeStep: task is required" };
+  const announce = sessionAnnouncer(onSession, cwd);
 
   let execution;
   try {
@@ -890,6 +919,7 @@ export async function executeStep({
         boundSession = session;
         bindSession({ session, task, event: "start", ts: startedAt, execution });
       }
+      if (session !== inherit) announce("codex", session, codexRolloutPath(session));
     });
     const run = await spawnCaptured(file, args, {
       cwd,
@@ -903,6 +933,7 @@ export async function executeStep({
     const parsed = parseCodexResult(run.stdout);
     const actual = parsed?.sessionId || "";
     const distinctSession = !!actual && actual !== inherit;
+    if (distinctSession) announce("codex", actual, codexRolloutPath(actual));
     if (bind && distinctSession) {
       if (boundSession !== actual)
         bindSession({ session: actual, task, event: "start", ts: startedAt, execution });
@@ -951,6 +982,7 @@ export async function executeStep({
   // A fork's id is minted by the CLI, so there is nothing honest to bind until
   // it reports one; the binding below, off the REPORTED id, is the only one.
   if (bind && !inherit) bindSession({ session: sessionId, task, event: "start", execution });
+  if (!inherit) announce("claude", sessionId, claudeTranscriptPath(sessionId, cwd));
 
   // The step is its own session (`--session-id` above), so it must not carry the
   // id of the session that launched the runner: whatever inside it reads
@@ -968,6 +1000,7 @@ export async function executeStep({
   const reported =
     parsed && typeof parsed.session_id === "string" ? parsed.session_id.trim() : "";
   const actual = reported || sessionId;
+  if (reported && (inherit || reported !== sessionId)) announce("claude", reported, claudeTranscriptPath(reported, cwd));
   if (bind && reported && (inherit || reported !== sessionId))
     bindSession({ session: reported, task, event: "start", execution });
   // The block closes either way. A step that timed out or crashed still spent
