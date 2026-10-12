@@ -20,7 +20,7 @@ import { renderInsightHelp } from "../kernel/insightRender";
 import { fmtDateTime, fmtDay } from "../kernel/dateFormat";
 import { loadSettingsStoreForWrite } from "../kernel/settingsStore";
 import { useSettings } from "../kernel/settingsStore";
-import { onThemeChange, themeColor, themeMix } from "../kernel/cssVar";
+import { chartTooltip, onThemeChange, themeColor, themeMix } from "../kernel/cssVar";
 import {
   Chart,
   BarController,
@@ -694,7 +694,7 @@ function renderCharts() {
           legend: { display: false },
           // Default tooltip prints the raw JS number ("$2.90000000000004").
           // Round it the same way the KPI/list cells do.
-          tooltip: { callbacks: { label: (c) => fmtCost(Number(c.parsed.y) || 0) } },
+          tooltip: { ...chartTooltip(), callbacks: { label: (c) => fmtCost(Number(c.parsed.y) || 0) } },
         },
       },
       plugins: [costCrosshair],
@@ -727,7 +727,7 @@ function renderCharts() {
         maintainAspectRatio: false,
         plugins: {
           legend: { display: true, labels: { color: tick, font: { size: 11 } } },
-          tooltip: {
+          tooltip: { ...chartTooltip(),
             callbacks: { label: (c) => `${c.dataset.label}: ${fmtTokens(Number(c.parsed.y) || 0)}` },
           },
         },

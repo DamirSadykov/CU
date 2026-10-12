@@ -490,7 +490,7 @@ watch(
             @click.stop="toggle(row.node)"
           /><span class="row-main"><span class="row-icon">{{ icon(row.node) }}</span
           ><span v-if="row.node.kind === 'tool'" class="tool-number">#{{ row.node.sequence ?? row.modelNumber }}</span
-          ><span v-if="row.node.kind === 'tool'" class="type-label">{{ t(`workTraceType_${nodeType(row.node)}`) }}</span
+          ><span v-if="row.node.kind === 'tool'" class="type-label" :style="{ '--c': TRACE_TYPE_COLORS[nodeType(row.node)] }">{{ t(`workTraceType_${nodeType(row.node)}`) }}</span
           ><template v-if="row.node.kind === 'session'"><span class="session-role">{{ sessionParts(row.node)[0] }}</span><code class="session-id">{{ sessionParts(row.node)[1] }}</code></template
           ><span v-else class="name">{{ label(row) }}</span
           ><span
@@ -499,7 +499,7 @@ watch(
             class="type-label"
             :title="contextTitle(context)"
             >{{ contextText(context) }}</span
-          ><span v-if="row.node.kind === 'model'" class="type-label">{{ t(`workTraceType_${nodeType(row.node)}`) }}</span
+          ><span v-if="row.node.kind === 'model'" class="type-label" :style="{ '--c': TRACE_TYPE_COLORS[nodeType(row.node)] }">{{ t(`workTraceType_${nodeType(row.node)}`) }}</span
           ><span v-if="row.node.model && !row.node.sequence" class="meta">{{ row.node.model }}</span
           ><span v-if="row.node.kind === 'run' && reviewText(row.node)" class="review" :class="{ passed: attemptReviewSummary(row.node.result, row.node.review)?.passed }" @click.stop="select(row.node)">{{ reviewText(row.node) }}</span></span
           ><span
@@ -648,7 +648,7 @@ watch(
   box-shadow: inset 2px 0 var(--accent);
 }
 .model-row {
-  background: color-mix(in srgb, var(--accent-soft) 38%, transparent);
+  background: var(--ink-2);
 }
 .attempt-row { background: color-mix(in srgb, var(--paper) 2.5%, transparent); font-weight: 600; height: 32px; min-height: 32px; }
 .work-row.attempt-row.selected { background: var(--accent-soft); }
@@ -691,9 +691,9 @@ watch(
 .review-findings code { color: var(--text-2); font-family: var(--mono); font-size: 12px; }
 .review-findings small { color: var(--text-3); flex-basis: 100%; }
 .type-label {
-  background: var(--accent-soft);
+  background: color-mix(in srgb, var(--c, var(--paper-3)) 16%, transparent);
   border-radius: 9px;
-  color: var(--accent);
+  color: var(--c, var(--paper-3));
   font-size: 12px;
   padding: 1px 5px;
   white-space: nowrap;

@@ -16,6 +16,17 @@ export function themeMix(token: string, percent: number): string {
     return themeColor(`color-mix(in srgb, var(${token}) ${percent}%, transparent)`);
 }
 
+export function chartTooltip() {
+    return {
+        backgroundColor: themeColor("var(--ink-1)"),
+        titleColor: themeColor("var(--paper)"),
+        bodyColor: themeColor("var(--paper-2)"),
+        footerColor: themeColor("var(--paper-3)"),
+        borderColor: themeColor("var(--line-2)"),
+        borderWidth: 1,
+    };
+}
+
 export function onThemeChange(callback: () => void): () => void {
     if (typeof MutationObserver === "undefined" || typeof document === "undefined") return () => {};
     const observer = new MutationObserver(() => callback());

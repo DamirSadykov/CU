@@ -2,7 +2,7 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { BarController, BarElement, CategoryScale, Chart, Legend, LineController, LineElement, LinearScale, PointElement, Tooltip, type ActiveElement, type ChartEvent } from "chart.js";
-import { onThemeChange, themeColor, themeMix } from "../kernel/cssVar";
+import { chartTooltip, onThemeChange, themeColor, themeMix } from "../kernel/cssVar";
 import { TRACE_TYPE_COLORS, traceMarkers, traceSeries, type TraceMarker, type TraceMarkerPart, type WorkNode } from "./workTree";
 Chart.register(BarController, BarElement, CategoryScale, LineController, LineElement, LinearScale, PointElement, Tooltip, Legend);
 const props = defineProps<{ root: WorkNode | null; selectedNodeId?: string | null }>();
@@ -46,7 +46,7 @@ const markers = { id: "trace-markers", afterDraw(current: Chart) {
   const cost = costs[costs.length - 1];
   if (cost) { const x = scales.x.getPixelForValue(cost.index - 1), y = scales.cost.getPixelForValue(cost.value); ctx.save(); ctx.fillStyle = themeColor("var(--hemp)"); ctx.font = "10px var(--mono, monospace)"; ctx.textBaseline = "middle"; ctx.fillText(`$${cost.value.toFixed(2)}`, x + 4, y); ctx.restore(); }
 } };
-function options() { return { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 12, right: 34 } }, interaction: { mode: "index" as const, intersect: false }, plugins: { legend: { display: false }, tooltip: { callbacks: { afterBody: (items: readonly { dataIndex: number }[]) => { const marker = props.root ? traceMarkers(props.root).find((entry) => entry.index === (items[0]?.dataIndex ?? -1) + 1) : undefined; return marker ? restartTooltip(marker) ?? "" : ""; } } } }, scales: {
+function options() { return { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 12, right: 34 } }, interaction: { mode: "index" as const, intersect: false }, plugins: { legend: { display: false }, tooltip: { ...chartTooltip(), callbacks: { afterBody: (items: readonly { dataIndex: number }[]) => { const marker = props.root ? traceMarkers(props.root).find((entry) => entry.index === (items[0]?.dataIndex ?? -1) + 1) : undefined; return marker ? restartTooltip(marker) ?? "" : ""; } } } }, scales: {
   x: { grid: { color: color("--stroke") }, ticks: { color: color("--text-3") } }, tokens: { type: "linear" as const, position: "left" as const, beginAtZero: true, grid: { color: color("--stroke") }, ticks: { color: color("--text-3") } }, cache: { type: "linear" as const, display: false, beginAtZero: true }, cost: { type: "linear" as const, position: "right" as const, beginAtZero: true, grid: { drawOnChartArea: false }, ticks: { color: color("--text-3"), callback: (value: string | number) => `$${value}` } },
 }, onClick: (_event: ChartEvent, elements: readonly ActiveElement[]) => { const element = elements.find((entry) => entry.datasetIndex === 0), node = props.root && traceSeries(props.root).context[element?.index ?? -1]; if (node) emit("select", node.nodeId); } }; }
 function render() { if (!canvas.value) return; if (chart) { chart.data = data(); chart.options = options(); chart.update(); } else chart = new Chart(canvas.value, { type: "bar", data: data(), options: options(), plugins: [markers] }); }

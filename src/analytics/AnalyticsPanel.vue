@@ -6,7 +6,7 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import ProjectLabel from "../kernel/ProjectLabel.vue";
 import { useProjectLinks } from "./projectLinks";
 import { fmtDateTime, fmtDay } from "../kernel/dateFormat";
-import { onThemeChange, themeColor } from "../kernel/cssVar";
+import { chartTooltip, onThemeChange, themeColor } from "../kernel/cssVar";
 import {
   Chart,
   BarController,
@@ -463,7 +463,7 @@ function renderCharts() {
         maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
-          tooltip: {
+          tooltip: { ...chartTooltip(),
             callbacks: {
               label: (ctx) =>
                 isCost
@@ -514,7 +514,7 @@ function renderCharts() {
         cutout: "62%",
         plugins: {
           legend: { display: false },
-          tooltip: {
+          tooltip: { ...chartTooltip(),
             callbacks: {
               label: (ctx) =>
                 `${ctx.label}: ` +
