@@ -189,7 +189,7 @@ function stopFocus(completed: boolean) {
 }
 .chip-btn.primary {
   background: var(--accent);
-  color: white;
+  color: var(--on-accent);
   border-color: transparent;
 }
 .focus-status {

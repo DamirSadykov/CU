@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 export const TOKEN_FILES = new Set(['src/styles/cu-tokens.css']);
 
-const COLOR = /(?<![\w-])#[0-9a-fA-F]{3,8}(?![\w-])|\b(?:rgba?|hsla?)\(/g;
+const COLOR = /(?<![\w-])#[0-9a-fA-F]{3,8}(?![\w-])|\b(?:rgba?|hsla?)\(|(?<![\w.#-])(?:white|black)(?![\w-])/g;
 
 function stripComments(text) {
   return text.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '));

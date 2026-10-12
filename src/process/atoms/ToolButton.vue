@@ -48,7 +48,7 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
 .tool-button.pri {
     background: var(--accent);
     border-color: transparent;
-    color: var(--on-next);
+    color: var(--on-accent);
     font-weight: 600;
 }
 .tool-button.pri:hover {

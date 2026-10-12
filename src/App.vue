@@ -1175,7 +1175,7 @@ onUnmounted(() => {
     border: none;
     border-radius: 4px;
     background: var(--accent);
-    color: white;
+    color: var(--on-accent);
     font-size: 12px;
     font-weight: 500;
     font-family: var(--segoe);
@@ -1237,7 +1237,7 @@ onUnmounted(() => {
     border: none;
     border-radius: 4px;
     background: var(--crit);
-    color: white;
+    color: var(--on-close);
     font-size: 12px;
     font-weight: 500;
     font-family: var(--segoe);

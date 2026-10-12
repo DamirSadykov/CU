@@ -670,7 +670,7 @@ onUnmounted(() => {
                 <path
                   d="M2 6.2l2.6 2.6L10 3.3"
                   fill="none"
-                  stroke="var(--on-bold)"
+                  stroke="var(--on-next)"
                   stroke-width="2"
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -804,7 +804,7 @@ onUnmounted(() => {
 }
 .seg button.on {
   background: var(--accent);
-  color: var(--paper);
+  color: var(--on-accent);
 }
 
 .summary {

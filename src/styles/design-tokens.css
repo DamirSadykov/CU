@@ -36,10 +36,12 @@
     --accent: var(--hemp);
     --accent-2: var(--hemp-2);
     --accent-soft: var(--hemp-soft);
+    --on-accent: var(--on-hemp);
 }
 
 .pipe-root.accent-purple {
     --accent: var(--ag-codex);
     --accent-2: var(--ag-codex);
     --accent-soft: color-mix(in srgb, var(--ag-codex) 16%, transparent);
+    --on-accent: var(--on-next);
 }

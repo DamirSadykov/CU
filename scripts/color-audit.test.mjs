@@ -12,6 +12,11 @@ describe('color-audit', () => {
     expect(auditCss(css)).toEqual([]);
   });
 
+  it('finds named white and black but not white-space', () => {
+    const css = '.a{\n  color: white;\n  background: black;\n  white-space: nowrap;\n}';
+    expect(auditCss(css).map((h) => h.line)).toEqual([2, 3]);
+  });
+
   it('does not take identifiers that start like hex for colors', () => {
     expect(auditCss('.x{grid-area:#cafe-zone; content:"a#bed"}')).toEqual([]);
   });

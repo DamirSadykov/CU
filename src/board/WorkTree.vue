@@ -681,9 +681,9 @@ watch(
 .review-summary { border-bottom: 1px solid var(--stroke-strong); display: flex; flex-direction: column; gap: 6px; padding-bottom: 8px; }
 .review-counts { display: flex; flex-wrap: wrap; gap: 4px; }
 .review-count, .finding-level { border-radius: var(--r-pill); font-size: 11px; padding: 2px 6px; }
-.review-critical { background: var(--crit); color: var(--text-2); }
-.review-high { background: var(--high); color: var(--text-2); }
-.review-medium { background: var(--warn); color: var(--text); }
+.review-critical { background: var(--crit); color: var(--on-close); }
+.review-high { background: var(--high); color: var(--on-hemp); }
+.review-medium { background: var(--warn); color: var(--on-next); }
 .review-low { background: var(--accent-soft); color: var(--accent); }
 .review-unknown { background: var(--node-bg); color: var(--text-3); }
 .review-findings { display: flex; flex-direction: column; gap: 6px; list-style: none; margin: 0; padding: 0; }

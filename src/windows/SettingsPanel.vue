@@ -2229,13 +2229,14 @@ function handleSave() {
   left: 3px;
   width: 14px;
   height: 14px;
-  background: white;
+  background: var(--paper-2);
   border-radius: 50%;
-  transition: transform 200ms;
+  transition: transform 200ms, background 200ms;
 }
 
 .toggle.on .toggle-knob {
   transform: translateX(20px);
+  background: var(--on-accent);
 }
 
 .appearance-card {
@@ -2283,7 +2284,7 @@ function handleSave() {
 
 .lang-btn.active {
   background: var(--accent);
-  color: white;
+  color: var(--on-accent);
 }
 
 .settings-save-bar {
@@ -2297,7 +2298,7 @@ function handleSave() {
   border: none;
   border-radius: var(--card-radius);
   background: var(--accent);
-  color: white;
+  color: var(--on-accent);
   font-size: 13px;
   font-weight: 500;
   font-family: var(--segoe);

@@ -2115,12 +2115,12 @@ onUnmounted(() => {
 .aw-presets button.active,
 .aw-presets button.active:hover {
   background: var(--accent);
-  color: var(--paper);
+  color: var(--on-accent);
 }
 .aw-export {
   border: 1px solid transparent;
   background: var(--accent);
-  color: var(--paper);
+  color: var(--on-accent);
   border-radius: var(--card-radius);
   padding: 5px 12px;
   font-size: 12px;
@@ -2325,7 +2325,7 @@ onUnmounted(() => {
 .aw-merge-btn {
   border: 1px solid transparent;
   background: var(--accent);
-  color: var(--paper);
+  color: var(--on-accent);
   border-radius: var(--card-radius);
   padding: 5px 14px;
   font-size: 12px;
@@ -2641,7 +2641,7 @@ onUnmounted(() => {
 /* Solid-green count pill next to the RECOMMENDATIONS title. */
 .aw-tab-count {
   background: var(--success);
-  color: var(--on-bold);
+  color: var(--on-next);
   border-radius: 10px;
   padding: 1px 8px;
   font-size: 11px;

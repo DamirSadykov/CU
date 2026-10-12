@@ -337,7 +337,7 @@ onMounted(async () => {
   border: none;
   border-radius: var(--card-radius);
   background: var(--accent);
-  color: white;
+  color: var(--on-accent);
   font-size: 13px;
   font-weight: 500;
   font-family: var(--segoe);

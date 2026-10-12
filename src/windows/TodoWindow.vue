@@ -2402,7 +2402,7 @@ onUnmounted(() => {
 }
 .tw-vt.active {
   background: var(--accent);
-  color: var(--on-next);
+  color: var(--on-accent);
 }
 .tw-vt svg {
   opacity: 0.85;
@@ -2410,7 +2410,7 @@ onUnmounted(() => {
 .tw-add {
   border: 1px solid var(--accent);
   background: var(--accent);
-  color: var(--on-next);
+  color: var(--on-accent);
   border-radius: 6px;
   padding: 6px 12px;
   font-size: 12px;
@@ -3178,7 +3178,7 @@ onUnmounted(() => {
 .tw-btn {
   border: none;
   background: var(--accent);
-  color: var(--on-next);
+  color: var(--on-accent);
   border-radius: 5px;
   padding: 7px 16px;
   font-size: 12px;

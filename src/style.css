@@ -4,6 +4,7 @@
     --card-radius: 6px;
     --accent: var(--hemp);
     --accent-soft: var(--hemp-soft);
+    --on-accent: var(--on-hemp);
     --success: var(--ok);
     --warning: var(--warn);
     --text: var(--paper);
@@ -266,14 +267,14 @@ body,
 .icon-btn.pin-on,
 .icon-btn.pin-on:hover {
     background: var(--accent);
-    color: var(--paper);
+    color: var(--on-accent);
 }
 /* Analytics toggle active: same filled-accent treatment as pin so the
    "you're on the charts page" state is unmistakable. */
 .icon-btn.active,
 .icon-btn.active:hover {
     background: var(--accent);
-    color: var(--paper);
+    color: var(--on-accent);
 }
 @keyframes spin {
     from {
@@ -623,8 +624,8 @@ body,
     background: color-mix(in srgb, var(--paper) 6%, transparent);
 }
 .win-btn.close:hover {
-    background: var(--crit);
-    color: white;
+    background: var(--close);
+    color: var(--on-close);
 }
 
 /* Density variants */
@@ -654,18 +655,22 @@ body,
 .accent-blue {
     --accent: var(--next);
     --accent-soft: color-mix(in srgb, var(--next) 18%, transparent);
+    --on-accent: var(--on-next);
 }
 .accent-purple {
     --accent: var(--ag-codex);
     --accent-soft: color-mix(in srgb, var(--ag-codex) 18%, transparent);
+    --on-accent: var(--on-next);
 }
 .accent-claude {
     --accent: var(--hemp);
     --accent-soft: var(--hemp-soft);
+    --on-accent: var(--on-hemp);
 }
 .accent-mint {
     --accent: var(--ag-gemini);
     --accent-soft: color-mix(in srgb, var(--ag-gemini) 18%, transparent);
+    --on-accent: var(--on-next);
 }
 
 /* Hint banner */
@@ -702,7 +707,7 @@ body,
     border: none;
     border-radius: var(--card-radius);
     background: var(--accent);
-    color: white;
+    color: var(--on-accent);
     font-size: 13px;
     font-weight: 500;
     font-family: var(--segoe);
