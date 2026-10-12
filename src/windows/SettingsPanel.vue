@@ -659,56 +659,6 @@ async function setTaskGuard(v: string) {
 
 onMounted(loadTaskGuard);
 
-// --- Task-ref migration & backups (#63) ---
-// Bare `#N` used to be treated as a task reference, but in prose it almost always
-// means a GitHub PR/issue — a number collision silently linked the wrong task. The
-// app now links only the explicit `t#N` form, and rewrites the genuine `#N` task
-// refs in stored text on startup, since a board with both spellings is ambiguous
-// rather than merely old. What is left here is the safety net: the rewrite guesses,
-// so it backs todos.json up first and "Откатить" restores that backup.
-interface BackupInfo {
-  name: string;
-  when_ms: number;
-}
-const restoring = ref(false);
-const migrateMsg = ref("");
-const latestBackup = ref<BackupInfo | null>(null);
-
-async function loadLatestBackup() {
-  try {
-    latestBackup.value = await invoke<BackupInfo | null>("latest_todo_backup");
-  } catch {
-    // not under Tauri
-  }
-}
-
-function fmtBackupTime(ms: number): string {
-  try {
-    return new Date(ms).toLocaleString();
-  } catch {
-    return "";
-  }
-}
-
-async function runRestore() {
-  if (restoring.value || !latestBackup.value) return;
-  // Restoring overwrites the current board with the backup — confirm, since any
-  // edits made after that backup would be lost.
-  if (typeof window !== "undefined" && !window.confirm(t("migrateRestoreConfirm"))) return;
-  restoring.value = true;
-  try {
-    await invoke("restore_todo_backup", {});
-    migrateMsg.value = t("migrateRestored");
-    await loadLatestBackup();
-  } catch (e) {
-    migrateMsg.value = String(e);
-  } finally {
-    restoring.value = false;
-  }
-}
-
-onMounted(loadLatestBackup);
-
 // --- Board import / export (#181) ---
 // Carrying todos.json between machines by hand DESTROYS whatever the other machine
 // added: both number tasks with max+1, so the same number lands on different tasks
@@ -803,7 +753,6 @@ async function confirmImport() {
       total: r.total_after,
     });
     pendingImport.value = null;
-    await loadLatestBackup(); // the import took one; "Откатить" now undoes it
   } catch (e) {
     ioMsg.value = String(e);
   } finally {
@@ -1773,29 +1722,6 @@ function handleSave() {
           <option v-for="lv in TASK_CTX_LEVELS" :key="lv" :value="lv">{{ taskCtxPrioLabel(lv) }}</option>
         </select>
         <div class="field-hint">{{ t('taskCtxPrioDesc') }}</div>
-      </div>
-
-      <!-- Task-ref migration (#63): bare `#N` → `t#N` runs on startup; `#N` reads as
-           a PR/issue, only `t#N` links. What is offered here is the undo. -->
-      <div class="card">
-        <div class="field-label">{{ t('migrateTitle') }}</div>
-        <div class="field-hint" style="margin-top: 6px">{{ t('migrateDesc') }}</div>
-        <div class="budget-suggest" style="margin-top: 10px">
-          <span style="display: flex; gap: 8px; flex-shrink: 0">
-            <button
-              type="button"
-              class="suggest-btn"
-              :disabled="restoring || !latestBackup"
-              @click="runRestore"
-            >
-              {{ restoring ? t('migrateRestoring') : t('migrateRestore') }}
-            </button>
-          </span>
-          <span v-if="migrateMsg" class="field-hint" style="margin: 0">{{ migrateMsg }}</span>
-        </div>
-        <div v-if="latestBackup" class="field-hint" style="margin-top: 6px">
-          {{ t('migrateBackupAt', { date: fmtBackupTime(latestBackup.when_ms) }) }}
-        </div>
       </div>
 
       <!-- Board import / export (#181): moving a board between machines. Import is a

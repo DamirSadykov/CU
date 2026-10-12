@@ -1,6 +1,6 @@
 {
   "productName": "Claude Usage Tracker (Preview)",
-  "identifier": "com.claude-usage-tracker.preview",
+  "identifier": "com.cu.preview",
   "bundle": {
     "createUpdaterArtifacts": false
   },

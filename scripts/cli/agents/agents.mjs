@@ -9,9 +9,11 @@ import {
   readFileSync,
 } from "node:fs";
 import { spawnSync } from "node:child_process";
+import path from "node:path";
 import { READ_ONLY_TOOLS, parseProviderResult, providerArgv, resolveSpawn } from "./providers.mjs";
 import { dutyModeReader } from "./duty-mode.mjs";
-import { appDataDir, appDataFile, writeJsonAtomic } from "../kernel/appdata.mjs";
+import { appDataFile, writeJsonAtomic } from "../kernel/appdata.mjs";
+import { withDataDir } from "../kernel/board-lock.mjs";
 
 export const AGENT_PROVIDER_MANIFEST = JSON.parse(
   readFileSync(new URL("./agent-providers.json", import.meta.url), "utf8"),
@@ -139,10 +141,12 @@ export function readAgentConfig(appData) {
 }
 
 export function saveAgentConfig(config, appData) {
-  const file = agentsPath(appData);
-  mkdirSync(appDataDir(appData), { recursive: true });
-  writeJsonAtomic(file, config);
-  return file;
+  return withDataDir((dir) => {
+    const file = path.join(dir, "agents.json");
+    mkdirSync(dir, { recursive: true });
+    writeJsonAtomic(file, config);
+    return file;
+  }, { appData });
 }
 
 // The lifecycle chooses the duty; tasks do not carry model assignments. A

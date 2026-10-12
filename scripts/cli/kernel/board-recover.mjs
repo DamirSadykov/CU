@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { withBoardLock } from "./board-lock.mjs";
+import { withBoardLock, withDataDir } from "./board-lock.mjs";
+import { appDataLocation } from "./appdata.mjs";
 
 export const CURRENT = 3;
 
@@ -93,6 +94,13 @@ function writeCorruptBackup(file, raw) {
 
 function ensureCorruptBackup(file, raw) {
   try {
+    const location = path.basename(file) === "todos.json" ? appDataLocation(file) : null;
+    if (location) {
+      return withDataDir(
+        (dir) => writeCorruptBackup(path.join(dir, "todos.json"), raw),
+        location,
+      );
+    }
     return withBoardLock(file, () => writeCorruptBackup(file, raw), { waitMs: 0 });
   } catch (e) {
     return { path: null, error: e };

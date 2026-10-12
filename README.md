@@ -122,11 +122,11 @@ single-instance lock, and tray/window label, so they can all run at the same tim
 without clobbering each other — every storage path is derived from the Tauri
 `identifier`.
 
-| Profile | Command | Identifier | Data dir (`%APPDATA%`) |
-|---|---|---|---|
-| **dev** | `npm run app:dev` | `com.claude-usage-tracker.dev` | `…-tracker.dev\` |
-| **preview** | `npm run app:preview` | `com.claude-usage-tracker.preview` | `…-tracker.preview\` |
-| **prod** | `npm run tauri build` / CI release | `com.claude-usage-tracker.app` | `…-tracker.app\` |
+| Profile | Command | Identifier | Data dir (`%APPDATA%`) | Migrates from |
+|---|---|---|---|---|
+| **dev** | `npm run app:dev` | `com.cu.dev` | `com.cu.dev\` | `com.claude-usage-tracker.dev\` |
+| **preview** | `npm run app:preview` | `com.cu.preview` | `com.cu.preview\` | `com.claude-usage-tracker.preview\` |
+| **prod** | `npm run tauri build` / CI release | `com.cu.app` | `com.cu.app\` | `com.claude-usage-tracker.app\` |
 
 - **dev** — fast debug iteration. Always use `npm run app:dev`; plain
   `npm run tauri dev` would write to the **production** data directory.
@@ -140,6 +140,22 @@ without clobbering each other — every storage path is derived from the Tauri
 The dev/preview overlays live in `src-tauri/tauri.conf.dev.json` and
 `src-tauri/tauri.conf.preview.json`; they are merged on top of the base config via
 `--config` (JSON Merge Patch).
+
+When a profile first starts after the identifier change, it copies the matching
+legacy directory shown in the table to the new directory; profiles and identifiers
+outside these three explicit pairs are never mixed or migrated. A new directory
+is considered live only when it contains
+the `migrated-from` marker. All readers select it using this rule:
+`marker exists in new || old directory does not exist ? new : old`. CLI writes go
+through `withDataDir`, which waits for the old board lock and selects the directory
+again under that lock, so a writer cannot split data across the two directories.
+
+Migration is assembled in `<new>.migrating` and renamed into place only after the
+marker is written. An interrupted staging directory, or an unmarked new directory
+while the old one still exists, is preserved as `<name>.failed-<timestamp>` before
+the migration is retried. If copying fails, the app does not start: an error dialog
+shows the unchanged legacy directory and the migration log path. The legacy
+directory is retained as a backup after a successful migration.
 
 ## Configuration
 

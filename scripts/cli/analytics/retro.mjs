@@ -13,7 +13,7 @@ import {
   loadBoardForWrite,
   saveBoard,
 } from "../kernel/board-io.mjs";
-import { withBoardLock } from "../kernel/board-lock.mjs";
+import { withBoardLock, withDataDir } from "../kernel/board-lock.mjs";
 import { uiLocale } from "../kernel/settings.mjs";
 import { collectRetroFacts, collectSessionRetroFacts } from "./retro-facts.mjs";
 
@@ -168,6 +168,19 @@ function writeTextAtomic(file, text) {
   renameSync(tmp, file);
 }
 
+function writeDataReport({ appData, relative, text, writeReport }) {
+  if (writeReport !== writeTextAtomic) {
+    const file = path.join(appDataDir(appData), relative);
+    writeReport(file, text);
+    return file;
+  }
+  return withDataDir((dir) => {
+    const file = path.join(dir, relative);
+    writeReport(file, text);
+    return file;
+  }, { appData });
+}
+
 export function retroLanguage(appData) {
   return uiLocale(appData) === "ru" ? "Russian" : "English";
 }
@@ -221,8 +234,12 @@ export function runRetro(ref, {
   });
   const raw = String(invoked?.text || invoked?.error || "retro agent returned no output");
   const parsed = invoked?.ok ? parseRetroOutput(raw, collected.facts) : null;
-  const reportFile = retroReportPath(change.number, appData);
-  writeReport(reportFile, parsed?.report || raw);
+  const reportFile = writeDataReport({
+    appData,
+    relative: path.join("retro", `c${change.number}-report.md`),
+    text: parsed?.report || raw,
+    writeReport,
+  });
 
   if (!invoked?.ok) {
     const error = new Error(`retro agent failed; diagnostic report saved to ${reportFile}: ${invoked?.error || "no output"}`);
@@ -244,16 +261,21 @@ export function runRetro(ref, {
     }),
     status: "proposed",
   }));
-  lock(file, () => {
-    const current = readBoardForWrite(file);
+  const storeProposals = (boardFile) => {
+    const current = readBoardForWrite(boardFile);
     const target = resolveChange(current, ref);
     target.ext ??= {};
     target.ext.retro ??= {};
     const existing = Array.isArray(target.ext.retro.proposals) ? target.ext.retro.proposals : [];
     target.ext.retro.proposals = [...existing, ...proposals];
     target.updated_at = new Date().toISOString();
-    save(file, current);
-  });
+    save(boardFile, current);
+  };
+  if (lock === withBoardLock && save === saveBoard) {
+    withDataDir((dir) => storeProposals(path.join(dir, "todos.json")), { appData });
+  } else {
+    lock(file, () => storeProposals(file));
+  }
   return { parsed: true, reportFile, proposals, profile: invoked.profile };
 }
 
@@ -276,8 +298,12 @@ export function runRetroSession(session, {
   });
   const raw = String(invoked?.text || invoked?.error || "retro agent returned no output");
   const parsed = invoked?.ok ? parseRetroOutput(raw, collected.facts) : null;
-  const reportFile = retroSessionReportPath(id, appData);
-  writeReport(reportFile, parsed?.report || raw);
+  const reportFile = writeDataReport({
+    appData,
+    relative: path.join("retro", `session-${id}-report.md`),
+    text: parsed?.report || raw,
+    writeReport,
+  });
   if (!invoked?.ok) {
     const error = new Error(`retro agent failed; diagnostic report saved to ${reportFile}: ${invoked?.error || "no output"}`);
     error.reportFile = reportFile;

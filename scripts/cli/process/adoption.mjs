@@ -35,7 +35,7 @@ import os from "node:os";
 import path from "node:path";
 
 import { boardPath, loadBoard, isChangeRoot } from "../board/todos.mjs";
-import { roamingBase } from "../kernel/settings.mjs";
+import { appDataDir, appDataFile } from "../kernel/appdata.mjs";
 import { buildEnterContext, buildExitContext, buildDiscussionContext, planFormatDoc } from "./plan-hook.mjs";
 
 const USAGE =
@@ -56,11 +56,11 @@ function claudeProjectsDir() {
 }
 
 export function eventsPath() {
-  return path.join(roamingBase(), "com.claude-usage-tracker.app", "plan-events.jsonl");
+  return appDataFile("plan-events.jsonl");
 }
 
 export function plansDir() {
-  return path.join(roamingBase(), "com.claude-usage-tracker.app", "plans");
+  return path.join(appDataDir(), "plans");
 }
 
 // ── the transcript scan ─────────────────────────────────────────────────────

@@ -39,7 +39,8 @@ import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { matchPlanCli } from "../kernel/settings.mjs";
-import { appDataDir, appDataFile } from "../kernel/appdata.mjs";
+import { appDataFile } from "../kernel/appdata.mjs";
+import { withDataDir } from "../kernel/board-lock.mjs";
 import { readDocument, applyDocument, summarize } from "./apply.mjs";
 import {
   DISCUSSION_KEY,
@@ -83,16 +84,18 @@ export function formatAlreadySent(session, marker = readMarker()) {
 function markFormatSent(session) {
   if (!session) return;
   try {
-    const marker = readMarker();
-    marker[session] = new Date().toISOString();
-    // Oldest-first trim: the map is small, sorting it is cheaper than any index.
-    const entries = Object.entries(marker).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
-    const kept = Object.fromEntries(entries.slice(-MARKER_KEEP));
-    const file = markerFile();
-    mkdirSync(path.dirname(file), { recursive: true });
-    const tmp = file + ".tmp";
-    writeFileSync(tmp, JSON.stringify(kept, null, 2) + "\n");
-    renameSync(tmp, file);
+    withDataDir((dir) => {
+      const file = path.join(dir, "plan-format-seen.json");
+      let marker = {};
+      try { marker = JSON.parse(readFileSync(file, "utf8")); } catch {}
+      marker[session] = new Date().toISOString();
+      const entries = Object.entries(marker).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
+      const kept = Object.fromEntries(entries.slice(-MARKER_KEEP));
+      mkdirSync(path.dirname(file), { recursive: true });
+      const tmp = file + ".tmp";
+      writeFileSync(tmp, JSON.stringify(kept, null, 2) + "\n");
+      renameSync(tmp, file);
+    });
   } catch {
     // no marker written → at worst the format is injected twice, never a break
   }
@@ -342,13 +345,15 @@ export function readPlanText(input) {
 // instead of writing its own.
 function keepPlanFile(session, text, suffix = "") {
   try {
-    const dir = path.join(appDataDir(), "plans");
-    mkdirSync(dir, { recursive: true });
-    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const name = `${stamp}-${String(session || "session").slice(0, 8)}${suffix}.yaml`;
-    const file = path.join(dir, name);
-    writeFileSync(file, text);
-    return file;
+    return withDataDir((dataDir) => {
+      const dir = path.join(dataDir, "plans");
+      mkdirSync(dir, { recursive: true });
+      const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+      const name = `${stamp}-${String(session || "session").slice(0, 8)}${suffix}.yaml`;
+      const file = path.join(dir, name);
+      writeFileSync(file, text);
+      return file;
+    });
   } catch {
     return ""; // provenance is a nicety; failing to keep it must not stop the record
   }
@@ -362,9 +367,12 @@ function keepPlanFile(session, text, suffix = "") {
 function markDiscussion(file) {
   if (!file) return file;
   try {
-    const renamed = file.replace(/\.yaml$/, "-discussion.yaml");
-    renameSync(file, renamed);
-    return renamed;
+    return withDataDir((dataDir) => {
+      const current = path.join(dataDir, "plans", path.basename(file));
+      const renamed = current.replace(/\.yaml$/, "-discussion.yaml");
+      renameSync(current, renamed);
+      return renamed;
+    });
   } catch {
     return file; // still provenance, just without the label
   }
@@ -389,16 +397,14 @@ function markDiscussion(file) {
 //
 // Append-only JSONL next to todos.json; one short line per plan, so it stays
 // small without trimming. Like everything in a hook: never throws.
-function eventsFile() {
-  return appDataFile("plan-events.jsonl");
-}
-
 // Exported for the unit tests.
 export function noteExit(fields) {
   try {
-    const file = eventsFile();
-    mkdirSync(path.dirname(file), { recursive: true });
-    appendFileSync(file, JSON.stringify({ ts: new Date().toISOString(), ...fields }) + "\n");
+    withDataDir((dir) => {
+      const file = path.join(dir, "plan-events.jsonl");
+      mkdirSync(path.dirname(file), { recursive: true });
+      appendFileSync(file, JSON.stringify({ ts: new Date().toISOString(), ...fields }) + "\n");
+    });
   } catch {
     // a lost measurement line must never cost a session its plan
   }

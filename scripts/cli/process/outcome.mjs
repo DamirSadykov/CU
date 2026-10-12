@@ -38,7 +38,7 @@ import os from "node:os";
 import path from "node:path";
 
 import { resolveTask, readTaskSessionEvents, loadBoard, loadBoardForWrite, saveBoard } from "../board/todos.mjs";
-import { withBoardLock } from "../kernel/board-lock.mjs";
+import { withBoardLock, withDataDir } from "../kernel/board-lock.mjs";
 import { appDataFile } from "../kernel/appdata.mjs";
 import { snapshotTree, diffNameStatus } from "./red-gate.mjs";
 
@@ -559,7 +559,7 @@ function usage(code) {
 
 export function run(args) {
   const f = parseFlags(args);
-  if (f.write) return withBoardLock(appDataFile("todos.json"), () => reconcileAndReport(f));
+  if (f.write) return withDataDir(() => withBoardLock(appDataFile("todos.json"), () => reconcileAndReport(f)));
   return reconcileAndReport(f);
 }
 

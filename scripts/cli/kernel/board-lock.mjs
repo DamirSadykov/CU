@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { appDataDir } from "./appdata.mjs";
 
 const envWaitMs = Number(process.env.BOARD_LOCK_WAIT_MS);
 export const BOARD_LOCK_WAIT_MS = envWaitMs > 0 ? envWaitMs : 15_000;
@@ -260,7 +261,7 @@ export function withBoardLock(file, fn, opts = {}) {
     }
     throw new Error(`could not take the board lock (${got.reason}): ${got.lock}`);
   }
-  sweepOrphanTmp(file);
+  if (opts.sweep !== false) sweepOrphanTmp(file);
   held.set(key, 1);
   try {
     const result = fn();
@@ -272,4 +273,15 @@ export function withBoardLock(file, fn, opts = {}) {
     releaseBoardLock(got.lock);
     throw err;
   }
+}
+
+export function withDataDir(fn, { appData, identifier, ...opts } = {}) {
+  const selected = appDataDir(appData, identifier);
+  const file = path.join(selected, "todos.json");
+  return withBoardLock(file, () => {
+    if (appDataDir(appData, identifier) !== selected)
+      return withDataDir(fn, { appData, identifier, ...opts });
+    sweepOrphanTmp(file);
+    return fn(selected);
+  }, { ...opts, sweep: false });
 }

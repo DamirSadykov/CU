@@ -54,8 +54,10 @@ const COST_PER_MSG: f64 = 0.17;
 fn app_dir() -> std::path::PathBuf {
     match std::env::var("CUT_APP_DIR") {
         Ok(d) => std::path::PathBuf::from(d),
-        Err(_) => std::path::PathBuf::from(std::env::var("APPDATA").unwrap())
-            .join("com.claude-usage-tracker.preview"),
+        Err(_) => claude_usage_tracker_lib::data_dir::selected_data_dir(
+            &std::path::PathBuf::from(std::env::var("APPDATA").unwrap()),
+            "com.cu.preview",
+        ),
     }
 }
 

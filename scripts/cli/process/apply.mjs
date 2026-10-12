@@ -62,7 +62,7 @@ import {
 import { checkGraph, splitFindings } from "./graph-rules.mjs";
 import { createChange, findChangeByTitle, changeAddress } from "../board/change.mjs";
 import { parseYamlSubset } from "../kernel/yaml-subset.mjs";
-import { withBoardLock } from "../kernel/board-lock.mjs";
+import { withBoardLock, withDataDir } from "../kernel/board-lock.mjs";
 import path from "node:path";
 import { flowLanguages, readSettings } from "../kernel/settings.mjs";
 
@@ -816,7 +816,7 @@ export function summarize(result, doc) {
 
 export function run(args) {
   const flags0 = new Set(args.filter((a) => a.startsWith("--")));
-  if (flags0.has("--go")) return withBoardLock(boardPath(), () => apply(args));
+  if (flags0.has("--go")) return withDataDir(() => withBoardLock(boardPath(), () => apply(args)));
   return apply(args);
 }
 

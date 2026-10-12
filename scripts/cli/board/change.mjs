@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { boardPath, loadBoard, loadBoardForWrite, saveBoard, findChange, changeAddress } from "../kernel/board-io.mjs";
-import { withBoardLock } from "../kernel/board-lock.mjs";
+import { withBoardLock, withDataDir } from "../kernel/board-lock.mjs";
 
 export { findChange, changeAddress } from "../kernel/board-io.mjs";
 
@@ -668,13 +668,15 @@ export function run(args) {
     process.stdout.write(USAGE + "\n");
     process.exit(cmd ? 0 : 1);
   }
-  if (cmd === "new") return cmdNew(rest);
+  const mutate = (fn) => withDataDir(fn);
+  if (cmd === "new") return mutate(() => cmdNew(rest));
   if (cmd === "list") return cmdList(rest);
   if (cmd === "show") return cmdShow(rest);
-  if (cmd === "close") return cmdClose(rest);
-  if (cmd === "out") return cmdOut(rest);
-  if (cmd === "measure") return cmdMeasure(rest);
+  if (cmd === "close") return mutate(() => cmdClose(rest));
+  if (cmd === "out") return mutate(() => cmdOut(rest));
+  if (cmd === "measure") return mutate(() => cmdMeasure(rest));
+  if (cmd === "proposal" && rest[0] === "set") return mutate(() => cmdProposal(rest));
   if (cmd === "proposal") return cmdProposal(rest);
-  if (cmd === "set") return cmdSet(rest);
+  if (cmd === "set") return mutate(() => cmdSet(rest));
   fail(`unknown command: ${cmd}\n\n${USAGE}`);
 }

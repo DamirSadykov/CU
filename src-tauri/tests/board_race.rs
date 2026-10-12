@@ -6,8 +6,8 @@ use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use claude_usage_tracker_lib::board_lock;
 use claude_usage_tracker_lib::todos;
+use claude_usage_tracker_lib::{board_lock, data_dir};
 
 fn node_available() -> bool {
     Command::new("node")
@@ -45,6 +45,10 @@ impl TempBoardDir {
         self.0
             .join("com.claude-usage-tracker.app")
             .join("todos.json")
+    }
+
+    fn migrated_board_path(&self) -> PathBuf {
+        self.0.join("com.cu.app").join("todos.json")
     }
 }
 
@@ -228,4 +232,75 @@ fn cli_writer_waits_out_a_two_second_rust_hold_without_writing_past_it() {
     let t = final_file.todos.iter().find(|t| t.number == n).unwrap();
     assert_eq!(t.status, "in_progress");
     assert_board_dir_clean(&board_path);
+}
+
+#[test]
+fn cli_writer_waiting_during_migration_reselects_and_writes_only_new_board() {
+    if !node_available() {
+        eprintln!("skip: node not found in PATH");
+        return;
+    }
+
+    let board = TempBoardDir::new("migration");
+    let appdata = board.appdata().to_path_buf();
+    let old_board = board.board_path();
+    let new_board = board.migrated_board_path();
+    let number = add_via_cli(&appdata, "wait through migration");
+    let old_before = fs::read_to_string(&old_board).unwrap();
+
+    let (copy_started_tx, copy_started_rx) = std::sync::mpsc::channel();
+    let (finish_copy_tx, finish_copy_rx) = std::sync::mpsc::channel();
+    let migration_root = appdata.clone();
+    let migration = std::thread::spawn(move || {
+        data_dir::migrate_with(
+            &migration_root,
+            "com.cu.app",
+            "test",
+            |source, staging| {
+                fs::copy(source.join("todos.json"), staging.join("todos.json"))
+                    .map_err(|e| e.to_string())?;
+                copy_started_tx.send(()).unwrap();
+                finish_copy_rx.recv().unwrap();
+                Ok(())
+            },
+        )
+        .expect("migration");
+    });
+    copy_started_rx
+        .recv_timeout(Duration::from_secs(5))
+        .expect("migration did not enter copy step");
+
+    let child = Command::new("node")
+        .arg(cli_path())
+        .args(["todos", "set", "status", &number.to_string(), "in_progress"])
+        .env("APPDATA", &appdata)
+        .env("BOARD_LOCK_WAIT_MS", "30000")
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("spawn node writer");
+
+    std::thread::sleep(Duration::from_millis(400));
+    assert_eq!(fs::read_to_string(&old_board).unwrap(), old_before);
+    assert!(!new_board.exists(), "staging must not be published early");
+
+    finish_copy_tx.send(()).unwrap();
+    migration.join().expect("migration thread");
+    let out = child.wait_with_output().expect("wait node writer");
+    assert!(
+        out.status.success(),
+        "writer failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+
+    assert_eq!(
+        fs::read_to_string(&old_board).unwrap(),
+        old_before,
+        "legacy board must remain the immutable backup"
+    );
+    let file = todos::load(&new_board);
+    let task = file.todos.iter().find(|t| t.number == number).unwrap();
+    assert_eq!(task.status, "in_progress");
+    assert!(new_board.parent().unwrap().join("migrated-from").is_file());
+    assert_board_dir_clean(&new_board);
 }

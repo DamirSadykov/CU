@@ -3,6 +3,7 @@
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { appDataFile, writeJsonAtomic } from "../kernel/appdata.mjs";
+import { withDataDir } from "../kernel/board-lock.mjs";
 import { loadBoard } from "../kernel/board-io.mjs";
 
 const pointsPath = () => appDataFile("restart-points.jsonl");
@@ -152,9 +153,11 @@ function cmdCalibrate(args) {
   const json = args.includes("--json");
   const result = calibrate(readRestartPoints(), readTaskSessions());
   if (result.pairs) {
-    const file = appDataFile("restart-calibration.json");
-    mkdirSync(path.dirname(file), { recursive: true });
-    writeJsonAtomic(file, { rhos: result.rhos, pairs: result.pairs, computed_at: new Date().toISOString(), total: result.total, dropped: result.dropped });
+    withDataDir((dir) => {
+      const file = path.join(dir, "restart-calibration.json");
+      mkdirSync(path.dirname(file), { recursive: true });
+      writeJsonAtomic(file, { rhos: result.rhos, pairs: result.pairs, computed_at: new Date().toISOString(), total: result.total, dropped: result.dropped });
+    });
   }
   if (json) return process.stdout.write(JSON.stringify(result, null, 2) + "\n");
   process.stdout.write(`пар всего: ${result.total}; принято: ${result.pairs}; отброшено: ${Object.entries(result.dropped).map(([k, v]) => `${k}=${v}`).join(", ") || "0"}\n`);
