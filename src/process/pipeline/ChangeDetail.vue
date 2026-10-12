@@ -6,7 +6,7 @@ import HintBar from "../atoms/HintBar.vue";
 import { useChange } from "./useChange";
 import { useBoard } from "./useBoard";
 import LaneRow from "./views/LaneRow.vue";
-import { attemptsOf, changeAddress } from "./changeAdapt";
+import { attemptsOf, changeAddress, workMinutesFor, workSpan } from "./changeAdapt";
 import { formatMoney, isDone } from "./adapt";
 import { visibleGraph } from "./visibleGraph";
 import type { TaskNode } from "./types";
@@ -60,9 +60,13 @@ const lifecycleText = computed(() => {
     if (!created || Number.isNaN(Date.parse(created))) return "";
     const start = new Date(created);
     const end = current.value?.closed_at && !Number.isNaN(Date.parse(current.value.closed_at)) ? new Date(current.value.closed_at) : new Date();
-    const days = Math.max(0, Math.floor((end.getTime() - start.getTime()) / 86_400_000));
     const date = start.toLocaleDateString(locale.value === "ru" ? "ru-RU" : "en-US", { day: "numeric", month: "short" });
-    return t("changeSince", { date, days });
+    const since = t("changeSince", { date });
+    const minutes = workMinutesFor(cc.members.value, end.getTime());
+    if (minutes <= 0) return since;
+    const span = workSpan(minutes);
+    const key = span.unit === "min" ? "changeWorkMin" : span.unit === "h" ? "changeWorkH" : "changeWorkD";
+    return `${since} · ${t(key, { n: span.value })}`;
 });
 function openTask(n?: number) { if (n) emit("open", `#${n}`); }
 function openRef(ref: string) { if (/^t#\d+$/i.test(ref)) emit("open", `#${ref.slice(2)}`); else if (/^c#\d+$/i.test(ref)) cc.select(ref); }
@@ -189,7 +193,7 @@ const changeLinks = computed(() => {
           <span class="change-status stseg" :class="{ closed: !cc.open.value }">{{ cc.open.value ? t("changeOpen") : t("changeClosed") }}</span>
           <span class="change-chip chip change-chip-ok">{{ t("changeTasksProgress", { done: cc.progress.value.done, total: cc.progress.value.total }) }}</span>
           <span class="change-chip chip change-chip-money" :title="spentTitle">{{ spentText }} / {{ budgetText }}</span>
-          <span v-if="lifecycleText" class="change-chip chip">{{ lifecycleText }}</span>
+          <span v-if="lifecycleText" class="change-chip chip" :title="t('changeWorkHint')">{{ lifecycleText }}</span>
         </div>
       </header>
       <div class="change-body">

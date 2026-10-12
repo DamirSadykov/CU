@@ -25,6 +25,7 @@ export interface BoardRow {
   created_at: string;
   updated_at: string;
   closed_at?: string | null;
+  status_history?: Array<{ status: string; at: string }>;
   ref_count: number;
   comment_count: number;
 }
