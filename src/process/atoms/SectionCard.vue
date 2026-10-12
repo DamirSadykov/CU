@@ -38,13 +38,13 @@ withDefaults(
 }
 .section-card.tone-spec {
     border-color: var(--accent);
-    background: rgba(76, 194, 255, 0.05);
-    box-shadow: 0 0 0 1px rgba(76, 194, 255, 0.25);
+    background: color-mix(in srgb, var(--next) 5%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--next) 25%, transparent);
 }
 .section-card.tone-warn {
     border-color: var(--warn);
-    background: rgba(255, 193, 7, 0.05);
-    box-shadow: 0 0 0 1px rgba(255, 193, 7, 0.25);
+    background: color-mix(in srgb, var(--warn) 5%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--warn) 25%, transparent);
 }
 .section-card.selected {
     box-shadow: 0 0 0 2px var(--accent);

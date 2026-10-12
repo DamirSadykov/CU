@@ -79,5 +79,5 @@ defineExpose({ focusSearch: () => searchEl.value?.focus(), focusProject: () => p
 .tw-filter-count { color: var(--text-4); font-variant-numeric: tabular-nums; }
 .tw-filter-dates { gap: 6px; padding: 7px; }
 .tw-filter-dates label { display: grid; gap: 3px; color: var(--text-3); font: 10px/1 var(--segoe); }
-.tw-filter-dates input { border: 1px solid var(--stroke-strong); border-radius: 3px; background: var(--input-bg); color: var(--text-2); color-scheme: dark; font: 11px/1 var(--segoe); padding: 3px 5px; }
+.tw-filter-dates input { border: 1px solid var(--stroke-strong); border-radius: 3px; background: var(--input-bg); color: var(--text-2); font: 11px/1 var(--segoe); padding: 3px 5px; }
 </style>

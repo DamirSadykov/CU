@@ -29,7 +29,7 @@ const fill = computed(() => {
     align-items: center;
     gap: 8px;
     padding: 6px 10px;
-    background: rgba(0, 0, 0, 0.28);
+    background: color-mix(in srgb, var(--hard) 28%, transparent);
     border-radius: 0 0 8px 8px;
     font-family: var(--mono);
     font-size: 11px;

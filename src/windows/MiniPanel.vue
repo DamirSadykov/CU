@@ -144,8 +144,8 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   padding: 10px 14px;
-  background: rgba(20, 20, 24, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--ink-1) 95%, transparent);
+  border: 1px solid color-mix(in srgb, var(--paper) 8%, transparent);
   border-radius: 10px;
   display: flex;
   flex-direction: column;
@@ -192,13 +192,13 @@ onUnmounted(() => {
 .row .label {
   width: 20px;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  color: color-mix(in srgb, var(--paper) 50%, transparent);
 }
 
 .track {
   flex: 1;
   height: 6px;
-  background: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--paper) 8%, transparent);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -210,10 +210,10 @@ onUnmounted(() => {
   transition: width 300ms ease;
 }
 
-.track i.t-green { background: #6ccb5f; }
-.track i.t-yellow { background: #ffc107; }
-.track i.t-orange { background: #d97757; }
-.track i.t-red { background: #f87171; }
+.track i.t-green { background: var(--ok); }
+.track i.t-yellow { background: var(--warn); }
+.track i.t-orange { background: var(--ag-claude); }
+.track i.t-red { background: var(--crit); }
 
 .row .val {
   font-size: 12px;
@@ -226,7 +226,7 @@ onUnmounted(() => {
 .label {
   font-size: 11px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.45);
+  color: color-mix(in srgb, var(--paper) 45%, transparent);
   flex-shrink: 0;
 }
 
@@ -234,13 +234,13 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
-.val.t-green { color: #6ccb5f; }
-.val.t-yellow { color: #ffc107; }
-.val.t-orange { color: #d97757; }
-.val.t-red { color: #f87171; }
+.val.t-green { color: var(--ok); }
+.val.t-yellow { color: var(--warn); }
+.val.t-orange { color: var(--ag-claude); }
+.val.t-red { color: var(--crit); }
 
 .loading {
-  color: rgba(255, 255, 255, 0.3);
+  color: color-mix(in srgb, var(--paper) 30%, transparent);
   font-size: 12px;
   text-align: center;
   pointer-events: none;

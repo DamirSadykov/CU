@@ -63,8 +63,8 @@ withDefaults(
     color: var(--crit);
 }
 .file-row.missing {
-    border-color: rgba(248, 113, 113, 0.35);
-    background: rgba(248, 113, 113, 0.06);
+    border-color: color-mix(in srgb, var(--crit) 35%, transparent);
+    background: color-mix(in srgb, var(--crit) 6%, transparent);
 }
 .file-row.missing .file-row-mark,
 .file-row.missing .file-row-path {

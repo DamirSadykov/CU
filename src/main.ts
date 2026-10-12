@@ -1,33 +1,24 @@
 import { createApp } from "vue";
+import "./styles/cu-tokens.css";
 import "./style.css";
 import "./styles/design-tokens.css";
-// Font experiment: bundle candidate UI fonts (self-hosted, offline-safe).
-// Each <weight>.css covers all subsets incl. Cyrillic via unicode-range.
-import "@fontsource/montserrat/400.css";
-import "@fontsource/montserrat/500.css";
-import "@fontsource/montserrat/600.css";
-import "@fontsource/montserrat/700.css";
-import "@fontsource/fira-code/400.css";
-import "@fontsource/fira-code/500.css";
-import "@fontsource/fira-code/600.css";
-import "@fontsource/fira-code/700.css";
-import "@fontsource/jetbrains-mono/400.css";
-import "@fontsource/jetbrains-mono/500.css";
-import "@fontsource/jetbrains-mono/600.css";
-import "@fontsource/jetbrains-mono/700.css";
-// Per-font size tuning (one file per font), keyed off :root[data-font=…].
-import "./styles/fonts/montserrat.css";
-import "./styles/fonts/fira-code.css";
-import "./styles/fonts/jetbrains-mono.css";
+import "./styles/cu-kit.css";
+import "@fontsource/ibm-plex-sans/400.css";
+import "@fontsource/ibm-plex-sans/500.css";
+import "@fontsource/ibm-plex-sans/600.css";
+import "@fontsource/ibm-plex-sans-condensed/500.css";
+import "@fontsource/ibm-plex-sans-condensed/600.css";
+import "@fontsource/ibm-plex-sans-condensed/700.css";
+import "@fontsource/ibm-plex-mono/400.css";
+import "@fontsource/ibm-plex-mono/500.css";
+import "@fontsource/ibm-plex-mono/600.css";
 import App from "./App.vue";
 import i18n from "./kernel/i18n";
 import { installErrorLogging, reportFatal } from "./kernel/logging";
-import { applyFont, readCachedFontId } from "./kernel/fontSwitch";
+import { installTheme } from "./kernel/theme";
 
 installErrorLogging();
-// Apply the cached font before paint (every window) to avoid a flash; App.vue
-// reconciles it against the persisted store value on load.
-applyFont(readCachedFontId());
+installTheme();
 
 const app = createApp(App);
 app.config.errorHandler = (err, _instance, info) => {

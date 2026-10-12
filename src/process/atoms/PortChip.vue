@@ -35,7 +35,7 @@ const missing = computed(() => props.exists === false);
     padding: 2px 6px 2px 5px;
     border-left: 2px solid var(--accent);
     border-radius: 3px;
-    background: rgba(255, 255, 255, 0.05);
+    background: color-mix(in srgb, var(--paper) 5%, transparent);
     font-family: var(--mono);
     font-size: 9.5px;
     font-style: normal;

@@ -42,13 +42,13 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
 }
 .tool-button.active {
     background: var(--accent-soft);
-    border-color: rgba(76, 194, 255, 0.45);
+    border-color: color-mix(in srgb, var(--next) 45%, transparent);
     color: var(--accent);
 }
 .tool-button.pri {
     background: var(--accent);
     border-color: transparent;
-    color: #06283a;
+    color: var(--on-next);
     font-weight: 600;
 }
 .tool-button.pri:hover {
@@ -62,14 +62,14 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
 }
 .tool-button.cost {
     color: var(--high);
-    border-color: rgba(217, 119, 87, 0.4);
-    background: rgba(217, 119, 87, 0.1);
+    border-color: color-mix(in srgb, var(--ag-claude) 40%, transparent);
+    background: color-mix(in srgb, var(--ag-claude) 10%, transparent);
     font-weight: 600;
 }
 .tool-button.warn {
     color: var(--warn);
-    border-color: rgba(255, 193, 7, 0.35);
-    background: rgba(255, 193, 7, 0.08);
+    border-color: color-mix(in srgb, var(--warn) 35%, transparent);
+    background: color-mix(in srgb, var(--warn) 8%, transparent);
 }
 .tool-button.icon {
     padding: 0 9px;

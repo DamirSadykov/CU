@@ -102,14 +102,14 @@ function isLimited(window: CodexLimitWindow): boolean {
 </template>
 
 <style scoped>
-.codex-card { border-left: 2px solid #10b981; }
+.codex-card { border-left: 2px solid var(--ok); }
 .codex-plan {
   padding: 1px 5px;
-  border: 1px solid rgba(16, 185, 129, 0.45);
+  border: 1px solid color-mix(in srgb, var(--ok) 45%, transparent);
   border-radius: 999px;
-  color: #34d399;
+  color: var(--ok);
   font: 600 9px ui-monospace, Consolas, monospace;
   text-transform: uppercase;
 }
-.codex-limit { color: #f87171; }
+.codex-limit { color: var(--crit); }
 </style>

@@ -46,6 +46,25 @@ pub fn open_analytics(app: &AppHandle) {
     }
 }
 
+pub fn open_kit(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window("kit") {
+        show(&window);
+        return;
+    }
+    if let Err(error) =
+        WebviewWindowBuilder::new(app, "kit", WebviewUrl::App("index.html#kit".into()))
+            .title("CU — UI kit")
+            .inner_size(1120.0, 820.0)
+            .min_inner_size(560.0, 480.0)
+            .resizable(true)
+            .decorations(true)
+            .center()
+            .build()
+    {
+        warn!("failed to create kit window: {error}");
+    }
+}
+
 pub fn open_todos(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("todos") {
         show(&window);

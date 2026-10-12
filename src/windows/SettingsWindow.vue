@@ -12,7 +12,6 @@ import i18n from "../kernel/i18n";
 import { loadUpdaterDisplay } from "../kernel/updater";
 import { useSettings } from "../kernel/settingsStore";
 import SettingsPanel from "./SettingsPanel.vue";
-import { applyFont } from "../kernel/fontSwitch";
 
 type SettingsTab =
     | "account"
@@ -57,11 +56,7 @@ const budgetUnit = computed<"usd" | "pct">(() =>
 const configured = computed(() => settings.value.sessionKey && settings.value.orgId);
 
 // Side-effects that must follow the snapshot (the layer only carries data): apply
-// the persisted font + locale on first load and on every `settings-changed` refresh.
-watch(
-    () => settings.value.uiFont,
-    (f) => applyFont(f),
-);
+// the persisted locale on first load and on every `settings-changed` refresh.
 watch(
     () => settings.value.locale,
     (l) => applyLocale(l),
@@ -125,10 +120,9 @@ const unlisteners: Array<() => void> = [];
 
 onMounted(async () => {
     await initSettings();
-    // Apply the persisted font/locale once on load. The watchers above only fire on
+    // Apply the persisted locale once on load. The watcher above only fires on
     // a CHANGE from the previous value, so a first read that equals the default
-    // wouldn't trigger them — apply explicitly here to cover that case.
-    applyFont(settings.value.uiFont);
+    // wouldn't trigger it — apply explicitly here to cover that case.
     applyLocale(settings.value.locale);
     // The Updates tab shows app version + saved check interval; the main window's
     // initUpdater() owns periodic checking, so here we only load the display.
@@ -201,7 +195,8 @@ onUnmounted(() => {
             :runtime-insight-kinds="settings.runtimeInsightKinds"
             :keep-awake-enabled="settings.keepAwakeEnabled"
             :locale="locale"
-            :ui-font="settings.uiFont"
+            :ui-theme="settings.uiTheme"
+            :ui-skin="settings.uiSkin"
             :saved-tick="savedTick"
             @save="handleSave"
             @runtime-change="handleRuntimeChange"

@@ -37,32 +37,32 @@ withDefaults(
     font-family: var(--mono);
 }
 .meta-chip.tone-muted {
-    background: rgba(255, 255, 255, 0.06);
+    background: color-mix(in srgb, var(--paper) 6%, transparent);
     color: var(--text-4);
 }
 .meta-chip.tone-theme {
-    background: rgba(227, 179, 65, 0.12);
+    background: color-mix(in srgb, var(--warn) 12%, transparent);
     color: var(--theme);
 }
 .meta-chip.tone-ok,
 .meta-chip.tone-file {
-    background: rgba(108, 203, 95, 0.12);
+    background: color-mix(in srgb, var(--ok) 12%, transparent);
     color: var(--ok);
 }
 .meta-chip.tone-warn {
-    background: rgba(255, 193, 7, 0.12);
+    background: color-mix(in srgb, var(--warn) 12%, transparent);
     color: var(--warn);
 }
 .meta-chip.tone-crit {
-    background: rgba(248, 113, 113, 0.12);
+    background: color-mix(in srgb, var(--crit) 12%, transparent);
     color: var(--crit);
 }
 .meta-chip.tone-spec {
-    background: rgba(76, 194, 255, 0.12);
+    background: color-mix(in srgb, var(--next) 12%, transparent);
     color: var(--accent);
 }
 .meta-chip.tone-run {
-    background: rgba(217, 119, 87, 0.12);
+    background: color-mix(in srgb, var(--ag-claude) 12%, transparent);
     color: var(--high);
 }
 </style>

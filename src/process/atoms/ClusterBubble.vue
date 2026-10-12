@@ -30,9 +30,9 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
     justify-content: center;
     gap: 4px;
     padding: 10px;
-    border: 1px dashed rgba(255, 255, 255, 0.09);
+    border: 1px dashed color-mix(in srgb, var(--paper) 9%, transparent);
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.02);
+    background: color-mix(in srgb, var(--paper) 2%, transparent);
     text-align: center;
     cursor: pointer;
 }

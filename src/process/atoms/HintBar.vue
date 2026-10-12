@@ -35,20 +35,20 @@ withDefaults(
     color: var(--text-3);
 }
 .hint-bar.tone-accent {
-    border-color: rgba(76, 194, 255, 0.28);
-    background: rgba(76, 194, 255, 0.06);
+    border-color: color-mix(in srgb, var(--next) 28%, transparent);
+    background: color-mix(in srgb, var(--next) 6%, transparent);
 }
 .hint-bar.tone-accent .hint-bar-icon {
     color: var(--accent);
 }
 .hint-bar.tone-warn {
-    border-color: rgba(255, 193, 7, 0.3);
-    background: rgba(255, 193, 7, 0.06);
+    border-color: color-mix(in srgb, var(--warn) 30%, transparent);
+    background: color-mix(in srgb, var(--warn) 6%, transparent);
 }
 .hint-bar.tone-warn .hint-bar-icon {
     color: var(--warn);
 }
 .hint-bar.tone-muted {
-    background: rgba(255, 255, 255, 0.03);
+    background: color-mix(in srgb, var(--paper) 3%, transparent);
 }
 </style>

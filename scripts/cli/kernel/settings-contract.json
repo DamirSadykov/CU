@@ -44,7 +44,8 @@
     { "key": "systemInfoEnabled", "scope": "ui", "writer": "app", "readers": ["ui"], "default": true },
     { "key": "correctionsEnabled", "scope": "ui", "writer": "app", "readers": ["ui"], "default": false },
     { "key": "locale", "scope": "shared", "writer": "app", "readers": ["ui", "cli"], "default": null },
-    { "key": "uiFont", "scope": "ui", "writer": "app", "readers": ["ui"], "defaultFrom": "src/fontSwitch.ts DEFAULT_FONT_ID" },
+    { "key": "uiTheme", "scope": "ui", "writer": "app", "readers": ["ui"], "default": "system" },
+    { "key": "uiSkin", "scope": "ui", "writer": "app", "readers": ["ui"], "default": "standard" },
     { "key": "ignoredInsights", "scope": "ui", "writer": "app", "readers": ["ui"], "default": [], "direct": true },
     { "key": "resolverUrl", "scope": "ui", "writer": "app", "readers": ["ui"], "default": "", "direct": true },
     { "key": "updateCheckHours", "scope": "ui", "writer": "app", "readers": ["ui"], "default": 6, "direct": true },
@@ -65,6 +66,7 @@
     { "key": "thresholds", "note": "до разделения на thresholdsSession/thresholdsWeekly; читается только как fallback миграции в settingsStore.ts" },
     { "key": "openAiAdminEnabled", "note": "удаляется при чтении снапшота" },
     { "key": "openAiAdminKey", "note": "удаляется при чтении снапшота" },
-    { "key": "openAiUsageDays", "note": "удаляется при чтении снапшота" }
+    { "key": "openAiUsageDays", "note": "удаляется при чтении снапшота" },
+    { "key": "uiFont", "note": "переключатель шрифта убран в c#90; значение в старом settings.json больше не читается" }
   ]
 }

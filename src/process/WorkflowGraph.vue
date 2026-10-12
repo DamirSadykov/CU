@@ -193,7 +193,7 @@ const runnerNodes = computed<FlowNode[]>(() => [
   padding: 8px 8px;
   border: 1px solid var(--stroke-strong);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.03);
+  background: color-mix(in srgb, var(--paper) 3%, transparent);
   text-align: center;
 }
 .wf-node-label {

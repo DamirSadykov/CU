@@ -45,11 +45,11 @@ withDefaults(
 }
 .spec-para.tone-change {
     border-left-color: var(--ok);
-    background: rgba(108, 203, 95, 0.04);
+    background: color-mix(in srgb, var(--ok) 4%, transparent);
 }
 .spec-para.tone-conflict {
     border-left-color: var(--warn);
-    background: rgba(255, 193, 7, 0.05);
+    background: color-mix(in srgb, var(--warn) 5%, transparent);
 }
 .spec-para.dim {
     opacity: 0.42;
@@ -69,7 +69,7 @@ withDefaults(
 .spec-para-task {
     padding: 1px 5px;
     border-radius: 4px;
-    background: rgba(76, 194, 255, 0.12);
+    background: color-mix(in srgb, var(--next) 12%, transparent);
     color: var(--accent);
     font-family: var(--mono);
     font-size: 10.5px;
@@ -90,20 +90,20 @@ withDefaults(
     padding: 7px 9px;
     border: 1px solid var(--stroke-strong);
     border-radius: var(--r-ctl);
-    background: rgba(0, 0, 0, 0.24);
+    background: color-mix(in srgb, var(--hard) 24%, transparent);
 }
 .spec-para-badge {
     flex: none;
     padding: 3px 8px;
     border-radius: var(--r-ctl);
-    background: rgba(76, 194, 255, 0.12);
+    background: color-mix(in srgb, var(--next) 12%, transparent);
     color: var(--accent);
     font-family: var(--mono);
     font-size: 12px;
     font-weight: 600;
 }
 .spec-para.tone-conflict .spec-para-badge {
-    background: rgba(255, 193, 7, 0.14);
+    background: color-mix(in srgb, var(--warn) 14%, transparent);
     color: var(--warn);
 }
 .spec-para-caption {

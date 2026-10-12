@@ -208,7 +208,7 @@ defineExpose({ remeasure: schedule });
 }
 .radial-wire {
     fill: none;
-    stroke: rgba(255, 255, 255, 0.18);
+    stroke: color-mix(in srgb, var(--paper) 18%, transparent);
     stroke-width: 1.2;
 }
 .radial-wire.dashed {
@@ -219,7 +219,7 @@ defineExpose({ remeasure: schedule });
     stroke-width: 1.5;
 }
 .radial-wire.tone-in {
-    stroke: rgba(255, 255, 255, 0.34);
+    stroke: color-mix(in srgb, var(--paper) 34%, transparent);
 }
 .radial-head {
     stroke: none;
@@ -228,9 +228,9 @@ defineExpose({ remeasure: schedule });
     fill: var(--accent);
 }
 .radial-head.tone-in {
-    fill: rgba(255, 255, 255, 0.34);
+    fill: color-mix(in srgb, var(--paper) 34%, transparent);
 }
 .radial-head.tone-plain {
-    fill: rgba(255, 255, 255, 0.18);
+    fill: color-mix(in srgb, var(--paper) 18%, transparent);
 }
 </style>

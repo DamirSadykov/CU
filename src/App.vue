@@ -13,7 +13,7 @@ import FocusControls from "./analytics/FocusControls.vue";
 import ServiceStatusBar from "./analytics/ServiceStatusBar.vue";
 import AboutPanel from "./windows/AboutPanel.vue";
 import PipelineWindow from "./process/pipeline/PipelineWindow.vue";
-import { applyFont, writeCachedFontId, DEFAULT_FONT_ID } from "./kernel/fontSwitch";
+import KitWindow from "./windows/KitWindow.vue";
 import {
     DEFAULT_THRESHOLDS,
     normalize,
@@ -35,6 +35,7 @@ const isAnalytics = window.location.hash === "#analytics";
 const isTodos = window.location.hash === "#todos";
 const isSettings = window.location.hash === "#settings";
 const isPipeline = window.location.hash === "#pipeline";
+const isKit = window.location.hash === "#kit";
 
 const { t, locale } = useI18n();
 
@@ -86,7 +87,8 @@ const runtimeInsightKinds = ref<string[]>(["long_session", "cold_rewrites"]);
 const keepAwakeEnabled = ref(false);
 const systemInfoEnabled = ref(true);
 const correctionsEnabled = ref(false);
-const uiFont = ref(DEFAULT_FONT_ID);
+const uiTheme = ref("system");
+const uiSkin = ref("standard");
 const todaySpent = ref<number | null>(null);
 const budgetUnit = computed<"usd" | "pct">(() =>
     ccAnalyticsEnabled.value ? "usd" : "pct",
@@ -233,10 +235,8 @@ async function loadSettings() {
     correctionsEnabled.value = s.correctionsEnabled;
     // An unset locale must not clobber the running one (navigator default).
     if (s.locale) locale.value = s.locale;
-    uiFont.value = s.uiFont;
-    // Apply the persisted font and refresh the fast cache main.ts reads.
-    applyFont(uiFont.value);
-    writeCachedFontId(uiFont.value);
+    uiTheme.value = s.uiTheme;
+    uiSkin.value = s.uiSkin;
 }
 
 const pinned = ref(false);
@@ -279,7 +279,8 @@ async function saveSettings() {
     await store.set("systemInfoEnabled", systemInfoEnabled.value);
     await store.set("correctionsEnabled", correctionsEnabled.value);
     await store.set("locale", locale.value);
-    await store.set("uiFont", uiFont.value);
+    await store.set("uiTheme", uiTheme.value);
+    await store.set("uiSkin", uiSkin.value);
     await store.save();
 }
 
@@ -581,7 +582,8 @@ async function handleSave(settings: {
     systemInfoEnabled: boolean;
     correctionsEnabled: boolean;
     locale: string;
-    uiFont: string;
+    uiTheme: string;
+    uiSkin: string;
 }) {
     sessionKey.value = settings.sessionKey;
     orgId.value = settings.orgId;
@@ -610,9 +612,8 @@ async function handleSave(settings: {
     systemInfoEnabled.value = settings.systemInfoEnabled;
     correctionsEnabled.value = settings.correctionsEnabled;
     locale.value = settings.locale;
-    uiFont.value = settings.uiFont;
-    applyFont(uiFont.value);
-    writeCachedFontId(uiFont.value);
+    uiTheme.value = settings.uiTheme;
+    uiSkin.value = settings.uiSkin;
     // The backend re-arms its alert engine on disable (see `configure`).
     await saveSettings();
 
@@ -693,6 +694,7 @@ onMounted(async () => {
     if (isTodos) return; // the todos window self-initializes via TodoWindow
     if (isSettings) return; // the settings window self-initializes via SettingsWindow
     if (isPipeline) return; // the pipeline preview renders mocked data only
+    if (isKit) return;
 
     await loadSettings();
     void logInfo(`[frontend] onMounted: settings loaded configured=${Boolean(configured.value)}`);
@@ -829,6 +831,7 @@ onUnmounted(() => {
     <TodoWindow v-else-if="isTodos" />
     <SettingsWindow v-else-if="isSettings" />
     <PipelineWindow v-else-if="isPipeline" />
+    <KitWindow v-else-if="isKit" />
     <div v-else class="flyout accent-claude">
         <!-- Header -->
         <div class="fly-hd">
@@ -945,7 +948,7 @@ onUnmounted(() => {
                         fill="currentColor"
                     >
                         <path
-                            fill="#e2e8f0"
+                            fill="var(--paper-2)"
                             d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l-.38 2.65c-.03.24.18.42.43.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3-1.07-3-3.5s1.07-3.5 3-3.5 3 1.07 3 3.5-1.07 3.5-3 3.5z"
                         />
                     </svg>
@@ -1054,12 +1057,12 @@ onUnmounted(() => {
                 <CodexUsageCards v-if="codexLimits" :limits="codexLimits" />
                 <div
                     class="card"
-                    style="border-color: rgba(248, 113, 113, 0.3)"
+                    style="border-color: color-mix(in srgb, var(--crit) 30%, transparent)"
                 >
                     <p
                         style="
                             font-size: 12px;
-                            color: #f87171;
+                            color: var(--crit);
                             word-break: break-all;
                         "
                     >
@@ -1154,7 +1157,7 @@ onUnmounted(() => {
     margin: 8px 10px 0;
     border: 1px solid var(--accent);
     border-radius: var(--card-radius);
-    background: rgba(217, 119, 87, 0.12);
+    background: color-mix(in srgb, var(--ag-claude) 12%, transparent);
 }
 
 .update-text {
@@ -1213,9 +1216,9 @@ onUnmounted(() => {
     flex-wrap: wrap;
     padding: 8px 12px;
     margin: 8px 10px 0;
-    border: 1px solid rgba(248, 113, 113, 0.5);
+    border: 1px solid color-mix(in srgb, var(--crit) 50%, transparent);
     border-radius: var(--card-radius);
-    background: rgba(248, 113, 113, 0.12);
+    background: color-mix(in srgb, var(--crit) 12%, transparent);
 }
 
 .diag-text {
@@ -1233,7 +1236,7 @@ onUnmounted(() => {
     padding: 4px 12px;
     border: none;
     border-radius: 4px;
-    background: #f87171;
+    background: var(--crit);
     color: white;
     font-size: 12px;
     font-weight: 500;
@@ -1278,7 +1281,7 @@ onUnmounted(() => {
     text-transform: uppercase;
     color: var(--accent);
     border: 1px solid var(--accent);
-    background: rgba(217, 119, 87, 0.12);
+    background: color-mix(in srgb, var(--ag-claude) 12%, transparent);
     vertical-align: middle;
 }
 </style>

@@ -1194,6 +1194,11 @@ async fn open_analytics_window(app: AppHandle) {
     kernel::windows::open_analytics(&app);
 }
 
+#[tauri::command]
+async fn open_kit_window(app: AppHandle) {
+    kernel::windows::open_kit(&app);
+}
+
 /// Opens the folder containing the log file in the OS file manager.
 #[tauri::command]
 fn open_log_dir(app: AppHandle) -> Result<(), String> {
@@ -3618,6 +3623,7 @@ pub fn run() {
             set_pin,
             app_env_label,
             open_analytics_window,
+            open_kit_window,
             get_analytics_ext,
             export_analytics_json,
             get_todos,

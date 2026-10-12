@@ -6,6 +6,7 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import ProjectLabel from "../kernel/ProjectLabel.vue";
 import { useProjectLinks } from "./projectLinks";
 import { fmtDateTime, fmtDay } from "../kernel/dateFormat";
+import { onThemeChange, themeColor } from "../kernel/cssVar";
 import {
   Chart,
   BarController,
@@ -203,10 +204,10 @@ function modelColor(label: string): string {
 // the cached context and typically dwarfs everything else.
 type TokenKey = "input" | "output" | "cache_create" | "cache_read";
 const TOKEN_TYPES: { key: TokenKey; color: string }[] = [
-  { key: "input", color: "#d97757" },
-  { key: "output", color: "#6ccb5f" },
-  { key: "cache_create", color: "#5b9bd5" },
-  { key: "cache_read", color: "#9aa0a6" },
+  { key: "input", color: "var(--hemp)" },
+  { key: "output", color: "var(--ok)" },
+  { key: "cache_create", color: "var(--next)" },
+  { key: "cache_read", color: "var(--paper-4)" },
 ];
 const TOKEN_LABEL: Record<TokenKey, string> = {
   input: "tokInput",
@@ -310,7 +311,7 @@ const heatMax = computed(() => {
 });
 function heatStyle(v: number): Record<string, string> {
   const alpha = heatMax.value > 0 ? Math.min(1, 0.12 + (v / heatMax.value) * 0.88) : 0;
-  return { background: v > 0 ? `rgba(217, 119, 87, ${alpha})` : "rgba(255,255,255,0.04)" };
+  return { background: v > 0 ? `color-mix(in srgb, var(--hemp) ${Math.round(alpha * 100)}%, transparent)` : "color-mix(in srgb, var(--paper) 4%, transparent)" };
 }
 
 const compareDelta = computed(() => {
@@ -428,8 +429,8 @@ async function reload() {
 function renderCharts() {
   const d = data.value;
   if (!d) return;
-  const gridColor = "rgba(255,255,255,0.06)";
-  const tickColor = "rgba(255,255,255,0.45)";
+  const gridColor = themeColor("var(--line)");
+  const tickColor = themeColor("var(--paper-3)");
 
   // Time chart: single cost bar, or stacked token-type bars (per day or week).
   if (dailyCanvas.value) {
@@ -441,7 +442,7 @@ function renderCharts() {
       ? [
           {
             data: pts.map((p) => p.cost),
-            backgroundColor: "#d97757",
+            backgroundColor: themeColor("var(--hemp)"),
             borderRadius: 3,
             maxBarThickness: 26,
           },
@@ -449,7 +450,7 @@ function renderCharts() {
       : TOKEN_TYPES.filter((tt) => !hiddenTokens.value.has(tt.key)).map((tt) => ({
           label: t(TOKEN_LABEL[tt.key]),
           data: pts.map((p) => p[tt.key]),
-          backgroundColor: tt.color,
+          backgroundColor: themeColor(tt.color),
           stack: "tok",
           maxBarThickness: 26,
         }));
@@ -553,7 +554,11 @@ onMounted(async () => {
     if (props.active) void reload();
   });
 });
+const stopThemeWatch = onThemeChange(() => {
+  if (props.active) renderCharts();
+});
 onUnmounted(() => {
+  stopThemeWatch();
   dailyChart?.destroy();
   modelChart?.destroy();
   unlistenLinks?.();
@@ -665,7 +670,7 @@ onUnmounted(() => {
                 <path
                   d="M2 6.2l2.6 2.6L10 3.3"
                   fill="none"
-                  stroke="#fff"
+                  stroke="var(--on-bold)"
                   stroke-width="2"
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -773,7 +778,7 @@ onUnmounted(() => {
   transition: background 120ms, color 120ms, border-color 120ms;
 }
 .more-btn:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: color-mix(in srgb, var(--paper) 4%, transparent);
   color: var(--text);
   border-color: var(--accent);
 }
@@ -799,7 +804,7 @@ onUnmounted(() => {
 }
 .seg button.on {
   background: var(--accent);
-  color: #fff;
+  color: var(--paper);
 }
 
 .summary {
@@ -808,7 +813,7 @@ onUnmounted(() => {
 }
 .stat {
   flex: 1;
-  background: var(--card-bg, rgba(255, 255, 255, 0.03));
+  background: var(--card-bg, color-mix(in srgb, var(--paper) 3%, transparent));
   border: 1px solid var(--stroke-strong);
   border-radius: 8px;
   padding: 10px 10px;
@@ -820,8 +825,8 @@ onUnmounted(() => {
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
-.stat-val.up { color: #f87171; }
-.stat-val.down { color: #6ccb5f; }
+.stat-val.up { color: var(--crit); }
+.stat-val.down { color: var(--ok); }
 .stat-lbl {
   font-size: 12px;
   color: var(--text-4);
@@ -911,7 +916,7 @@ onUnmounted(() => {
   padding: 6px 12px 6px 8px;
   border: 1px solid var(--stroke-strong);
   border-radius: 8px;
-  background: var(--card-bg, rgba(255, 255, 255, 0.03));
+  background: var(--card-bg, color-mix(in srgb, var(--paper) 3%, transparent));
   font-family: var(--segoe);
   font-size: 13px;
   cursor: pointer;
@@ -919,7 +924,7 @@ onUnmounted(() => {
 }
 .tok-chip:hover {
   border-color: var(--accent);
-  background: rgba(255, 255, 255, 0.06);
+  background: color-mix(in srgb, var(--paper) 6%, transparent);
 }
 .tok-chip.off {
   opacity: 0.5;
@@ -989,8 +994,8 @@ onUnmounted(() => {
 
 /* Anomalous-spend warning card */
 .alert-card {
-  border: 1px solid rgba(248, 113, 113, 0.4);
-  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid color-mix(in srgb, var(--crit) 40%, transparent);
+  background: color-mix(in srgb, var(--crit) 8%, transparent);
   border-radius: 8px;
   padding: 10px 12px;
   display: flex;
@@ -1003,14 +1008,14 @@ onUnmounted(() => {
   gap: 8px;
   font-size: 13px;
   font-weight: 600;
-  color: #f87171;
+  color: var(--crit);
 }
 .alert-ic {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #f87171;
-  color: #1a1a1a;
+  background: var(--crit);
+  color: var(--ink-0);
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -1043,7 +1048,7 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 .anomaly-mult {
-  color: #f87171;
+  color: var(--crit);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
@@ -1084,7 +1089,7 @@ onUnmounted(() => {
 .pbar-track {
   height: 7px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.06);
+  background: color-mix(in srgb, var(--paper) 6%, transparent);
   overflow: hidden;
 }
 .pbar-fill {

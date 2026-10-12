@@ -337,7 +337,7 @@ describe("trace views", () => {
     expect(tail[0]?.value).toBeCloseTo(.000064);
   });
   it("exports the design color table for every trace type", () => {
-    expect(TRACE_TYPE_COLORS).toEqual({ read: "#4cc2ff", edit: "#6ccb5f", shell: "#b388ff", text: "#8a8a8a", agent: "#f0a0c8", web: "#e79878", other: "var(--text-4)" });
+    expect(TRACE_TYPE_COLORS).toEqual({ read: "var(--paper-4)", edit: "var(--next)", shell: "var(--ok)", text: "var(--hemp)", agent: "var(--ag-codex)", web: "var(--ag-gemini)", other: "var(--text-4)" });
   });
   it("removes tool rows in headings-only mode but preserves subagent branches", () => {
     const agentModel = modelCallNode({ id: "agent-model", model: "m", calls: [{ id: "x", name: "Read" }] });

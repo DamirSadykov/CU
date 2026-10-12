@@ -501,7 +501,7 @@ function onTab(value: string) {
 .doc-text :deep(.sp-code) {
     padding: 1px 5px;
     border-radius: 4px;
-    background: rgba(255, 255, 255, 0.06);
+    background: color-mix(in srgb, var(--paper) 6%, transparent);
     font-family: var(--mono);
     font-size: 0.88em;
     color: var(--text-2);
@@ -533,7 +533,7 @@ function onTab(value: string) {
     padding: 6px 8px;
     border: 1px solid var(--stroke-strong);
     border-radius: var(--r-card);
-    background: rgba(0, 0, 0, 0.2);
+    background: color-mix(in srgb, var(--hard) 20%, transparent);
 }
 .panel-files {
     display: flex;
@@ -543,7 +543,7 @@ function onTab(value: string) {
     padding: 8px;
     border: 1px solid var(--stroke-strong);
     border-radius: var(--r-card);
-    background: rgba(0, 0, 0, 0.2);
+    background: color-mix(in srgb, var(--hard) 20%, transparent);
 }
 .spec-empty {
     padding: 6px 4px;

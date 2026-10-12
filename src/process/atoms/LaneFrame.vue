@@ -29,7 +29,7 @@ defineExpose({ body });
     align-items: stretch;
     border: 1px solid var(--stroke);
     border-radius: var(--r-card);
-    background: rgba(255, 255, 255, 0.012);
+    background: color-mix(in srgb, var(--paper) 1.2%, transparent);
     overflow: visible;
 }
 .lane-frame.tone-theme {
@@ -37,8 +37,8 @@ defineExpose({ body });
     background: var(--theme-bg);
 }
 .lane-frame.tone-warn {
-    border-color: rgba(255, 193, 7, 0.24);
-    background: rgba(255, 193, 7, 0.045);
+    border-color: color-mix(in srgb, var(--warn) 24%, transparent);
+    background: color-mix(in srgb, var(--warn) 4.5%, transparent);
 }
 .lane-body {
     position: relative;

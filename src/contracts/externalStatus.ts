@@ -13,10 +13,10 @@ export type ExtBucketId = "open" | "active" | "done" | "other";
 
 /** Column order + presentation. `labelKey` resolves through vue-i18n at the call site. */
 export const EXT_BUCKETS: { id: ExtBucketId; labelKey: string; dot: string }[] = [
-  { id: "open", labelKey: "extColOpen", dot: "#9aa0aa" },
-  { id: "active", labelKey: "extColActive", dot: "#4cc2ff" },
-  { id: "done", labelKey: "extColDone", dot: "#6ccb5f" },
-  { id: "other", labelKey: "extColOther", dot: "#b388ff" },
+  { id: "open", labelKey: "extColOpen", dot: "var(--paper-4)" },
+  { id: "active", labelKey: "extColActive", dot: "var(--next)" },
+  { id: "done", labelKey: "extColDone", dot: "var(--ok)" },
+  { id: "other", labelKey: "extColOther", dot: "var(--ag-codex)" },
 ];
 
 /** settings.json key holding the user's `{ [sourceStatus]: bucket }` overrides. */

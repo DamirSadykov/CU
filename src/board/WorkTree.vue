@@ -650,7 +650,7 @@ watch(
 .model-row {
   background: color-mix(in srgb, var(--accent-soft) 38%, transparent);
 }
-.attempt-row { background: rgba(255, 255, 255, .025); font-weight: 600; height: 32px; min-height: 32px; }
+.attempt-row { background: color-mix(in srgb, var(--paper) 2.5%, transparent); font-weight: 600; height: 32px; min-height: 32px; }
 .work-row.attempt-row.selected { background: var(--accent-soft); }
 .row-main { align-items: center; display: flex; gap: 6px; min-width: 0; overflow: hidden; white-space: nowrap; }
 .row-main > * { flex-shrink: 0; }
@@ -755,7 +755,7 @@ watch(
   color: var(--text-3);
 }
 .details pre {
-  background: #161616;
+  background: var(--ink-0);
   margin: 0;
   max-height: 130px;
   overflow: auto;

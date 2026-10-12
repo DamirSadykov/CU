@@ -1114,7 +1114,7 @@ watch(
     padding: 18px;
     border: 1px solid var(--stroke-strong);
     border-radius: var(--r-card);
-    background: rgba(26, 26, 26, 0.96);
+    background: color-mix(in srgb, var(--ink-1) 96%, transparent);
     text-align: center;
 }
 .rings-empty-title {
@@ -1172,7 +1172,7 @@ watch(
     padding: 9px 10px 10px;
     border: 1px solid var(--stroke-strong);
     border-radius: var(--r-card);
-    background: rgba(26, 26, 26, 0.96);
+    background: color-mix(in srgb, var(--ink-1) 96%, transparent);
     transform: translate(-50%, -50%);
 }
 .rings-plaque-head {

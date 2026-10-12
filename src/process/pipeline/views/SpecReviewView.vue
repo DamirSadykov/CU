@@ -658,7 +658,7 @@ const mergeSummary = computed(() => {
 .doc-text :deep(.sp-code) {
     padding: 1px 5px;
     border-radius: 4px;
-    background: rgba(255, 255, 255, 0.06);
+    background: color-mix(in srgb, var(--paper) 6%, transparent);
     font-family: var(--mono);
     font-size: 0.88em;
     color: var(--text-2);
@@ -677,8 +677,8 @@ const mergeSummary = computed(() => {
     font-weight: 600;
 }
 .act-ok {
-    border-color: rgba(108, 203, 95, 0.4);
-    background: rgba(108, 203, 95, 0.1);
+    border-color: color-mix(in srgb, var(--ok) 40%, transparent);
+    background: color-mix(in srgb, var(--ok) 10%, transparent);
     color: var(--ok);
 }
 .doc-diff {
@@ -687,7 +687,7 @@ const mergeSummary = computed(() => {
     padding: 10px 0;
     border: 1px solid var(--stroke-strong);
     border-radius: var(--r-card);
-    background: rgba(0, 0, 0, 0.24);
+    background: color-mix(in srgb, var(--hard) 24%, transparent);
 }
 .diff-line {
     display: flex;
@@ -699,11 +699,11 @@ const mergeSummary = computed(() => {
     color: var(--text-3);
 }
 .diff-line.add {
-    background: rgba(108, 203, 95, 0.1);
+    background: color-mix(in srgb, var(--ok) 10%, transparent);
     color: var(--ok);
 }
 .diff-line.cut {
-    background: rgba(248, 113, 113, 0.1);
+    background: color-mix(in srgb, var(--crit) 10%, transparent);
     color: var(--crit);
 }
 .diff-op {
@@ -739,7 +739,7 @@ const mergeSummary = computed(() => {
     padding: 6px 8px;
     border: 1px solid var(--stroke-strong);
     border-radius: var(--r-card);
-    background: rgba(0, 0, 0, 0.2);
+    background: color-mix(in srgb, var(--hard) 20%, transparent);
 }
 .merge-button {
     width: 100%;

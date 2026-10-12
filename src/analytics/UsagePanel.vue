@@ -202,7 +202,7 @@ const prepaidBalance = computed(() => props.usage.prepaid_balance);
         <div>
           <div class="card-title">
             {{ t('session5h') }}
-            <span v-if="fiveHour.is_limited" class="badge" style="color: #f87171">{{ t('limit') }}</span>
+            <span v-if="fiveHour.is_limited" class="badge" style="color: var(--crit)">{{ t('limit') }}</span>
           </div>
           <div class="card-sub">{{ formatReset(fiveHour.reset_at) }}</div>
         </div>
@@ -234,7 +234,7 @@ const prepaidBalance = computed(() => props.usage.prepaid_balance);
         <div>
           <div class="card-title">
             {{ t('weekly7d') }}
-            <span v-if="sevenDay.is_limited" class="badge" style="color: #f87171">{{ t('limit') }}</span>
+            <span v-if="sevenDay.is_limited" class="badge" style="color: var(--crit)">{{ t('limit') }}</span>
           </div>
           <div class="card-sub">{{ formatReset(sevenDay.reset_at) }}</div>
         </div>
@@ -272,7 +272,7 @@ const prepaidBalance = computed(() => props.usage.prepaid_balance);
         <div>
           <div class="card-title">
             {{ t('opusWeekly') }}
-            <span v-if="opusDay.is_limited" class="badge" style="color: #f87171">{{ t('limit') }}</span>
+            <span v-if="opusDay.is_limited" class="badge" style="color: var(--crit)">{{ t('limit') }}</span>
           </div>
           <div class="card-sub">{{ formatReset(opusDay.reset_at) }}</div>
         </div>
@@ -298,7 +298,7 @@ const prepaidBalance = computed(() => props.usage.prepaid_balance);
         <div>
           <div class="card-title">
             {{ t('sonnetWeekly') }}
-            <span v-if="sonnetDay.is_limited" class="badge" style="color: #f87171">{{ t('limit') }}</span>
+            <span v-if="sonnetDay.is_limited" class="badge" style="color: var(--crit)">{{ t('limit') }}</span>
           </div>
           <div class="card-sub">{{ formatReset(sonnetDay.reset_at) }}</div>
         </div>
@@ -325,7 +325,7 @@ const prepaidBalance = computed(() => props.usage.prepaid_balance);
         <div>
           <div class="card-title">
             {{ t('scopedWeekly', { model: s.model }) }}
-            <span v-if="s.is_limited" class="badge" style="color: #f87171">{{ t('limit') }}</span>
+            <span v-if="s.is_limited" class="badge" style="color: var(--crit)">{{ t('limit') }}</span>
           </div>
           <div class="card-sub">{{ formatReset(s.reset_at) }}</div>
         </div>
@@ -417,7 +417,7 @@ const prepaidBalance = computed(() => props.usage.prepaid_balance);
   padding: 8px;
   border: 1px solid var(--stroke-strong);
   border-radius: var(--card-radius);
-  background: rgba(255, 255, 255, 0.04);
+  background: color-mix(in srgb, var(--paper) 4%, transparent);
   color: var(--text-2);
   font-size: 12px;
   cursor: pointer;

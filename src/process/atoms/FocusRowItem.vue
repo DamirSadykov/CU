@@ -37,7 +37,7 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
     cursor: pointer;
 }
 .focus-row:hover {
-    background: rgba(255, 255, 255, 0.04);
+    background: color-mix(in srgb, var(--paper) 4%, transparent);
 }
 .focus-row-id {
     font-family: var(--mono);

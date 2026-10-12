@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import type { Ref } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { open as openFileDialog, save as saveFileDialog } from "@tauri-apps/plugin-dialog";
@@ -13,8 +13,18 @@ import {
 import type { AlertTiers, AlertTierKey, AlertTypes, AlertTypeKey } from "../kernel/thresholds";
 import { useUpdater } from "../kernel/updater";
 import { INSIGHT_KINDS } from "../analytics/insightKinds";
-import { FONT_OPTIONS, applyFont } from "../kernel/fontSwitch";
 import { modelFamilyClass } from "../analytics/modelFamily";
+import CuSeg from "../kernel/ui/CuSeg.vue";
+import type { CuSegOption } from "../kernel/ui/types";
+import {
+  applyTheme,
+  normalizeUiSkin,
+  normalizeUiTheme,
+  resolveTheme,
+  skinAllowed,
+  type UiSkin,
+  type UiTheme,
+} from "../kernel/theme";
 import EnrollmentPanel from "../external/EnrollmentPanel.vue";
 import WorkflowGraph from "../process/WorkflowGraph.vue";
 import agentProviderManifest from "../../scripts/cli/agents/agent-providers.json";
@@ -102,7 +112,8 @@ const props = defineProps<{
   runtimeInsightKinds: string[];
   keepAwakeEnabled: boolean;
   locale: string;
-  uiFont: string;
+  uiTheme: string;
+  uiSkin: string;
   // Bumped by the host each time the main window confirms a persisted save
   // (the `settings-changed` round-trip). Watched below to flash "Saved ✓".
   savedTick?: number;
@@ -137,7 +148,8 @@ const emit = defineEmits<{
     systemInfoEnabled: boolean;
     correctionsEnabled: boolean;
     locale: string;
-    uiFont: string;
+    uiTheme: string;
+    uiSkin: string;
   }];
   // Runtime-insight settings save immediately (not via the Save button).
   runtimeChange: [settings: { enabled: boolean; kinds: string[] }];
@@ -180,19 +192,43 @@ const localTodoNotify = ref(props.todoNotificationsEnabled);
 const localSystemInfo = ref(props.systemInfoEnabled);
 const localCorrections = ref(props.correctionsEnabled);
 const localLocale = ref(props.locale);
-const localFont = ref(props.uiFont);
+const localTheme = ref<UiTheme>(normalizeUiTheme(props.uiTheme));
+const localSkin = ref<UiSkin>(normalizeUiSkin(props.uiSkin));
+const systemDark = ref(typeof matchMedia === "function" && matchMedia("(prefers-color-scheme: dark)").matches);
 
-// Live preview: applying on change lets the user compare fonts before saving.
-// The choice only persists when the Save button calls handleSave → emit("save").
-function onFontChange() {
-  applyFont(localFont.value);
+const themeOptions = computed<CuSegOption<UiTheme>[]>(() => [
+  { value: "system", label: t("themeSystem") },
+  { value: "light", label: t("themeLight") },
+  { value: "dark", label: t("themeDark") },
+]);
+const skinOptions = computed<CuSegOption<UiSkin>[]>(() => [
+  { value: "standard", label: t("skinStandard") },
+  { value: "acid", label: t("skinAcid") },
+  {
+    value: "ultraviolet",
+    label: t("skinUltraviolet"),
+    disabled: localTheme.value === "light",
+    title: localTheme.value === "light" ? t("skinUltravioletDarkOnly") : undefined,
+  },
+]);
+
+watch(localTheme, (base) => {
+  if (base === "light" && !skinAllowed(localSkin.value, false)) localSkin.value = "standard";
+});
+watch([localTheme, localSkin, systemDark], () => {
+  applyTheme(resolveTheme(localTheme.value, localSkin.value, systemDark.value));
+});
+
+async function openKit() {
+  try {
+    await invoke("open_kit_window");
+  } catch (e) {
+    console.error("open_kit_window failed", e);
+  }
 }
 
-// If the panel closes without saving, revert any preview to the persisted font.
-// After a successful save props.uiFont already equals the choice, so this is a
-// no-op in that case.
 onUnmounted(() => {
-  applyFont(props.uiFont);
+  applyTheme(resolveTheme(props.uiTheme, props.uiSkin, systemDark.value));
 });
 
 watch(() => props.sessionKey, (v) => (localSessionKey.value = v));
@@ -229,7 +265,8 @@ watch(() => props.todoNotificationsEnabled, (v) => (localTodoNotify.value = v));
 watch(() => props.systemInfoEnabled, (v) => (localSystemInfo.value = v));
 watch(() => props.correctionsEnabled, (v) => (localCorrections.value = v));
 watch(() => props.locale, (v) => (localLocale.value = v));
-watch(() => props.uiFont, (v) => (localFont.value = v));
+watch(() => props.uiTheme, (v) => (localTheme.value = normalizeUiTheme(v)));
+watch(() => props.uiSkin, (v) => (localSkin.value = normalizeUiSkin(v)));
 
 // Honour the requested tab on mount and whenever the host re-opens with a new
 // one (clicking a different screen's gear). Same value won't re-fire — harmless,
@@ -853,7 +890,8 @@ function handleSave() {
     systemInfoEnabled: localSystemInfo.value,
     correctionsEnabled: localCorrections.value,
     locale: localLocale.value,
-    uiFont: localFont.value,
+    uiTheme: localTheme.value,
+    uiSkin: localSkin.value,
   });
 }
 </script>
@@ -1034,20 +1072,18 @@ function handleSave() {
         </div>
       </div>
 
-      <!-- UI font -->
-      <div class="card">
-        <div class="field-label">{{ t('uiFont') }}</div>
-        <select
-          v-model="localFont"
-          class="field-input"
-          :style="{ fontFamily: 'var(--segoe)' }"
-          @change="onFontChange"
-        >
-          <option v-for="f in FONT_OPTIONS" :key="f.id" :value="f.id">
-            {{ f.system ? `${f.name} (${t('uiFontSystem')})` : f.name }}{{ f.mono ? ' · mono' : '' }}
-          </option>
-        </select>
-        <div class="field-hint">{{ t('uiFontHint') }}</div>
+      <div class="card appearance-card">
+        <div class="field-label">{{ t('appearance') }}</div>
+        <div class="appearance-row">
+          <span class="appearance-label">{{ t('themeBase') }}</span>
+          <CuSeg v-model="localTheme" :options="themeOptions" />
+        </div>
+        <div class="appearance-row">
+          <span class="appearance-label">{{ t('themeSkin') }}</span>
+          <CuSeg v-model="localSkin" :options="skinOptions" />
+        </div>
+        <div class="field-hint">{{ t('themeHint') }}</div>
+        <button type="button" class="cu-btn sm ghost appearance-kit" @click="openKit">{{ t('openKit') }}</button>
       </div>
 
       <!-- Auto-start toggle -->
@@ -1503,7 +1539,7 @@ function handleSave() {
             {{ t('restartNow') }}
           </button>
         </template>
-        <div v-else-if="updateStatus === 'error'" class="field-hint" style="color: #f87171">
+        <div v-else-if="updateStatus === 'error'" class="field-hint" style="color: var(--crit)">
           {{ t('updateError') }}<template v-if="updateErrorMessage"> — {{ updateErrorMessage }}</template>
         </div>
       </div>
@@ -1617,7 +1653,7 @@ function handleSave() {
           <div
             v-if="ccHookStatus && ccHookStatus.installed && !ccHookStatus.wired_path_exists"
             class="field-hint"
-            style="margin-top: 4px; color: #f87171"
+            style="margin-top: 4px; color: var(--crit)"
           >
             {{ t('installCcHookBroken') }}
           </div>
@@ -1626,7 +1662,7 @@ function handleSave() {
           <div
             v-if="ccHookStatus && ccHookStatus.installed && !ccHookStatus.stop_installed"
             class="field-hint"
-            style="margin-top: 4px; color: #fbbf24"
+            style="margin-top: 4px; color: var(--warn)"
           >
             {{ t('installCcHookStopMissing') }}
           </div>
@@ -1650,7 +1686,7 @@ function handleSave() {
           <div
             v-if="codexHookStatus && codexHookStatus.installed && !codexHookStatus.wired_path_exists"
             class="field-hint"
-            style="margin-top: 4px; color: #f87171"
+            style="margin-top: 4px; color: var(--crit)"
           >
             {{ t('installCodexHookBroken') }}
           </div>
@@ -1860,12 +1896,12 @@ function handleSave() {
 }
 
 .settings-tab:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: color-mix(in srgb, var(--paper) 5%, transparent);
   color: var(--text-2);
 }
 
 .settings-tab.active {
-  background: rgba(255, 255, 255, 0.07);
+  background: color-mix(in srgb, var(--paper) 7%, transparent);
   color: var(--text);
 }
 
@@ -1892,9 +1928,9 @@ function handleSave() {
   flex-shrink: 0;
 }
 
-.thr-dot.tier-yellow { background: #ffc107; }
-.thr-dot.tier-orange { background: #d97757; }
-.thr-dot.tier-red { background: #f87171; }
+.thr-dot.tier-yellow { background: var(--warn); }
+.thr-dot.tier-orange { background: var(--ag-claude); }
+.thr-dot.tier-red { background: var(--crit); }
 
 .thr-label {
   font-size: 12px;
@@ -1940,8 +1976,8 @@ function handleSave() {
 }
 .dash-move {
   background: transparent;
-  border: 1px solid var(--stroke-strong, rgba(255, 255, 255, 0.12));
-  color: rgba(255, 255, 255, 0.75);
+  border: 1px solid var(--stroke-strong, color-mix(in srgb, var(--paper) 12%, transparent));
+  color: color-mix(in srgb, var(--paper) 75%, transparent);
   width: 22px;
   height: 14px;
   border-radius: 3px;
@@ -1958,7 +1994,7 @@ function handleSave() {
   cursor: not-allowed;
 }
 .dash-move:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.06);
+  background: color-mix(in srgb, var(--paper) 6%, transparent);
 }
 
 .cc-note {
@@ -2039,14 +2075,13 @@ function handleSave() {
   padding: 8px 10px;
   border: 1px solid var(--stroke-strong);
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.04);
+  background: color-mix(in srgb, var(--paper) 4%, transparent);
   color: var(--text);
   font-size: 13px;
   font-family: var(--segoe);
   outline: none;
   /* Render native controls (e.g. the <select> dropdown list) in dark theme so
      options aren't white-on-white on Windows/WebView2. */
-  color-scheme: dark;
   transition: border-color 120ms, background 120ms;
 }
 /* Solid background fallback for the native <option> popup (the translucent
@@ -2058,7 +2093,7 @@ function handleSave() {
 
 .field-input:focus {
   border-color: var(--accent);
-  background: rgba(255, 255, 255, 0.06);
+  background: color-mix(in srgb, var(--paper) 6%, transparent);
 }
 
 .field-input::placeholder {
@@ -2086,7 +2121,7 @@ function handleSave() {
   padding: 10px;
   border: 1px solid var(--stroke-strong);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--paper) 2.5%, transparent);
 }
 .agent-profile-grid {
   display: grid;
@@ -2121,14 +2156,14 @@ function handleSave() {
   font: 600 11px ui-monospace, Consolas, monospace;
   background: color-mix(in srgb, currentColor 12%, transparent);
 }
-.model-openai-sol { color: #34d399; }
-.model-openai-terra { color: #60a5fa; }
-.model-openai-luna { color: #22d3ee; }
-.model-openai { color: #10b981; }
-.model-anthropic-opus { color: #d97757; }
-.model-anthropic-sonnet { color: #6ccb5f; }
-.model-anthropic-haiku { color: #5b9bd5; }
-.model-anthropic { color: #e879f9; }
+.model-openai-sol { color: var(--ok); }
+.model-openai-terra { color: var(--next); }
+.model-openai-luna { color: var(--ag-gemini); }
+.model-openai { color: var(--ok); }
+.model-anthropic-opus { color: var(--ag-claude); }
+.model-anthropic-sonnet { color: var(--ok); }
+.model-anthropic-haiku { color: var(--next); }
+.model-anthropic { color: var(--ag-claude); }
 .model-unknown { color: var(--text-4); }
 
 .field-range {
@@ -2203,6 +2238,25 @@ function handleSave() {
   transform: translateX(20px);
 }
 
+.appearance-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.appearance-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.appearance-label {
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+.appearance-kit {
+  align-self: flex-start;
+}
 .lang-switch {
   display: flex;
   gap: 0;
@@ -2263,7 +2317,7 @@ function handleSave() {
 /* Persisted confirmation — green fill, and it stays fully opaque even though the
    button isn't disabled while showing "Saved ✓". */
 .save-btn.saved {
-  background: #16a34a;
+  background: var(--ok);
   opacity: 1;
 }
 
@@ -2276,7 +2330,7 @@ function handleSave() {
   margin-top: 8px;
   height: 5px;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--paper) 10%, transparent);
   overflow: hidden;
 }
 
@@ -2293,7 +2347,7 @@ function handleSave() {
   padding: 7px;
   border: 1px solid var(--stroke-strong);
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.04);
+  background: color-mix(in srgb, var(--paper) 4%, transparent);
   color: var(--text-2);
   font-size: 12.5px;
   font-weight: 500;
@@ -2304,7 +2358,7 @@ function handleSave() {
 
 .btn-check:hover:not(:disabled) {
   border-color: var(--accent);
-  background: rgba(255, 255, 255, 0.06);
+  background: color-mix(in srgb, var(--paper) 6%, transparent);
 }
 
 .btn-check:disabled {
@@ -2334,7 +2388,7 @@ function handleSave() {
 }
 
 .suggest-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: color-mix(in srgb, var(--paper) 6%, transparent);
 }
 
 /* Import preview (#181) — shown before anything is written. */
@@ -2343,7 +2397,7 @@ function handleSave() {
   padding: 10px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.03);
+  background: color-mix(in srgb, var(--paper) 3%, transparent);
 }
 
 .io-preview-head {
@@ -2383,18 +2437,18 @@ function handleSave() {
 
 /* Plain add vs the two outcomes the user must actually notice. */
 .io-kind--added {
-  background: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--paper) 8%, transparent);
   color: var(--muted);
 }
 
 .io-kind--renumbered {
-  background: rgba(88, 166, 255, 0.16);
-  color: #58a6ff;
+  background: color-mix(in srgb, var(--next) 16%, transparent);
+  color: var(--next);
 }
 
 .io-kind--forked {
-  background: rgba(210, 153, 34, 0.18);
-  color: #d29922;
+  background: color-mix(in srgb, var(--warn) 18%, transparent);
+  color: var(--warn);
 }
 
 .io-num {

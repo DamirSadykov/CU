@@ -46,7 +46,7 @@ withDefaults(
     padding: 8px 10px 10px;
     border: 1px solid var(--stroke-strong);
     border-radius: var(--r-card);
-    background: rgba(20, 20, 20, 0.92);
+    background: color-mix(in srgb, var(--ink-1) 92%, transparent);
 }
 .mini-map-head {
     display: flex;
@@ -76,7 +76,7 @@ withDefaults(
     width: 2px;
     height: 2px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.35);
+    background: color-mix(in srgb, var(--paper) 35%, transparent);
     transform: translate(-50%, -50%);
 }
 .mini-map-viewport {

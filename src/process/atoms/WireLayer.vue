@@ -229,21 +229,21 @@ defineExpose({ remeasure: schedule });
     fill: none;
     stroke: currentColor;
     stroke-width: 1.2;
-    color: rgba(255, 255, 255, 0.22);
+    color: color-mix(in srgb, var(--paper) 22%, transparent);
 }
 .wire.dashed {
     stroke-dasharray: 3 4;
 }
 .wire.tone-spec {
-    color: rgba(76, 194, 255, 0.45);
+    color: color-mix(in srgb, var(--next) 45%, transparent);
 }
 .wire.tone-file {
-    color: rgba(108, 203, 95, 0.4);
+    color: color-mix(in srgb, var(--ok) 40%, transparent);
 }
 .wire.tone-run {
-    color: rgba(217, 119, 87, 0.45);
+    color: color-mix(in srgb, var(--ag-claude) 45%, transparent);
 }
 .wire.tone-after {
-    color: rgba(255, 255, 255, 0.16);
+    color: color-mix(in srgb, var(--paper) 16%, transparent);
 }
 </style>

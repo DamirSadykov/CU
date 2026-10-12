@@ -88,16 +88,16 @@ const hasIo = computed(
 }
 .node-card.done {
     border-style: dashed;
-    border-color: rgba(108, 203, 95, 0.4);
-    background: rgba(255, 255, 255, 0.015);
+    border-color: color-mix(in srgb, var(--ok) 40%, transparent);
+    background: color-mix(in srgb, var(--paper) 1.5%, transparent);
 }
 .node-card.done .node-id,
 .node-card.done .node-title {
     opacity: 0.42;
 }
 .node-card.active {
-    background: #2a2440;
-    border-color: #6b5bc4;
+    background: color-mix(in srgb, var(--ag-codex) 18%, var(--ink-1));
+    border-color: var(--ag-codex);
 }
 .node-card.selected {
     border-color: transparent;
