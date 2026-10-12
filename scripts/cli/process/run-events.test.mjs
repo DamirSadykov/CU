@@ -172,7 +172,7 @@ describe("worker_session contract", () => {
     expect(codex.ok).toBe(true);
     emitRunEvent(ctx, { task: 2, kind: "worker_done", attempt: 1, limit: 2, cost: 0.002 });
     emitRunEvent(ctx, { task: 2, kind: "verify", attempt: 1, limit: 2, ok: false });
-    emitRunEvent(ctx, { task: 2, kind: "park", park_kind: "retry", reason: "verify failed" });
+    emitRunEvent(ctx, { task: 2, kind: "park", attempt: 1, limit: 2, park_kind: "retry", reason: "verify failed" });
     emitRunEvent(ctx, { kind: "run_end", complete: false, stop: "park" });
     return {
       claudeSession: claude.sessionId,

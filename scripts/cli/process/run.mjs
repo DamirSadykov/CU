@@ -679,7 +679,13 @@ function park(ctx, kind, task, reason, extra = {}) {
     parked: true,
     ...extra,
   };
-  emitRunEvent(ctx, { task: task?.number, kind: "park", park_kind: kind, reason });
+  emitRunEvent(ctx, {
+    task: task?.number,
+    kind: "park",
+    ...(task ? { attempt: Math.max(1, ctx.attempts.get(task.id) || 1), limit: retryLimitOf(task) } : {}),
+    park_kind: kind,
+    reason,
+  });
 }
 
 function deferGate(ctx, task, reason) {

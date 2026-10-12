@@ -8,5 +8,5 @@
 {"ts":"2026-10-12T10:00:07.000Z","run":"contract-run","change":"c#98","task":"t#2","kind":"worker_session","attempt":1,"engine":"codex","session":"019a0000-0000-7000-8000-00000000c0de","cwd":"C:\\Users\\contract\\work","transcript":"C:\\Users\\contract\\.codex\\sessions\\2026\\10\\12\\rollout-2026-10-12T10-00-00-019a0000-0000-7000-8000-00000000c0de.jsonl"}
 {"ts":"2026-10-12T10:00:08.000Z","run":"contract-run","change":"c#98","task":"t#2","kind":"worker_done","attempt":1,"limit":2,"cost":0.002}
 {"ts":"2026-10-12T10:00:09.000Z","run":"contract-run","change":"c#98","task":"t#2","kind":"verify","attempt":1,"limit":2,"ok":false}
-{"ts":"2026-10-12T10:00:10.000Z","run":"contract-run","change":"c#98","task":"t#2","kind":"park","park_kind":"retry","reason":"verify failed"}
+{"ts":"2026-10-12T10:00:10.000Z","run":"contract-run","change":"c#98","task":"t#2","kind":"park","attempt":1,"limit":2,"park_kind":"retry","reason":"verify failed"}
 {"ts":"2026-10-12T10:00:11.000Z","run":"contract-run","change":"c#98","kind":"run_end","complete":false,"stop":"park","task":null}
