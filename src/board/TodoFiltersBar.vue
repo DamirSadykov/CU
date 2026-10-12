@@ -72,7 +72,7 @@ defineExpose({ focusSearch: () => searchEl.value?.focus(), focusProject: () => p
 .tw-filter-clear { font-size: 15px; line-height: 10px; }
 .tw-search-clear { padding: 0 2px; border: 0; background: transparent; color: var(--text-3); font-size: 15px; line-height: 1; cursor: pointer; }
 .tw-search-clear:hover { color: var(--text); }
-.tw-filter-options { position: absolute; z-index: 10; top: calc(100% + 5px); left: 0; display: grid; min-width: max-content; padding: 4px; border: 1px solid var(--stroke-strong); border-radius: var(--r-ctl); background: var(--layer); box-shadow: 0 6px 16px var(--canvas-bg); }
+.tw-filter-options { position: absolute; z-index: 10; top: calc(100% + 5px); left: 0; display: grid; min-width: max-content; padding: 4px; border: 1px solid var(--stroke-strong); border-radius: var(--r-card); background: var(--layer); box-shadow: 0 6px 16px var(--canvas-bg); }
 .tw-filter-options button { padding: 5px 7px; border: 0; border-radius: 3px; background: transparent; color: var(--text-2); font: 11px/1.2 var(--segoe); text-align: left; cursor: pointer; }
 .tw-filter-options button:hover { background: var(--layer-hover); color: var(--text); }
 .tw-filter-options button { display: flex; align-items: center; justify-content: space-between; gap: 14px; }

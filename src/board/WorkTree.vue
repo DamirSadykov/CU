@@ -618,7 +618,7 @@ watch(
 .trace-body { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr) minmax(250px, .65fr); }
 .work-tree {
   border: 1px solid var(--stroke-strong);
-  border-radius: var(--r-ctl);
+  border-radius: var(--r-card);
   max-height: 370px;
   overflow: auto;
 }
@@ -738,7 +738,7 @@ watch(
 }
 .details {
   border: 1px solid var(--stroke-strong);
-  border-radius: var(--r-ctl);
+  border-radius: var(--r-card);
   display: flex;
   flex-direction: column;
   font-size: 13px;
