@@ -115,7 +115,7 @@ function toggleFromCaret(event: MouseEvent, node: BoardTreeNode): void {
 }
 
 function open(node: BoardTreeNode): void {
-  if (node.kind === "task" || node.kind === "change" || node.kind === "legacy") emit("open", node);
+  if (node.kind === "task" || node.kind === "change" || node.kind === "legacy" || node.kind === "group") emit("open", node);
 }
 
 function onKeydown(event: KeyboardEvent): void {
