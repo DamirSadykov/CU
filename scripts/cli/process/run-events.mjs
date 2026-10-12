@@ -1,4 +1,4 @@
-import { appendFileSync, mkdirSync, readFileSync, statSync, watch } from "node:fs";
+import { appendFileSync, mkdirSync, readFileSync, statSync, watch, writeFileSync } from "node:fs";
 import path from "node:path";
 import { withDataDir } from "../kernel/board-lock.mjs";
 
@@ -36,6 +36,58 @@ function appendRunEventFile(event, file) {
   }
 }
 
+export const VERIFY_LOG_LIMIT = 1024 * 1024;
+
+export function verifyLogPath(dataDir, run, task, attempt) {
+  return path.join(dataDir, "run-logs", String(run), `t${String(task).replace(/^t?#/, "")}-a${attempt}-verify.log`);
+}
+
+export function createVerifyLog(limit = VERIFY_LOG_LIMIT) {
+  let chunks = [];
+  let kept = 0;
+  let dropped = 0;
+  return {
+    get size() { return kept + dropped; },
+    push(chunk) {
+      const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk ?? ""), "utf8");
+      if (!buf.length) return;
+      chunks.push(buf);
+      kept += buf.length;
+      while (kept > limit && chunks.length) {
+        const extra = kept - limit;
+        if (chunks[0].length <= extra) {
+          kept -= chunks[0].length;
+          dropped += chunks[0].length;
+          chunks.shift();
+        } else {
+          chunks[0] = chunks[0].subarray(extra);
+          kept -= extra;
+          dropped += extra;
+        }
+      }
+    },
+    bytes() {
+      const body = Buffer.concat(chunks);
+      if (!dropped) return body;
+      const header = (count) => Buffer.from(`[verify log truncated: ${count} bytes dropped from the start]
+`, "utf8");
+      let cut = Math.min(body.length, Math.max(0, body.length + header(dropped + body.length).length - limit));
+      while (cut < body.length && (body[cut] & 0xc0) === 0x80) cut += 1;
+      return Buffer.concat([header(dropped + cut), body.subarray(cut)]);
+    },
+  };
+}
+
+export function writeVerifyLog(file, log) {
+  try {
+    mkdirSync(path.dirname(file), { recursive: true });
+    writeFileSync(file, log.bytes());
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function formatRunEvent(event) {
   const prefix = [changeId(event?.change), taskId(event?.task)].filter(Boolean).join(" ");
   const attempt = event?.attempt == null ? "" : ` attempt ${event.attempt}/${event.limit ?? "-"}`;
@@ -51,6 +103,7 @@ export function formatRunEvent(event) {
   if (kind === "worker_done") return `${prefix}${attempt}: worker done${typeof event.cost === "number" ? ` $${Math.round(event.cost * 10000) / 10000}` : ""}`.trim();
   if (kind === "run_start" || kind === "run_end") return `${changeId(event?.change)}: ${kind.replace("_", " ")}`.trim();
   if (kind === "worker_session") return `${prefix}${attempt}: worker session ${event.engine || "?"} ${event.session || ""}`.trim();
+  if (kind === "attempt_snapshot") return `${prefix}${attempt}: snapshot ${String(event.snapshot || "").slice(0, 12)}`.trim();
   if (kind === "escalate") return `${prefix}${attempt}: escalate${event.route ? ` (${event.route})` : ""}`.trim();
   return `${prefix}${attempt}: ${kind}`.trim();
 }
