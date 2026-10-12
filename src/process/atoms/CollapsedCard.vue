@@ -34,7 +34,7 @@ const style = computed(() => ({ width: `${props.width}px` }));
     padding: 12px;
     border: 1px dashed var(--stroke-strong);
     border-radius: 9px;
-    background: rgba(255, 255, 255, 0.012);
+    background: color-mix(in srgb, var(--paper) 1.2%, transparent);
     color: var(--text-4);
     font: inherit;
     font-size: 11px;
@@ -43,7 +43,7 @@ const style = computed(() => ({ width: `${props.width}px` }));
     cursor: pointer;
 }
 .collapsed-card:hover {
-    background: rgba(255, 255, 255, 0.03);
+    background: color-mix(in srgb, var(--paper) 3%, transparent);
 }
 .collapsed-card b {
     display: block;

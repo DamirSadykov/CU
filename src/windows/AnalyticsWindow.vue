@@ -20,6 +20,7 @@ import { renderInsightHelp } from "../kernel/insightRender";
 import { fmtDateTime, fmtDay } from "../kernel/dateFormat";
 import { loadSettingsStoreForWrite } from "../kernel/settingsStore";
 import { useSettings } from "../kernel/settingsStore";
+import { chartTooltip, onThemeChange, themeColor, themeMix } from "../kernel/cssVar";
 import {
   Chart,
   BarController,
@@ -648,7 +649,7 @@ const costCrosshair = {
     ctx.moveTo(x, chartArea.top);
     ctx.lineTo(x, chartArea.bottom);
     ctx.lineWidth = 1;
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.28)";
+    ctx.strokeStyle = themeMix("--paper", 28);
     ctx.stroke();
     ctx.restore();
   },
@@ -658,8 +659,8 @@ function renderCharts() {
   const d = data.value;
   if (!d) return;
   const labels = d.daily.map((p) => fmtDay(p.date, locale.value));
-  const grid = "rgba(255,255,255,0.06)";
-  const tick = "rgba(255,255,255,0.45)";
+  const grid = themeColor("var(--line)");
+  const tick = themeColor("var(--paper-3)");
 
   // Cost over time (single line). Extra-usage credit history isn't available
   // per-day from the API, so this charts CC spend — which is what drives most
@@ -676,8 +677,8 @@ function renderCharts() {
           {
             label: t("metricCost"),
             data: d.daily.map((p) => p.cost),
-            borderColor: "#d97757",
-            backgroundColor: "rgba(217,119,87,0.18)",
+            borderColor: themeColor("var(--hemp)"),
+            backgroundColor: themeMix("--hemp", 18),
             fill: true,
             tension: 0.25,
             pointRadius: 2,
@@ -693,7 +694,7 @@ function renderCharts() {
           legend: { display: false },
           // Default tooltip prints the raw JS number ("$2.90000000000004").
           // Round it the same way the KPI/list cells do.
-          tooltip: { callbacks: { label: (c) => fmtCost(Number(c.parsed.y) || 0) } },
+          tooltip: { ...chartTooltip(), callbacks: { label: (c) => fmtCost(Number(c.parsed.y) || 0) } },
         },
       },
       plugins: [costCrosshair],
@@ -704,10 +705,10 @@ function renderCharts() {
   if (tokenCanvas.value) {
     tokenChart?.destroy();
     const series = [
-      { key: "input" as const, color: "#d97757", label: t("tokInput") },
-      { key: "output" as const, color: "#6ccb5f", label: t("tokOutput") },
-      { key: "cache_create" as const, color: "#5b9bd5", label: t("tokCacheCreate") },
-      { key: "cache_read" as const, color: "#9aa0a6", label: t("tokCacheRead") },
+      { key: "input" as const, color: themeColor("var(--hemp)"), label: t("tokInput") },
+      { key: "output" as const, color: themeColor("var(--ok)"), label: t("tokOutput") },
+      { key: "cache_create" as const, color: themeColor("var(--next)"), label: t("tokCacheCreate") },
+      { key: "cache_read" as const, color: themeColor("var(--paper-4)"), label: t("tokCacheRead") },
     ];
     tokenChart = new Chart(tokenCanvas.value, {
       type: "bar",
@@ -726,7 +727,7 @@ function renderCharts() {
         maintainAspectRatio: false,
         plugins: {
           legend: { display: true, labels: { color: tick, font: { size: 11 } } },
-          tooltip: {
+          tooltip: { ...chartTooltip(),
             callbacks: { label: (c) => `${c.dataset.label}: ${fmtTokens(Number(c.parsed.y) || 0)}` },
           },
         },
@@ -1203,6 +1204,7 @@ const visibleTools = computed(() => {
 
 watch([dateFrom, dateTo, projectFilter], load);
 watch(locale, () => renderCharts());
+const stopThemeWatch = onThemeChange(() => renderCharts());
 // Tabs are `v-if`-gated, so switching to a tab with charts remounts its
 // canvases — re-render once the new DOM is in place.
 watch(activeTab, (tab) => {
@@ -1246,6 +1248,7 @@ onUnmounted(() => {
   window.removeEventListener("resize", onTilePopoverDismissScroll);
   unlistenLinks?.();
   unlistenCorr?.();
+  stopThemeWatch();
 });
 </script>
 
@@ -2025,18 +2028,18 @@ onUnmounted(() => {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--bg, #1a1a1a);
-  color: var(--text, #e8e8e8);
+  background: var(--bg, var(--ink-0));
+  color: var(--text);
   font-family: var(--segoe);
   /* Claude-code orange accent for this window's controls (matches the cost
      chart line), instead of the app-wide Win11 blue. Overriding the token here
      repaints every `var(--accent)` control inside the window at once. */
-  --accent: #d97757;
-  --accent-soft: rgba(217, 119, 87, 0.18);
+  --accent: var(--ag-claude);
+  --accent-soft: color-mix(in srgb, var(--ag-claude) 18%, transparent);
 }
 .aw-head {
   padding: 12px 16px;
-  border-bottom: 1px solid var(--stroke-strong, rgba(255, 255, 255, 0.08));
+  border-bottom: 1px solid var(--stroke-strong, color-mix(in srgb, var(--paper) 8%, transparent));
   display: flex;
   align-items: center;
   gap: 16px;
@@ -2059,11 +2062,11 @@ onUnmounted(() => {
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: var(--text-3, rgba(255, 255, 255, 0.7));
+  color: var(--text-3, color-mix(in srgb, var(--paper) 70%, transparent));
 }
 .aw-filters input,
 .aw-filters select {
-  background: rgba(255, 255, 255, 0.04);
+  background: color-mix(in srgb, var(--paper) 4%, transparent);
   border: 1px solid var(--stroke-strong);
   color: var(--text);
   border-radius: var(--card-radius);
@@ -2072,7 +2075,6 @@ onUnmounted(() => {
   font-family: var(--segoe);
   /* Hints the platform to render the dropdown in a dark colour scheme so the
      OS popup menu (which the WebView can't fully restyle) picks dark fg/bg. */
-  color-scheme: dark;
 }
 .aw-filters input:focus,
 .aw-filters select:focus {
@@ -2082,15 +2084,15 @@ onUnmounted(() => {
 /* `<option>` is system-painted on Windows — set explicit colours so the
    dropdown isn't white-on-white in dark mode. */
 .aw-filters select option {
-  background: #232323;
-  color: #e8e8e8;
+  background: var(--field);
+  color: var(--paper);
 }
 .aw-presets {
   display: inline-flex;
   border: 1px solid var(--stroke-strong);
   border-radius: var(--card-radius);
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.04);
+  background: color-mix(in srgb, var(--paper) 4%, transparent);
 }
 .aw-presets button {
   border: none;
@@ -2113,12 +2115,12 @@ onUnmounted(() => {
 .aw-presets button.active,
 .aw-presets button.active:hover {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 .aw-export {
   border: 1px solid transparent;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   border-radius: var(--card-radius);
   padding: 5px 12px;
   font-size: 12px;
@@ -2146,7 +2148,7 @@ onUnmounted(() => {
 .aw-settings:hover {
   border-color: var(--accent);
   color: var(--text);
-  background: rgba(255, 255, 255, 0.05);
+  background: color-mix(in srgb, var(--paper) 5%, transparent);
 }
 
 /* Tab bar under the header — one row of buttons, the active one gets an accent
@@ -2210,7 +2212,7 @@ onUnmounted(() => {
 .aw-group-hd {
   font-size: 11px;
   font-weight: 600;
-  color: var(--text-3, rgba(255, 255, 255, 0.7));
+  color: var(--text-3, color-mix(in srgb, var(--paper) 70%, transparent));
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: -6px;
@@ -2235,7 +2237,7 @@ onUnmounted(() => {
   font-weight: 500;
   text-transform: none;
   letter-spacing: 0;
-  color: var(--accent, #6ea8fe);
+  color: var(--next);
 }
 .aw-corr-guide:hover {
   text-decoration: underline;
@@ -2258,10 +2260,10 @@ onUnmounted(() => {
   border: none;
   background: none;
   cursor: pointer;
-  color: var(--text-3, rgba(255, 255, 255, 0.6));
+  color: var(--text-3, color-mix(in srgb, var(--paper) 60%, transparent));
 }
 .aw-corr-refresh:hover:not(:disabled) {
-  color: var(--accent, #6ea8fe);
+  color: var(--next);
 }
 .aw-corr-refresh:disabled {
   cursor: default;
@@ -2279,12 +2281,12 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-4, rgba(255, 255, 255, 0.5));
+  color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
   font-size: 14px;
 }
 /* Inline empty state inside a tab panel (e.g. Tools tab with no data). */
 .aw-empty-inline {
-  color: var(--text-4, rgba(255, 255, 255, 0.5));
+  color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
   font-size: 13px;
   font-style: italic;
   padding: 24px 4px;
@@ -2300,12 +2302,12 @@ onUnmounted(() => {
 .aw-proj-desc {
   margin: 0;
   font-size: 12px;
-  color: var(--text-4, rgba(255, 255, 255, 0.5));
+  color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
   max-width: 64ch;
   line-height: 1.5;
 }
 .aw-proj-name {
-  color: var(--text-2, rgba(255, 255, 255, 0.85));
+  color: var(--text-2, color-mix(in srgb, var(--paper) 85%, transparent));
   max-width: 240px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2318,12 +2320,12 @@ onUnmounted(() => {
   flex-wrap: wrap;
 }
 .aw-merge-arrow {
-  color: var(--text-4, rgba(255, 255, 255, 0.5));
+  color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
 }
 .aw-merge-btn {
   border: 1px solid transparent;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   border-radius: var(--card-radius);
   padding: 5px 14px;
   font-size: 12px;
@@ -2340,7 +2342,7 @@ onUnmounted(() => {
 }
 .aw-merge-err {
   font-size: 12px;
-  color: #e5736b;
+  color: var(--crit);
 }
 .aw-merge-list {
   list-style: none;
@@ -2357,24 +2359,23 @@ onUnmounted(() => {
   font-size: 13px;
 }
 .aw-merge-alias {
-  color: var(--text-2, rgba(255, 255, 255, 0.85));
+  color: var(--text-2, color-mix(in srgb, var(--paper) 85%, transparent));
 }
 .aw-merge-canon {
-  color: var(--text, #e8e8e8);
+  color: var(--text);
   font-weight: 500;
   flex: 1;
 }
 
 /* --- Association groups (issue #13) --- */
 .aw-group-input {
-  background: var(--card-bg, #232323);
-  border: 1px solid var(--stroke-strong, rgba(255, 255, 255, 0.12));
+  background: var(--card-bg);
+  border: 1px solid var(--stroke-strong, color-mix(in srgb, var(--paper) 12%, transparent));
   color: var(--text);
   border-radius: var(--card-radius, 6px);
   padding: 7px 10px;
   font-size: 13px;
   font-family: var(--segoe);
-  color-scheme: dark;
   width: 220px;
 }
 .aw-group-input:focus {
@@ -2391,9 +2392,9 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 8px;
   padding: 10px;
-  border: 1px solid var(--stroke-strong, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--stroke-strong, color-mix(in srgb, var(--paper) 8%, transparent));
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--paper) 2%, transparent);
 }
 .aw-group-head {
   display: flex;
@@ -2406,7 +2407,7 @@ onUnmounted(() => {
 }
 .aw-group-total {
   font-size: 12px;
-  color: var(--text-3, rgba(255, 255, 255, 0.7));
+  color: var(--text-3, color-mix(in srgb, var(--paper) 70%, transparent));
   font-variant-numeric: tabular-nums;
   margin-left: auto;
 }
@@ -2424,22 +2425,22 @@ onUnmounted(() => {
   gap: 4px;
   padding: 2px 4px 2px 8px;
   font-size: 12px;
-  color: var(--text-2, rgba(255, 255, 255, 0.85));
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--stroke-strong, rgba(255, 255, 255, 0.1));
+  color: var(--text-2, color-mix(in srgb, var(--paper) 85%, transparent));
+  background: color-mix(in srgb, var(--paper) 6%, transparent);
+  border: 1px solid var(--stroke-strong, color-mix(in srgb, var(--paper) 10%, transparent));
   border-radius: 12px;
 }
 .aw-chip-x {
   border: none;
   background: transparent;
-  color: var(--text-4, rgba(255, 255, 255, 0.5));
+  color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
   font-size: 14px;
   line-height: 1;
   cursor: pointer;
   padding: 0 2px;
 }
 .aw-chip-x:hover {
-  color: var(--text, #e8e8e8);
+  color: var(--text);
 }
 
 .aw-kpis {
@@ -2456,8 +2457,8 @@ onUnmounted(() => {
 }
 .aw-kpi {
   position: relative;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--stroke-strong, rgba(255, 255, 255, 0.08));
+  background: color-mix(in srgb, var(--paper) 3%, transparent);
+  border: 1px solid var(--stroke-strong, color-mix(in srgb, var(--paper) 8%, transparent));
   border-radius: 8px;
   padding: 12px;
   text-align: center;
@@ -2471,8 +2472,8 @@ onUnmounted(() => {
   top: 6px;
   right: 6px;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.45);
+  border: 1px solid color-mix(in srgb, var(--paper) 20%, transparent);
+  color: color-mix(in srgb, var(--paper) 45%, transparent);
   font-size: 10px;
   font-weight: 600;
   line-height: 1;
@@ -2487,9 +2488,9 @@ onUnmounted(() => {
 }
 .aw-kpi-help:hover,
 .aw-kpi-help[aria-expanded="true"] {
-  color: rgba(255, 255, 255, 0.95);
-  border-color: rgba(255, 255, 255, 0.55);
-  background: rgba(255, 255, 255, 0.06);
+  color: color-mix(in srgb, var(--paper) 95%, transparent);
+  border-color: color-mix(in srgb, var(--paper) 55%, transparent);
+  background: color-mix(in srgb, var(--paper) 6%, transparent);
 }
 /* Floating help popover for KPI tiles. Teleported to <body> and fixed-position
    (coordinates set inline from the trigger's bounding rect, with edge clamping
@@ -2508,12 +2509,12 @@ onUnmounted(() => {
   overflow-y: auto;
   text-align: left;
   padding: 12px 20px;
-  background: var(--bg-2, #232323);
-  border: 1px solid var(--stroke-strong, rgba(255, 255, 255, 0.14));
+  background: var(--ink-2);
+  border: 1px solid var(--stroke-strong, color-mix(in srgb, var(--paper) 14%, transparent));
   border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--hard) 45%, transparent);
   /* Override the inline-body's top divider — the popover is a standalone card. */
-  border-top: 1px solid var(--stroke-strong, rgba(255, 255, 255, 0.14));
+  border-top: 1px solid var(--stroke-strong, color-mix(in srgb, var(--paper) 14%, transparent));
   margin-top: 0;
 }
 .aw-kpi-val {
@@ -2523,7 +2524,7 @@ onUnmounted(() => {
 }
 .aw-kpi-lbl {
   font-size: 11px;
-  color: var(--text-4, rgba(255, 255, 255, 0.5));
+  color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-top: 4px;
@@ -2535,7 +2536,7 @@ onUnmounted(() => {
   text-transform: none;
   letter-spacing: 0;
   font-size: 10px;
-  color: var(--text-3, rgba(255, 255, 255, 0.4));
+  color: var(--text-3, color-mix(in srgb, var(--paper) 40%, transparent));
 }
 
 /* Period-over-period trend badge: arrow + delta%, sitting under the KPI label.
@@ -2551,20 +2552,20 @@ onUnmounted(() => {
   line-height: 1;
   padding: 2px 6px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-4, rgba(255, 255, 255, 0.5));
+  background: color-mix(in srgb, var(--paper) 5%, transparent);
+  color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
 }
 .aw-trend.t-good {
-  background: rgba(108, 203, 95, 0.16);
-  color: #6ccb5f;
+  background: color-mix(in srgb, var(--ok) 16%, transparent);
+  color: var(--ok);
 }
 .aw-trend.t-bad {
-  background: rgba(248, 113, 113, 0.16);
-  color: #f87171;
+  background: color-mix(in srgb, var(--crit) 16%, transparent);
+  color: var(--crit);
 }
 .aw-trend.t-neutral {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text-3, rgba(255, 255, 255, 0.7));
+  background: color-mix(in srgb, var(--paper) 6%, transparent);
+  color: var(--text-3, color-mix(in srgb, var(--paper) 70%, transparent));
 }
 /* Triangle arrow drawn with borders so it inherits the badge text colour. */
 .aw-trend-arrow {
@@ -2603,23 +2604,23 @@ onUnmounted(() => {
   border-radius: 10px;
 }
 .aw-goal.goal-ok {
-  background: rgba(108, 203, 95, 0.18);
-  color: #6ccb5f;
+  background: color-mix(in srgb, var(--ok) 18%, transparent);
+  color: var(--ok);
 }
 .aw-goal.goal-exceeded {
-  background: rgba(248, 113, 113, 0.18);
-  color: #f87171;
+  background: color-mix(in srgb, var(--crit) 18%, transparent);
+  color: var(--crit);
 }
 /* Tint the whole tile border to match the goal state. */
 .aw-kpi.goal-ok {
-  border-color: rgba(108, 203, 95, 0.4);
+  border-color: color-mix(in srgb, var(--ok) 40%, transparent);
 }
 .aw-kpi.goal-exceeded {
-  border-color: rgba(248, 113, 113, 0.45);
+  border-color: color-mix(in srgb, var(--crit) 45%, transparent);
 }
 
 .aw-insights-block {
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--paper) 2%, transparent);
   border: 1px solid var(--stroke-strong);
   border-radius: 8px;
   padding: 14px 16px;
@@ -2640,7 +2641,7 @@ onUnmounted(() => {
 /* Solid-green count pill next to the RECOMMENDATIONS title. */
 .aw-tab-count {
   background: var(--success);
-  color: #06250a;
+  color: var(--on-next);
   border-radius: 10px;
   padding: 1px 8px;
   font-size: 11px;
@@ -2665,7 +2666,7 @@ onUnmounted(() => {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  background: rgba(255, 255, 255, 0.03);
+  background: color-mix(in srgb, var(--paper) 3%, transparent);
   border: 1px solid var(--stroke);
   border-radius: 8px;
   padding: 11px 12px;
@@ -2694,18 +2695,18 @@ onUnmounted(() => {
   padding: 0;
 }
 .aw-insight-help-body {
-  color: rgba(255, 255, 255, 0.78);
+  color: color-mix(in srgb, var(--paper) 78%, transparent);
   font-size: 12.5px;
   line-height: 1.55;
   padding: 4px 4px 2px;
-  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+  border-top: 1px dashed color-mix(in srgb, var(--paper) 10%, transparent);
   margin-top: 2px;
 }
 .aw-insight-help-body h4 {
   margin: 10px 0 4px;
   font-size: 12.5px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.95);
+  color: color-mix(in srgb, var(--paper) 95%, transparent);
 }
 .aw-insight-help-body h4:first-child {
   margin-top: 0;
@@ -2721,14 +2722,14 @@ onUnmounted(() => {
   margin-bottom: 3px;
 }
 .aw-insight-help-body code {
-  background: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--paper) 8%, transparent);
   padding: 1px 5px;
   border-radius: 3px;
   font-size: 11.5px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 .aw-insight-help-body strong {
-  color: rgba(255, 255, 255, 0.95);
+  color: color-mix(in srgb, var(--paper) 95%, transparent);
 }
 .aw-insight-x {
   flex: none;
@@ -2745,7 +2746,7 @@ onUnmounted(() => {
   transition: background 120ms, color 120ms;
 }
 .aw-insight-x:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--paper) 8%, transparent);
   color: var(--text);
 }
 .aw-cold-causes {
@@ -2766,21 +2767,21 @@ onUnmounted(() => {
   gap: 12px;
   font-size: 12.5px;
   padding: 3px 8px;
-  background: rgba(0, 0, 0, 0.15);
+  background: color-mix(in srgb, var(--hard) 15%, transparent);
   border-radius: 5px;
 }
 .aw-cold-cause-label {
-  color: var(--text-2, rgba(255, 255, 255, 0.85));
+  color: var(--text-2, color-mix(in srgb, var(--paper) 85%, transparent));
 }
 .aw-cold-cause-val {
   font-variant-numeric: tabular-nums;
-  color: var(--text-3, rgba(255, 255, 255, 0.6));
+  color: var(--text-3, color-mix(in srgb, var(--paper) 60%, transparent));
   white-space: nowrap;
 }
 .aw-cold-fix {
   font-size: 12px;
   line-height: 1.45;
-  color: var(--text-3, rgba(255, 255, 255, 0.6));
+  color: var(--text-3, color-mix(in srgb, var(--paper) 60%, transparent));
   margin-top: 8px;
 }
 .aw-affected-list {
@@ -2796,21 +2797,21 @@ onUnmounted(() => {
   align-items: center;
   gap: 10px;
   padding: 4px 8px;
-  background: rgba(0, 0, 0, 0.15);
+  background: color-mix(in srgb, var(--hard) 15%, transparent);
   border-radius: 5px;
 }
 .aw-ignored {
-  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+  border-top: 1px dashed color-mix(in srgb, var(--paper) 10%, transparent);
   padding-top: 8px;
   font-size: 12px;
 }
 .aw-ignored summary {
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.55);
+  color: color-mix(in srgb, var(--paper) 55%, transparent);
   user-select: none;
 }
 .aw-ignored summary:hover {
-  color: rgba(255, 255, 255, 0.8);
+  color: color-mix(in srgb, var(--paper) 80%, transparent);
 }
 .aw-ignored-list {
   display: flex;
@@ -2822,9 +2823,9 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: rgba(255, 255, 255, 0.55);
+  color: color-mix(in srgb, var(--paper) 55%, transparent);
   padding: 4px 8px;
-  background: rgba(255, 255, 255, 0.03);
+  background: color-mix(in srgb, var(--paper) 3%, transparent);
   border-radius: 5px;
 }
 .aw-ignored-text {
@@ -2832,7 +2833,7 @@ onUnmounted(() => {
 }
 .aw-search {
   margin-left: auto;
-  background: rgba(0, 0, 0, 0.25);
+  background: color-mix(in srgb, var(--hard) 25%, transparent);
   border: 1px solid var(--stroke-strong);
   color: inherit;
   border-radius: var(--card-radius);
@@ -2847,8 +2848,8 @@ onUnmounted(() => {
 .aw-insight-tag {
   flex: none;
   margin-top: 1px;
-  background: rgba(232, 184, 80, 0.18);
-  color: #e8b850;
+  background: var(--warn-soft);
+  color: var(--warn);
   border-radius: 4px;
   padding: 2px 7px;
   font-size: 10px;
@@ -2875,15 +2876,15 @@ onUnmounted(() => {
   gap: 14px;
 }
 .aw-card {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--stroke-strong, rgba(255, 255, 255, 0.08));
+  background: color-mix(in srgb, var(--paper) 2%, transparent);
+  border: 1px solid var(--stroke-strong, color-mix(in srgb, var(--paper) 8%, transparent));
   border-radius: 8px;
   padding: 12px;
 }
 .aw-card-hd {
   font-size: 12px;
   font-weight: 600;
-  color: var(--text-3, rgba(255, 255, 255, 0.7));
+  color: var(--text-3, color-mix(in srgb, var(--paper) 70%, transparent));
   text-transform: uppercase;
   letter-spacing: 0.04em;
   margin-bottom: 10px;
@@ -2897,7 +2898,7 @@ onUnmounted(() => {
   letter-spacing: 0;
   font-weight: 400;
   font-size: 12px;
-  color: var(--text-4, rgba(255, 255, 255, 0.5));
+  color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
 }
 .aw-chart {
   height: 220px;
@@ -2912,15 +2913,15 @@ onUnmounted(() => {
 .aw-table th {
   text-align: left;
   font-weight: 500;
-  color: var(--text-4, rgba(255, 255, 255, 0.5));
+  color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
   font-size: 11px;
   text-transform: uppercase;
   padding: 6px 8px;
-  border-bottom: 1px solid var(--stroke-strong, rgba(255, 255, 255, 0.08));
+  border-bottom: 1px solid var(--stroke-strong, color-mix(in srgb, var(--paper) 8%, transparent));
 }
 .aw-table td {
   padding: 7px 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid color-mix(in srgb, var(--paper) 3%, transparent);
   font-variant-numeric: tabular-nums;
 }
 
@@ -2941,12 +2942,12 @@ onUnmounted(() => {
   gap: 8px;
 }
 .aw-row-when {
-  color: var(--text-4, rgba(255, 255, 255, 0.5));
+  color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
 .aw-row-proj {
-  color: var(--text-2, rgba(255, 255, 255, 0.85));
+  color: var(--text-2, color-mix(in srgb, var(--paper) 85%, transparent));
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2959,9 +2960,9 @@ onUnmounted(() => {
   font-family: ui-monospace, Consolas, monospace;
   font-size: 11px;
   letter-spacing: 0.02em;
-  color: var(--text-3, rgba(255, 255, 255, 0.7));
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--stroke-strong, rgba(255, 255, 255, 0.12));
+  color: var(--text-3, color-mix(in srgb, var(--paper) 70%, transparent));
+  background: color-mix(in srgb, var(--paper) 5%, transparent);
+  border: 1px solid var(--stroke-strong, color-mix(in srgb, var(--paper) 12%, transparent));
   border-radius: 4px;
   padding: 2px 7px;
   cursor: pointer;
@@ -2969,9 +2970,9 @@ onUnmounted(() => {
   transition: background 120ms, color 120ms, border-color 120ms;
 }
 .aw-row-id:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text, #e8e8e8);
-  border-color: var(--accent, #d97757);
+  background: color-mix(in srgb, var(--paper) 10%, transparent);
+  color: var(--text);
+  border-color: var(--accent, var(--ag-claude));
 }
 .aw-row-proj:has(+ .aw-row-id) {
   flex: 1;
@@ -2983,26 +2984,26 @@ onUnmounted(() => {
 .aw-row-val {
   text-align: right;
   font-variant-numeric: tabular-nums;
-  color: var(--text-3, rgba(255, 255, 255, 0.7));
+  color: var(--text-3, color-mix(in srgb, var(--paper) 70%, transparent));
   flex-shrink: 0;
 }
 .aw-row-bar {
   height: 4px;
-  background: rgba(255, 255, 255, 0.05);
+  background: color-mix(in srgb, var(--paper) 5%, transparent);
   border-radius: 3px;
   overflow: hidden;
 }
 .aw-row-bar > span {
   display: block;
   height: 100%;
-  background: var(--accent, #d97757);
+  background: var(--accent, var(--ag-claude));
   transition: width 200ms;
 }
 
 .aw-modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: color-mix(in srgb, var(--hard) 55%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3010,8 +3011,8 @@ onUnmounted(() => {
   z-index: 50;
 }
 .aw-modal-box {
-  background: #232323;
-  border: 1px solid var(--stroke-strong, rgba(255, 255, 255, 0.12));
+  background: var(--ink-1);
+  border: 1px solid var(--stroke-strong);
   border-radius: 10px;
   width: min(720px, 100%);
   max-height: 80vh;
@@ -3031,8 +3032,8 @@ onUnmounted(() => {
   gap: 6px;
 }
 .aw-modal-actions button {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--stroke-strong, rgba(255, 255, 255, 0.12));
+  background: color-mix(in srgb, var(--paper) 6%, transparent);
+  border: 1px solid var(--stroke-strong, color-mix(in srgb, var(--paper) 12%, transparent));
   border-radius: 5px;
   color: var(--text);
   padding: 5px 12px;
@@ -3040,19 +3041,19 @@ onUnmounted(() => {
   cursor: pointer;
 }
 .aw-modal-actions button:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--paper) 10%, transparent);
 }
 .aw-modal-hint {
   margin: 0;
   font-size: 12px;
-  color: var(--text-4, rgba(255, 255, 255, 0.5));
+  color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
 }
 .aw-modal-box textarea {
   flex: 1;
   min-height: 240px;
-  background: rgba(0, 0, 0, 0.35);
+  background: color-mix(in srgb, var(--hard) 35%, transparent);
   color: var(--text);
-  border: 1px solid var(--stroke-strong, rgba(255, 255, 255, 0.12));
+  border: 1px solid var(--stroke-strong, color-mix(in srgb, var(--paper) 12%, transparent));
   border-radius: 6px;
   padding: 10px;
   font-family: ui-monospace, Consolas, monospace;

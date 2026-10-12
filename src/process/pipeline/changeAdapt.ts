@@ -383,6 +383,42 @@ export function costFor(members: ChangeTask[], nodes: RunGraphNode[]): ChangeCos
     };
 }
 
+export function workMinutesFor(members: ChangeTask[], end: number): number {
+    const spans: Array<[number, number]> = [];
+    for (const t of members) {
+        const events = (t.status_history ?? [])
+            .map((h) => ({ status: h.status, at: Date.parse(h.at) }))
+            .filter((e) => !Number.isNaN(e.at))
+            .sort((a, b) => a.at - b.at);
+        events.forEach((e, i) => {
+            if (e.status !== "in_progress") return;
+            const stop = Math.min(events[i + 1]?.at ?? end, end);
+            if (stop > e.at) spans.push([e.at, stop]);
+        });
+    }
+    spans.sort((a, b) => a[0] - b[0]);
+    let total = 0;
+    let from = -Infinity;
+    let to = -Infinity;
+    for (const [s, e] of spans) {
+        if (s > to) {
+            if (to > from) total += to - from;
+            from = s;
+            to = e;
+        } else if (e > to) to = e;
+    }
+    if (to > from) total += to - from;
+    return total / 60000;
+}
+
+export type WorkUnit = "min" | "h" | "d";
+
+export function workSpan(minutes: number): { value: number; unit: WorkUnit } {
+    if (minutes < 60) return { value: Math.max(1, Math.round(minutes)), unit: "min" };
+    if (minutes < 24 * 60) return { value: Math.round(minutes / 60), unit: "h" };
+    return { value: Math.round(minutes / (24 * 60)), unit: "d" };
+}
+
 export function sortedByRecency(changes: ChangeRecord[]): ChangeRecord[] {
     return [...changes].sort((a, b) => {
         const ta = Date.parse(a.created_at ?? "");

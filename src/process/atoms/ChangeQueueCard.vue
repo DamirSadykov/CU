@@ -41,7 +41,7 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
 }
 .queue-card.active {
     background: var(--accent-soft);
-    border-color: rgba(76, 194, 255, 0.45);
+    border-color: color-mix(in srgb, var(--next) 45%, transparent);
 }
 .queue-card.tone-ok {
     border-left-color: var(--ok);

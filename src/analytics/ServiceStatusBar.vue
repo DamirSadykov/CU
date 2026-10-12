@@ -229,7 +229,7 @@ onUnmounted(() => {
     margin: 8px 10px 0;
     border: 1px solid var(--stroke-strong);
     border-radius: var(--card-radius);
-    background: rgba(255, 255, 255, 0.03);
+    background: color-mix(in srgb, var(--paper) 3%, transparent);
     overflow: hidden;
 }
 
@@ -269,21 +269,21 @@ onUnmounted(() => {
 }
 
 .svc-none .svc-dot {
-    background: #3fb950;
+    background: var(--ok);
 }
 .svc-minor .svc-dot {
-    background: #ffc107;
+    background: var(--warn);
 }
 .svc-major .svc-dot {
-    background: #d97757;
+    background: var(--ag-claude);
 }
 .svc-critical .svc-dot {
-    background: #f87171;
+    background: var(--crit);
 }
 
 .svc-session .svc-dot {
     background: var(--success);
-    box-shadow: 0 0 8px rgba(108, 203, 95, 0.6);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--ok) 60%, transparent);
 }
 
 .svc-label {
@@ -295,7 +295,7 @@ onUnmounted(() => {
     font-size: 11px;
     font-variant-numeric: tabular-nums;
     color: var(--text-3);
-    background: rgba(255, 255, 255, 0.08);
+    background: color-mix(in srgb, var(--paper) 8%, transparent);
     border-radius: 8px;
     padding: 0 6px;
     line-height: 16px;
@@ -330,7 +330,7 @@ onUnmounted(() => {
 
 .svc-link:hover {
     color: var(--text);
-    background: rgba(255, 255, 255, 0.06);
+    background: color-mix(in srgb, var(--paper) 6%, transparent);
 }
 
 .svc-incidents {

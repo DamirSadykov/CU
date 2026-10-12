@@ -401,7 +401,7 @@ function reset() {
     gap: 8px;
     padding: 14px;
     border-right: 1px solid var(--stroke);
-    background: rgba(0, 0, 0, 0.14);
+    background: color-mix(in srgb, var(--hard) 14%, transparent);
 }
 .rail-address {
     font-family: var(--mono);

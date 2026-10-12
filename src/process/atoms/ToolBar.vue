@@ -18,7 +18,7 @@ defineOptions({ name: "ToolBar" });
     align-items: center;
     gap: 8px;
     padding: 0 14px;
-    background: #1b1b1b;
+    background: var(--ink-1);
     border-bottom: 1px solid var(--stroke);
 }
 .tool-bar-spacer {

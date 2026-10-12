@@ -33,7 +33,7 @@ withDefaults(
     padding: 2px 7px;
     border: 1px solid var(--stroke-strong);
     border-radius: var(--r-pill);
-    background: rgba(29, 29, 29, 0.98);
+    background: color-mix(in srgb, var(--ink-1) 98%, transparent);
     font-family: var(--mono);
     font-size: 10px;
     font-weight: 600;

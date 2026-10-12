@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use serde::Serialize;
 
-use super::todos::{Change, Todo, TodoFile};
+use super::todos::{Change, StatusChange, Todo, TodoFile};
 
 const DESCRIPTION_LIMIT: usize = 300;
 
@@ -29,6 +29,7 @@ pub struct TodoRow {
     pub created_at: String,
     pub updated_at: String,
     pub closed_at: Option<String>,
+    pub status_history: Vec<StatusChange>,
     pub ref_count: usize,
     pub comment_count: usize,
 }
@@ -70,6 +71,7 @@ pub fn row(todo: &Todo) -> TodoRow {
         created_at: todo.created_at.clone(),
         updated_at: todo.updated_at.clone(),
         closed_at: completion_at(todo),
+        status_history: todo.status_history.clone(),
         ref_count: reference_count(todo),
         comment_count: todo.comments.len(),
     }
@@ -141,6 +143,7 @@ mod tests {
         let row = row(&todo);
         assert_eq!(row.ref_count, 2);
         assert_eq!(row.comment_count, 1);
+        assert!(row.status_history.is_empty());
     }
 
     #[test]

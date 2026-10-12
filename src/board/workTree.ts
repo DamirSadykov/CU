@@ -3,12 +3,12 @@ import type { RestartPoint } from "../contracts/board";
 export type ToolCallType = "read" | "edit" | "shell" | "agent" | "web" | "other";
 /** Shared by the trace bars and the type chips. */
 export const TRACE_TYPE_COLORS = {
-  read: "#4cc2ff",
-  edit: "#6ccb5f",
-  shell: "#b388ff",
-  text: "#8a8a8a",
-  agent: "#f0a0c8",
-  web: "#e79878",
+  read: "var(--paper-4)",
+  edit: "var(--next)",
+  shell: "var(--ok)",
+  text: "var(--hemp)",
+  agent: "var(--ag-codex)",
+  web: "var(--ag-gemini)",
   other: "var(--text-4)",
 } as const satisfies Record<ToolCallType | "text", string>;
 export type WorkNodeKind = "task" | "session" | "run" | "group" | "model" | "tool" | "agent";

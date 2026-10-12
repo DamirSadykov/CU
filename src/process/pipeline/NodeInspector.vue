@@ -211,8 +211,8 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
     padding: 13px 14px 14px;
     border: 1px solid var(--stroke-strong);
     border-radius: var(--r-card);
-    background: rgba(26, 26, 26, 0.98);
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+    background: color-mix(in srgb, var(--ink-1) 98%, transparent);
+    box-shadow: 0 8px 28px color-mix(in srgb, var(--hard) 45%, transparent);
     overflow-y: auto;
 }
 .ni-head {
@@ -342,13 +342,13 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
     width: 15px;
     text-align: center;
     border-radius: var(--r-pill);
-    background: rgba(255, 255, 255, 0.06);
+    background: color-mix(in srgb, var(--paper) 6%, transparent);
     font-family: var(--mono);
     font-size: 10px;
     color: var(--text-4);
 }
 .ni-dir.write {
-    background: rgba(76, 194, 255, 0.12);
+    background: color-mix(in srgb, var(--next) 12%, transparent);
     color: var(--accent);
 }
 .ni-open {

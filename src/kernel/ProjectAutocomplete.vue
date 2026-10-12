@@ -181,15 +181,14 @@ defineExpose({ focus });
 .pa-input {
   width: 100%;
   box-sizing: border-box;
-  background: var(--card-bg, #232323);
-  color: var(--text, #e8e8e8);
-  border: 1px solid var(--stroke-strong, rgba(255, 255, 255, 0.12));
+  background: var(--card-bg);
+  color: var(--text);
+  border: 1px solid var(--stroke-strong, color-mix(in srgb, var(--paper) 12%, transparent));
   border-radius: var(--card-radius, 6px);
   padding: 7px 10px;
   font-size: 13px;
   font-family: var(--segoe);
   /* Dark popup hint for the platform-painted parts. */
-  color-scheme: dark;
 }
 .pa-input.clearable {
   padding-right: 24px;
@@ -205,14 +204,14 @@ defineExpose({ focus });
   transform: translateY(-50%);
   border: none;
   background: transparent;
-  color: var(--text-4, rgba(255, 255, 255, 0.5));
+  color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
   font-size: 15px;
   line-height: 1;
   cursor: pointer;
   padding: 0 2px;
 }
 .pa-clear:hover {
-  color: var(--text, #e8e8e8);
+  color: var(--text);
 }
 .pa-list {
   position: absolute;
@@ -228,17 +227,17 @@ defineExpose({ focus });
   margin: 2px 0 0;
   padding: 4px;
   list-style: none;
-  background: var(--card-bg, #232323);
-  border: 1px solid var(--stroke-strong, rgba(255, 255, 255, 0.12));
+  background: var(--card-bg);
+  border: 1px solid var(--stroke-strong, color-mix(in srgb, var(--paper) 12%, transparent));
   border-radius: 6px;
   max-height: 184px;
   overflow-y: auto;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--hard) 40%, transparent);
 }
 .pa-item {
   padding: 6px 8px;
   font-size: 12px;
-  color: var(--text-2, rgba(255, 255, 255, 0.85));
+  color: var(--text-2, color-mix(in srgb, var(--paper) 85%, transparent));
   border-radius: 4px;
   cursor: pointer;
   white-space: nowrap;
@@ -247,7 +246,7 @@ defineExpose({ focus });
 }
 .pa-item:hover,
 .pa-item.sel {
-  background: var(--accent-soft, rgba(217, 119, 87, 0.18));
-  color: var(--text, #e8e8e8);
+  background: var(--accent-soft, color-mix(in srgb, var(--ag-claude) 18%, transparent));
+  color: var(--text);
 }
 </style>

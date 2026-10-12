@@ -8,6 +8,8 @@ import {
     changeProgress,
     costFor,
     historyFor,
+    workMinutesFor,
+    workSpan,
     openChangesAt,
     passedFor,
     specAddressesOf,
@@ -422,5 +424,45 @@ describe("openChangesAt / specAddressesOf", () => {
             task({ id: "b", change_id: "c2", number: 2, status: "done" }),
         ];
         expect(openChangesAt("tasks#ui", [c1, c2], board).map((c) => changeAddress(c))).toEqual(["c#1"]);
+    });
+});
+
+describe("workMinutesFor / workSpan", () => {
+    const end = Date.parse("2026-08-02T00:00:00Z");
+
+    it("sums in_progress spans and skips review waits", () => {
+        const members = [
+            task({
+                id: "a",
+                status: "done",
+                status_history: [
+                    { status: "in_progress", at: "2026-08-01T10:00:00Z" },
+                    { status: "review", at: "2026-08-01T10:30:00Z" },
+                    { status: "in_progress", at: "2026-08-01T14:00:00Z" },
+                    { status: "done", at: "2026-08-01T14:20:00Z" },
+                ],
+            }),
+        ];
+        expect(workMinutesFor(members, end)).toBe(50);
+    });
+
+    it("counts parallel tasks once", () => {
+        const members = [
+            task({ id: "a", status: "done", status_history: [{ status: "in_progress", at: "2026-08-01T10:00:00Z" }, { status: "done", at: "2026-08-01T11:00:00Z" }] }),
+            task({ id: "b", status: "done", status_history: [{ status: "in_progress", at: "2026-08-01T10:30:00Z" }, { status: "done", at: "2026-08-01T11:30:00Z" }] }),
+        ];
+        expect(workMinutesFor(members, end)).toBe(90);
+    });
+
+    it("runs an open span up to the end", () => {
+        const members = [task({ id: "a", status: "in_progress", status_history: [{ status: "in_progress", at: "2026-08-01T23:00:00Z" }] })];
+        expect(workMinutesFor(members, end)).toBe(60);
+    });
+
+    it("rounds to the largest unit", () => {
+        expect(workSpan(0.2)).toEqual({ value: 1, unit: "min" });
+        expect(workSpan(45)).toEqual({ value: 45, unit: "min" });
+        expect(workSpan(150)).toEqual({ value: 3, unit: "h" });
+        expect(workSpan(3 * 24 * 60)).toEqual({ value: 3, unit: "d" });
     });
 });

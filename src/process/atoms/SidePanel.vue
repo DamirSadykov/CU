@@ -20,8 +20,8 @@ defineProps<{ title?: string }>();
     padding: 14px;
     border: 1px solid var(--stroke-strong);
     border-radius: var(--r-card);
-    background: rgba(26, 26, 26, 0.96);
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+    background: color-mix(in srgb, var(--ink-1) 96%, transparent);
+    box-shadow: 0 8px 28px color-mix(in srgb, var(--hard) 45%, transparent);
 }
 .side-panel-title {
     font-size: 10px;

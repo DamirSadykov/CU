@@ -61,7 +61,7 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
     cursor: pointer;
 }
 .spec-tree-item:hover {
-    background: rgba(255, 255, 255, 0.04);
+    background: color-mix(in srgb, var(--paper) 4%, transparent);
 }
 .spec-tree-item.active {
     background: var(--accent-soft);
@@ -101,23 +101,23 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
     white-space: nowrap;
 }
 .spec-tree-badge.tone-muted {
-    background: rgba(255, 255, 255, 0.06);
+    background: color-mix(in srgb, var(--paper) 6%, transparent);
     color: var(--text-3);
 }
 .spec-tree-badge.tone-spec {
-    background: rgba(76, 194, 255, 0.12);
+    background: color-mix(in srgb, var(--next) 12%, transparent);
     color: var(--accent);
 }
 .spec-tree-badge.tone-theme {
-    background: rgba(227, 179, 65, 0.12);
+    background: color-mix(in srgb, var(--warn) 12%, transparent);
     color: var(--theme);
 }
 .spec-tree-badge.tone-ok {
-    background: rgba(108, 203, 95, 0.12);
+    background: color-mix(in srgb, var(--ok) 12%, transparent);
     color: var(--ok);
 }
 .spec-tree-badge.tone-warn {
-    background: rgba(255, 193, 7, 0.12);
+    background: color-mix(in srgb, var(--warn) 12%, transparent);
     color: var(--warn);
 }
 .spec-tree-count {
@@ -125,14 +125,14 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
     min-width: 18px;
     padding: 1px 5px;
     border-radius: var(--r-pill);
-    background: rgba(255, 255, 255, 0.07);
+    background: color-mix(in srgb, var(--paper) 7%, transparent);
     color: var(--text-3);
     font-family: var(--mono);
     font-size: 10.5px;
     text-align: center;
 }
 .spec-tree-item.active .spec-tree-count {
-    background: rgba(76, 194, 255, 0.18);
+    background: color-mix(in srgb, var(--next) 18%, transparent);
     color: var(--accent);
 }
 .spec-tree-title {

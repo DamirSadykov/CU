@@ -49,7 +49,7 @@ const fill = computed(() => {
     width: 196px;
     padding: 14px 14px 16px;
     border-right: 1px solid var(--stroke);
-    background: rgba(0, 0, 0, 0.14);
+    background: color-mix(in srgb, var(--hard) 14%, transparent);
     display: flex;
     flex-direction: column;
     gap: 8px;

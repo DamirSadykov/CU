@@ -33,7 +33,7 @@ defineEmits<{ (e: "click", value: MouseEvent): void }>();
     padding: 4px 8px;
     border: 1px solid var(--stroke-strong);
     border-radius: var(--r-pill);
-    background: rgba(29, 29, 29, 0.96);
+    background: color-mix(in srgb, var(--ink-1) 96%, transparent);
     font: inherit;
     text-align: left;
     cursor: pointer;

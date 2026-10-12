@@ -141,19 +141,19 @@ function hide() {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  color: var(--accent, #d97757);
-  background: var(--accent-soft, rgba(217, 119, 87, 0.18));
+  color: var(--accent, var(--ag-claude));
+  background: var(--accent-soft, color-mix(in srgb, var(--ag-claude) 18%, transparent));
   cursor: help;
 }
 /* An alias (folded INTO another) reads as secondary — muted, not accent. */
 .pl-badge.alias {
-  color: var(--text-3, rgba(255, 255, 255, 0.7));
-  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-3, color-mix(in srgb, var(--paper) 70%, transparent));
+  background: color-mix(in srgb, var(--paper) 8%, transparent);
 }
 /* A group (works-with) badge — distinct cluster glyph, calmer tint. */
 .pl-badge.group {
-  color: var(--text-2, rgba(255, 255, 255, 0.85));
-  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-2, color-mix(in srgb, var(--paper) 85%, transparent));
+  background: color-mix(in srgb, var(--paper) 10%, transparent);
 }
 .pl-badge:focus-visible {
   outline: 1px solid var(--accent);
@@ -171,29 +171,29 @@ function hide() {
   flex-direction: column;
   gap: 2px;
   padding: 7px 9px;
-  background: var(--card-bg, #232323);
-  border: 1px solid var(--stroke-strong, rgba(255, 255, 255, 0.14));
-  border-left: 2px solid var(--accent, #d97757);
+  background: var(--card-bg);
+  border: 1px solid var(--stroke-strong, color-mix(in srgb, var(--paper) 14%, transparent));
+  border-left: 2px solid var(--accent, var(--ag-claude));
   border-radius: 6px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--hard) 45%, transparent);
   font-family: var(--segoe);
   pointer-events: none;
 }
 .pl-pop.alias {
-  border-left-color: var(--text-3, rgba(255, 255, 255, 0.7));
+  border-left-color: var(--text-3, color-mix(in srgb, var(--paper) 70%, transparent));
 }
 .pl-pop.group {
-  border-left-color: var(--text-2, rgba(255, 255, 255, 0.85));
+  border-left-color: var(--text-2, color-mix(in srgb, var(--paper) 85%, transparent));
 }
 .pl-pop-lbl {
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--text-4, rgba(255, 255, 255, 0.5));
+  color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
 }
 .pl-pop-items {
   font-size: 12px;
-  color: var(--text, #e8e8e8);
+  color: var(--text);
   word-break: break-word;
 }
 </style>

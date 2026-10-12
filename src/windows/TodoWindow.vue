@@ -67,11 +67,11 @@ interface Column {
   dot: string;
 }
 const COLUMNS: Column[] = [
-  { id: "backlog", labelKey: "colBacklog", dot: "#9aa0aa" },
-  { id: "queue", labelKey: "colQueue", dot: "#ffc107" },
-  { id: "in_progress", labelKey: "statusInProgress", dot: "#4cc2ff" },
-  { id: "review", labelKey: "colReview", dot: "#b388ff" },
-  { id: "done", labelKey: "statusDone", dot: "#6ccb5f" },
+  { id: "backlog", labelKey: "colBacklog", dot: "var(--paper-4)" },
+  { id: "queue", labelKey: "colQueue", dot: "var(--warn)" },
+  { id: "in_progress", labelKey: "statusInProgress", dot: "var(--next)" },
+  { id: "review", labelKey: "colReview", dot: "var(--ag-codex)" },
+  { id: "done", labelKey: "statusDone", dot: "var(--ok)" },
 ];
 const COL_BY_ID: Record<string, Column> = Object.fromEntries(
   COLUMNS.map((c) => [c.id, c]),
@@ -420,7 +420,8 @@ async function renderFlowDiagram() {
 
   try {
     const { default: mermaid } = await import("mermaid");
-    mermaid.initialize({ startOnLoad: false, securityLevel: "strict", theme: "dark" });
+    const lightBase = ["light", "acid"].includes(document.documentElement.dataset.theme ?? "light");
+    mermaid.initialize({ startOnLoad: false, securityLevel: "strict", theme: lightBase ? "default" : "dark" });
     const parts: string[] = [];
     for (const [index, section] of sections.entries()) {
       const heading = document.createElement("div");
@@ -2245,7 +2246,7 @@ onUnmounted(() => {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--flyout-bg, #1c1c1c);
+  background: var(--flyout-bg, var(--ink-0));
   color: var(--text);
   font-family: var(--segoe);
   overflow: hidden;
@@ -2320,7 +2321,6 @@ onUnmounted(() => {
   padding: 3px 6px;
   font-size: 11px;
   font-family: var(--segoe);
-  color-scheme: dark;
 }
 .tw-more {
   width: 100%;
@@ -2402,7 +2402,7 @@ onUnmounted(() => {
 }
 .tw-vt.active {
   background: var(--accent);
-  color: #06283b;
+  color: var(--on-accent);
 }
 .tw-vt svg {
   opacity: 0.85;
@@ -2410,7 +2410,7 @@ onUnmounted(() => {
 .tw-add {
   border: 1px solid var(--accent);
   background: var(--accent);
-  color: #06283b;
+  color: var(--on-accent);
   border-radius: 6px;
   padding: 6px 12px;
   font-size: 12px;
@@ -2422,7 +2422,7 @@ onUnmounted(() => {
   filter: brightness(1.1);
 }
 .tw-error {
-  color: #f87171;
+  color: var(--crit);
   font-size: 12px;
   word-break: break-word;
   padding: 8px 16px 0;
@@ -2432,9 +2432,9 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #f2b90c;
-  background: rgba(242, 185, 12, 0.1);
-  border: 1px solid rgba(242, 185, 12, 0.3);
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warn) 30%, transparent);
   border-radius: 6px;
   font-size: 12px;
   word-break: break-word;
@@ -2447,7 +2447,7 @@ onUnmounted(() => {
 }
 .tw-recovery-restore {
   flex-shrink: 0;
-  border: 1px solid rgba(242, 185, 12, 0.4);
+  border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent);
   background: transparent;
   color: inherit;
   border-radius: 4px;
@@ -2461,7 +2461,7 @@ onUnmounted(() => {
   cursor: default;
 }
 .tw-recovery-restore:not(:disabled):hover {
-  background: rgba(242, 185, 12, 0.15);
+  background: color-mix(in srgb, var(--warn) 15%, transparent);
 }
 .tw-empty {
   color: var(--text-3);
@@ -2497,7 +2497,7 @@ onUnmounted(() => {
   color: var(--text);
 }
 .tw-mode:not(.active):hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: color-mix(in srgb, var(--paper) 5%, transparent);
 }
 /* Theme-proof active state: a translucent accent tint (sits dark over the card) with
    white text — readable under ANY accent (blue/purple/claude/mint), unlike a dark
@@ -2516,7 +2516,7 @@ onUnmounted(() => {
   height: 16px;
   padding: 0 4px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.14);
+  background: color-mix(in srgb, var(--paper) 14%, transparent);
   color: inherit;
   font-size: 10.5px;
   font-weight: 600;
@@ -2560,7 +2560,7 @@ onUnmounted(() => {
 }
 .tw-ext-card:hover {
   border-color: var(--accent);
-  background: var(--card-bg-hover, rgba(255, 255, 255, 0.03));
+  background: var(--card-bg-hover, color-mix(in srgb, var(--paper) 3%, transparent));
 }
 .tw-ext-card:focus-visible {
   outline: 2px solid var(--accent);
@@ -2622,21 +2622,21 @@ onUnmounted(() => {
   letter-spacing: 0.03em;
   padding: 2px 7px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.06);
+  background: color-mix(in srgb, var(--paper) 6%, transparent);
   color: var(--text-3);
   white-space: nowrap;
 }
 .tw-ext-status.s-done {
-  background: rgba(108, 203, 95, 0.16);
-  color: #6ccb5f;
+  background: color-mix(in srgb, var(--ok) 16%, transparent);
+  color: var(--ok);
 }
 .tw-ext-status.s-active {
-  background: rgba(76, 194, 255, 0.16);
-  color: #4cc2ff;
+  background: color-mix(in srgb, var(--next) 16%, transparent);
+  color: var(--next);
 }
 .tw-ext-status.s-open {
-  background: rgba(154, 160, 170, 0.16);
-  color: #b6bcc6;
+  background: color-mix(in srgb, var(--paper-3) 16%, transparent);
+  color: var(--paper-2);
 }
 .tw-ext-assignee {
   font-size: 11.5px;
@@ -2691,7 +2691,7 @@ onUnmounted(() => {
   display: flex;
   gap: 12px;
   padding: 7px 0;
-  border-bottom: 1px solid var(--stroke-weak, rgba(255, 255, 255, 0.05));
+  border-bottom: 1px solid var(--stroke-weak, color-mix(in srgb, var(--paper) 5%, transparent));
   font-size: 13px;
 }
 .tw-ext-detail-row:last-child {
@@ -2712,7 +2712,7 @@ onUnmounted(() => {
 .tw-ext-detail-desc {
   margin: 0 0 16px;
   padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.03);
+  background: color-mix(in srgb, var(--paper) 3%, transparent);
   border: 1px solid var(--stroke-strong);
   border-radius: 6px;
   font-size: 13px;
@@ -2825,7 +2825,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--paper) 2%, transparent);
   border: 1px solid var(--stroke);
   border-radius: 10px;
   transition: border-color 120ms, background 120ms;
@@ -2951,10 +2951,10 @@ onUnmounted(() => {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--text-3, #7a808a);
+  color: var(--text-3);
 }
 .tw-handoff-item {
-  border-left: 2px solid var(--stroke-strong, rgba(255, 255, 255, 0.12));
+  border-left: 2px solid var(--stroke-strong, color-mix(in srgb, var(--paper) 12%, transparent));
   background: var(--card-bg);
   border-radius: 4px;
   padding: 6px 9px;
@@ -2978,7 +2978,7 @@ onUnmounted(() => {
   margin: 3px 0 0;
   font-size: 12px;
   font-style: italic;
-  color: var(--text-3, #7a808a);
+  color: var(--text-3);
 }
 .tw-card-meta {
   display: flex;
@@ -3020,12 +3020,12 @@ onUnmounted(() => {
   text-transform: capitalize;
 }
 .tw-prio-high {
-  color: #d4453a;
-  background: rgba(212, 69, 58, 0.13);
+  color: var(--crit);
+  background: color-mix(in srgb, var(--crit) 13%, transparent);
 }
 .tw-prio-medium {
-  color: #c07c19;
-  background: rgba(192, 124, 25, 0.14);
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
 }
 .tw-prio-low {
   color: var(--text-3);
@@ -3044,8 +3044,8 @@ onUnmounted(() => {
 /* Task that arrived via a board import (#181) — in particular a fork, whose local
    twin is still on the board, so the two need to be told apart at a glance. */
 .tw-imported {
-  color: #d29922;
-  background: rgba(210, 153, 34, 0.14);
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
   padding: 1px 7px;
   border-radius: 8px;
 }
@@ -3086,8 +3086,8 @@ onUnmounted(() => {
   color: var(--text);
 }
 .tw-icon.danger:hover {
-  border-color: #f87171;
-  color: #f87171;
+  border-color: var(--crit);
+  color: var(--crit);
 }
 
 /* Modal form */
@@ -3095,7 +3095,7 @@ onUnmounted(() => {
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: rgba(0, 0, 0, 0.5);
+  background: color-mix(in srgb, var(--hard) 50%, transparent);
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -3112,7 +3112,7 @@ onUnmounted(() => {
   border: 1px solid var(--stroke-strong);
   border-radius: 10px;
   background: var(--flyout-bg);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 16px 48px color-mix(in srgb, var(--hard) 50%, transparent);
 }
 .tw-form-title {
   font-size: 16px;
@@ -3132,7 +3132,6 @@ onUnmounted(() => {
   /* Render native controls in dark theme so the <input type="date"> calendar
      picker icon (and its popup) isn't a dark-on-dark, near-invisible glyph on
      Windows/WebView2 — same fix the settings selects already use. */
-  color-scheme: dark;
 }
 .tw-input:focus {
   outline: none;
@@ -3179,7 +3178,7 @@ onUnmounted(() => {
 .tw-btn {
   border: none;
   background: var(--accent);
-  color: #06283b;
+  color: var(--on-accent);
   border-radius: 5px;
   padding: 7px 16px;
   font-size: 12px;
@@ -3197,11 +3196,11 @@ onUnmounted(() => {
   border: 1px solid var(--stroke-strong);
 }
 .tw-btn.danger {
-  background: #e0524a;
-  color: #fff;
+  background: color-mix(in srgb, var(--crit) 85%, var(--paper));
+  color: var(--paper);
 }
 .tw-btn.danger:hover {
-  background: #d4453a;
+  background: var(--crit);
 }
 /* Delete-confirmation dialog: a narrow .tw-form panel with a short question. */
 .tw-confirm {
@@ -3221,9 +3220,9 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #c4a7ff;
-  background: rgba(179, 136, 255, 0.16);
-  border: 1px solid rgba(179, 136, 255, 0.5);
+  color: var(--ag-codex);
+  background: color-mix(in srgb, var(--ag-codex) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ag-codex) 50%, transparent);
   border-radius: 6px;
   padding: 1px 6px;
   line-height: 1.5;
@@ -3239,7 +3238,7 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: var(--success, #6ccb5f);
+  color: var(--success, var(--ok));
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
@@ -3286,7 +3285,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--paper) 2%, transparent);
   border: 1px solid var(--stroke);
   border-radius: 10px;
   padding: 8px;
@@ -3354,7 +3353,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 13px;
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--paper) 2%, transparent);
   border: 1px solid var(--stroke);
   border-radius: 10px;
   padding: 18px 20px;
@@ -3424,7 +3423,7 @@ onUnmounted(() => {
   font-variant-numeric: tabular-nums;
 }
 .tw-block-errs {
-  color: var(--danger, #d9534f);
+  color: var(--crit);
 }
 .tw-block-kind {
   margin-left: auto;
@@ -3495,7 +3494,7 @@ onUnmounted(() => {
 }
 /* Claude comments get the same violet accent as the AI badge. */
 .tw-comment.ai {
-  border-left-color: #b388ff;
+  border-left-color: var(--ag-codex);
 }
 .tw-comment-head {
   display: flex;
@@ -3509,7 +3508,7 @@ onUnmounted(() => {
   color: var(--text-2);
 }
 .tw-comment-author.ai {
-  color: #c4a7ff;
+  color: var(--ag-codex);
 }
 .tw-comment-time {
   font-size: 11.5px;
@@ -3532,7 +3531,7 @@ onUnmounted(() => {
   opacity: 1;
 }
 .tw-comment-del:hover {
-  color: #f87171;
+  color: var(--crit);
   background: var(--card-bg-hover);
 }
 .tw-comment-body {
@@ -3618,8 +3617,8 @@ onUnmounted(() => {
   margin-left: 4px;
 }
 .tw-ref-proj {
-  color: #c4a7ff;
-  background: rgba(179, 136, 255, 0.16);
+  color: var(--ag-codex);
+  background: color-mix(in srgb, var(--ag-codex) 16%, transparent);
 }
 
 /* Inline-reference autocomplete menu */
@@ -3641,7 +3640,7 @@ onUnmounted(() => {
   border-radius: 6px;
   max-height: 220px;
   overflow-y: auto;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--hard) 45%, transparent);
 }
 .tw-mention.up {
   top: auto;

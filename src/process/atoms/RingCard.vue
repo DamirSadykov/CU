@@ -91,15 +91,15 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
 }
 
 .ring-card.tone-hub {
-    border-color: rgba(76, 194, 255, 0.5);
-    background: rgba(76, 194, 255, 0.07);
+    border-color: color-mix(in srgb, var(--next) 50%, transparent);
+    background: color-mix(in srgb, var(--next) 7%, transparent);
 }
 .ring-card.tone-hub .ring-label {
     color: var(--accent);
 }
 
 .ring-card.tone-spec {
-    border-color: rgba(76, 194, 255, 0.35);
+    border-color: color-mix(in srgb, var(--next) 35%, transparent);
 }
 .ring-card.tone-spec .ring-label {
     color: var(--accent);
@@ -108,8 +108,8 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
 .ring-card.tone-focus {
     width: 230px;
     padding: 11px 13px 12px;
-    border-color: rgba(227, 179, 65, 0.35);
-    background: rgba(227, 179, 65, 0.11);
+    border-color: color-mix(in srgb, var(--warn) 35%, transparent);
+    background: color-mix(in srgb, var(--warn) 11%, transparent);
 }
 .ring-card.tone-focus .ring-label {
     font-family: var(--segoe);

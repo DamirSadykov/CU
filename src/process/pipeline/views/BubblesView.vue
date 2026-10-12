@@ -1248,7 +1248,7 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
 }
 .bub-wire {
     fill: none;
-    stroke: rgba(255, 255, 255, 0.32);
+    stroke: color-mix(in srgb, var(--paper) 32%, transparent);
     stroke-linecap: round;
 }
 .bub-wire.dashed {
@@ -1264,11 +1264,11 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
     cursor: pointer;
 }
 .bub-arrow {
-    fill: rgba(255, 255, 255, 0.4);
+    fill: color-mix(in srgb, var(--paper) 40%, transparent);
 }
 .bub-inner-wire {
     fill: none;
-    stroke: rgba(255, 255, 255, 0.22);
+    stroke: color-mix(in srgb, var(--paper) 22%, transparent);
     stroke-width: 1.2;
 }
 .bub-inner-wire.dashed {
@@ -1282,7 +1282,7 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
     padding: 1px 6px;
     border: 1px solid var(--stroke-strong);
     border-radius: var(--r-pill);
-    background: #1b1b1b;
+    background: var(--ink-1);
     font-family: var(--mono);
     font-size: 10.5px;
     line-height: 1.5;
@@ -1293,7 +1293,7 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
 }
 .bub-elabel:hover,
 .bub-elabel.marked {
-    border-color: rgba(76, 194, 255, 0.5);
+    border-color: color-mix(in srgb, var(--next) 50%, transparent);
     color: var(--accent);
 }
 
@@ -1302,15 +1302,15 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
     z-index: 1;
     border-radius: 50%;
     border: 1px solid var(--project-stroke);
-    background: rgba(255, 255, 255, 0.02);
+    background: color-mix(in srgb, var(--paper) 2%, transparent);
     cursor: pointer;
 }
 .bub.spec {
-    border-color: rgba(76, 194, 255, 0.22);
+    border-color: color-mix(in srgb, var(--next) 22%, transparent);
 }
 .bub.open {
     z-index: 1;
-    background: rgba(255, 255, 255, 0.03);
+    background: color-mix(in srgb, var(--paper) 3%, transparent);
     cursor: default;
 }
 .bub-ring {
@@ -1340,13 +1340,13 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
     stroke: var(--crit);
 }
 .bub-loop {
-    fill: #1f1f1f;
-    stroke: rgba(255, 255, 255, 0.3);
+    fill: var(--ink-2);
+    stroke: color-mix(in srgb, var(--paper) 30%, transparent);
     stroke-width: 1.2;
 }
 .bub-loop-tail {
     fill: none;
-    stroke: rgba(255, 255, 255, 0.22);
+    stroke: color-mix(in srgb, var(--paper) 22%, transparent);
     stroke-width: 1.2;
 }
 .bub-loop-text {
@@ -1367,7 +1367,7 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
 .bub-head.open {
     border: 1px solid var(--stroke);
     border-radius: var(--r-card);
-    background: rgba(24, 24, 24, 0.92);
+    background: color-mix(in srgb, var(--ink-1) 92%, transparent);
 }
 .bub-address {
     margin-top: 4px;
@@ -1425,15 +1425,15 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
     cursor: pointer;
 }
 .bub-chip.tone-done {
-    border-color: rgba(108, 203, 95, 0.4);
+    border-color: color-mix(in srgb, var(--ok) 40%, transparent);
     color: var(--ok);
 }
 .bub-chip.tone-blocked {
-    border-color: rgba(248, 113, 113, 0.4);
+    border-color: color-mix(in srgb, var(--crit) 40%, transparent);
     color: var(--crit);
 }
 .bub-chip.tone-wait {
-    border-color: rgba(227, 179, 65, 0.32);
+    border-color: color-mix(in srgb, var(--warn) 32%, transparent);
 }
 .bub-chip-id {
     display: block;
@@ -1456,7 +1456,7 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
     border-radius: 50%;
 }
 .bub-chip-dots .dot.in {
-    background: rgba(255, 255, 255, 0.45);
+    background: color-mix(in srgb, var(--paper) 45%, transparent);
 }
 .bub-chip-dots .dot.out {
     background: var(--accent);
@@ -1480,7 +1480,7 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
     padding: 14px 18px;
     border: 1px solid var(--stroke-strong);
     border-radius: var(--r-card);
-    background: rgba(26, 26, 26, 0.96);
+    background: color-mix(in srgb, var(--ink-1) 96%, transparent);
     text-align: center;
     transform: translateX(-50%);
 }

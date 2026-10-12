@@ -266,17 +266,16 @@ onMounted(async () => {
   padding: 8px 10px;
   border: 1px solid var(--stroke-strong);
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.04);
+  background: color-mix(in srgb, var(--paper) 4%, transparent);
   color: var(--text);
   font-size: 13px;
   font-family: var(--segoe);
   outline: none;
-  color-scheme: dark;
   transition: border-color 120ms, background 120ms;
 }
 .field-input:focus {
   border-color: var(--accent);
-  background: rgba(255, 255, 255, 0.06);
+  background: color-mix(in srgb, var(--paper) 6%, transparent);
 }
 .field-input::placeholder {
   color: var(--text-4);
@@ -299,7 +298,7 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 .status-dot.ok {
-  background: #4ade80;
+  background: var(--ok);
 }
 .status-dot.off {
   background: var(--text-4);
@@ -338,7 +337,7 @@ onMounted(async () => {
   border: none;
   border-radius: var(--card-radius);
   background: var(--accent);
-  color: white;
+  color: var(--on-accent);
   font-size: 13px;
   font-weight: 500;
   font-family: var(--segoe);
@@ -369,13 +368,13 @@ onMounted(async () => {
   transition: background 120ms, color 120ms;
 }
 .ghost-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: color-mix(in srgb, var(--paper) 5%, transparent);
   color: var(--text);
 }
 
 .err {
   font-size: 12.5px;
-  color: #f87171;
+  color: var(--crit);
   padding: 4px 2px;
 }
 
@@ -415,7 +414,6 @@ onMounted(async () => {
   width: 140px;
   padding: 6px 8px;
   cursor: pointer;
-  color-scheme: dark;
 }
 /* WebView2 renders the native dropdown light by default → white-on-white. Pin the
    option background/text to the dark surface so the list is readable. */

@@ -490,7 +490,7 @@ watch(
             @click.stop="toggle(row.node)"
           /><span class="row-main"><span class="row-icon">{{ icon(row.node) }}</span
           ><span v-if="row.node.kind === 'tool'" class="tool-number">#{{ row.node.sequence ?? row.modelNumber }}</span
-          ><span v-if="row.node.kind === 'tool'" class="type-label">{{ t(`workTraceType_${nodeType(row.node)}`) }}</span
+          ><span v-if="row.node.kind === 'tool'" class="type-label" :style="{ '--c': TRACE_TYPE_COLORS[nodeType(row.node)] }">{{ t(`workTraceType_${nodeType(row.node)}`) }}</span
           ><template v-if="row.node.kind === 'session'"><span class="session-role">{{ sessionParts(row.node)[0] }}</span><code class="session-id">{{ sessionParts(row.node)[1] }}</code></template
           ><span v-else class="name">{{ label(row) }}</span
           ><span
@@ -499,7 +499,7 @@ watch(
             class="type-label"
             :title="contextTitle(context)"
             >{{ contextText(context) }}</span
-          ><span v-if="row.node.kind === 'model'" class="type-label">{{ t(`workTraceType_${nodeType(row.node)}`) }}</span
+          ><span v-if="row.node.kind === 'model'" class="type-label" :style="{ '--c': TRACE_TYPE_COLORS[nodeType(row.node)] }">{{ t(`workTraceType_${nodeType(row.node)}`) }}</span
           ><span v-if="row.node.model && !row.node.sequence" class="meta">{{ row.node.model }}</span
           ><span v-if="row.node.kind === 'run' && reviewText(row.node)" class="review" :class="{ passed: attemptReviewSummary(row.node.result, row.node.review)?.passed }" @click.stop="select(row.node)">{{ reviewText(row.node) }}</span></span
           ><span
@@ -618,7 +618,7 @@ watch(
 .trace-body { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr) minmax(250px, .65fr); }
 .work-tree {
   border: 1px solid var(--stroke-strong);
-  border-radius: var(--r-ctl);
+  border-radius: var(--r-card);
   max-height: 370px;
   overflow: auto;
 }
@@ -648,9 +648,9 @@ watch(
   box-shadow: inset 2px 0 var(--accent);
 }
 .model-row {
-  background: color-mix(in srgb, var(--accent-soft) 38%, transparent);
+  background: var(--ink-2);
 }
-.attempt-row { background: rgba(255, 255, 255, .025); font-weight: 600; height: 32px; min-height: 32px; }
+.attempt-row { background: color-mix(in srgb, var(--paper) 2.5%, transparent); font-weight: 600; height: 32px; min-height: 32px; }
 .work-row.attempt-row.selected { background: var(--accent-soft); }
 .row-main { align-items: center; display: flex; gap: 6px; min-width: 0; overflow: hidden; white-space: nowrap; }
 .row-main > * { flex-shrink: 0; }
@@ -681,9 +681,9 @@ watch(
 .review-summary { border-bottom: 1px solid var(--stroke-strong); display: flex; flex-direction: column; gap: 6px; padding-bottom: 8px; }
 .review-counts { display: flex; flex-wrap: wrap; gap: 4px; }
 .review-count, .finding-level { border-radius: var(--r-pill); font-size: 11px; padding: 2px 6px; }
-.review-critical { background: var(--crit); color: var(--text-2); }
-.review-high { background: var(--high); color: var(--text-2); }
-.review-medium { background: var(--warn); color: var(--text); }
+.review-critical { background: var(--crit); color: var(--on-close); }
+.review-high { background: var(--high); color: var(--on-hemp); }
+.review-medium { background: var(--warn); color: var(--on-next); }
 .review-low { background: var(--accent-soft); color: var(--accent); }
 .review-unknown { background: var(--node-bg); color: var(--text-3); }
 .review-findings { display: flex; flex-direction: column; gap: 6px; list-style: none; margin: 0; padding: 0; }
@@ -691,9 +691,9 @@ watch(
 .review-findings code { color: var(--text-2); font-family: var(--mono); font-size: 12px; }
 .review-findings small { color: var(--text-3); flex-basis: 100%; }
 .type-label {
-  background: var(--accent-soft);
+  background: color-mix(in srgb, var(--c, var(--paper-3)) 16%, transparent);
   border-radius: 9px;
-  color: var(--accent);
+  color: var(--c, var(--paper-3));
   font-size: 12px;
   padding: 1px 5px;
   white-space: nowrap;
@@ -738,7 +738,7 @@ watch(
 }
 .details {
   border: 1px solid var(--stroke-strong);
-  border-radius: var(--r-ctl);
+  border-radius: var(--r-card);
   display: flex;
   flex-direction: column;
   font-size: 13px;
@@ -755,7 +755,7 @@ watch(
   color: var(--text-3);
 }
 .details pre {
-  background: #161616;
+  background: var(--ink-0);
   margin: 0;
   max-height: 130px;
   overflow: auto;

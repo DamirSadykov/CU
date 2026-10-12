@@ -177,7 +177,7 @@ function stopFocus(completed: boolean) {
   padding: 5px 10px;
   border: 1px solid var(--stroke-strong);
   border-radius: var(--card-radius);
-  background: rgba(255, 255, 255, 0.04);
+  background: color-mix(in srgb, var(--paper) 4%, transparent);
   color: var(--text-2);
   font-size: 12px;
   font-family: var(--segoe);
@@ -189,7 +189,7 @@ function stopFocus(completed: boolean) {
 }
 .chip-btn.primary {
   background: var(--accent);
-  color: white;
+  color: var(--on-accent);
   border-color: transparent;
 }
 .focus-status {
@@ -213,7 +213,7 @@ function stopFocus(completed: boolean) {
   padding: 5px 8px;
   border: 1px solid var(--stroke-strong);
   border-radius: var(--card-radius);
-  background: rgba(255, 255, 255, 0.04);
+  background: color-mix(in srgb, var(--paper) 4%, transparent);
   color: var(--text-2);
   font-size: 12px;
   font-family: var(--segoe);

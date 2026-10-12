@@ -215,14 +215,21 @@ watch([() => props.tree, selectedId], ([tree, id]) => {
   persistCollapsed(next);
 }, { immediate: true });
 
+let scrolledTo: string | null = null;
+
 async function scrollSelected(id: string | null): Promise<void> {
   await nextTick();
   if (!id) return;
-  root.value?.querySelector<HTMLElement>(`[data-tree-id="${CSS.escape(id)}"]`)?.scrollIntoView({ block: "nearest" });
+  const row = root.value?.querySelector<HTMLElement>(`[data-tree-id="${CSS.escape(id)}"]`);
+  if (!row) return;
+  row.scrollIntoView({ block: "nearest" });
+  scrolledTo = id;
 }
 
 watch(selectedId, scrollSelected, { flush: "post", immediate: true });
-watch(rows, () => scrollSelected(selectedId.value), { flush: "post" });
+watch(rows, () => {
+  if (selectedId.value !== scrolledTo) void scrollSelected(selectedId.value);
+}, { flush: "post" });
 </script>
 
 <template>

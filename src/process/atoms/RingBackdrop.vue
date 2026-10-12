@@ -75,7 +75,7 @@ defineExpose({ remeasure: schedule });
 }
 .ring {
     fill: none;
-    stroke: rgba(255, 255, 255, 0.07);
+    stroke: color-mix(in srgb, var(--paper) 7%, transparent);
     stroke-dasharray: 3 6;
 }
 </style>

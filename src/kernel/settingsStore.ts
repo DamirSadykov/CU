@@ -6,7 +6,6 @@ import {
     normalizeAlertTypes,
 } from "./thresholds";
 import type { AlertTiers, AlertTypes } from "./thresholds";
-import { DEFAULT_FONT_ID } from "./fontSwitch";
 
 export type FlowLanguage = "cs" | "rs" | "ts" | "js";
 export const DEFAULT_FLOW_LANGUAGES: readonly FlowLanguage[] = ["cs"];
@@ -64,7 +63,8 @@ export interface SettingsSnapshot {
     // Raw persisted locale — null when unset. Callers decide whether to apply it
     // (validating "en"/"ru"); an unset value must NOT clobber the running locale.
     locale: string | null;
-    uiFont: string;
+    uiTheme: string;
+    uiSkin: string;
 }
 
 export const SNAPSHOT_KEYS = [
@@ -101,7 +101,8 @@ export const SNAPSHOT_KEYS = [
     "correctionsEnabled",
     "specsEnabled",
     "locale",
-    "uiFont",
+    "uiTheme",
+    "uiSkin",
 ] as const;
 
 export const DIRECT_KEYS = [
@@ -153,7 +154,8 @@ export function defaultSettings(): SettingsSnapshot {
         correctionsEnabled: false,
         specsEnabled: false,
         locale: null,
-        uiFont: DEFAULT_FONT_ID,
+        uiTheme: "system",
+        uiSkin: "standard",
     };
 }
 
@@ -228,7 +230,8 @@ export async function readSettingsSnapshot(): Promise<SettingsSnapshot> {
         s.correctionsEnabled = (await get<boolean>("correctionsEnabled")) ?? s.correctionsEnabled;
         s.specsEnabled = (await get<boolean>("specsEnabled")) ?? s.specsEnabled;
         s.locale = (await get<string>("locale")) ?? null;
-        s.uiFont = (await get<string>("uiFont")) ?? s.uiFont;
+        s.uiTheme = (await get<string>("uiTheme")) ?? s.uiTheme;
+        s.uiSkin = (await get<string>("uiSkin")) ?? s.uiSkin;
     } catch {
         // First run / not under Tauri — defaults stand.
     }
