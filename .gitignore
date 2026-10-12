@@ -23,3 +23,5 @@ settings.local.json
 src-tauri/target-test/
 target-test/
 /.codex-cargo-target/
+
+docs/design/
