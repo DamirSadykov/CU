@@ -525,10 +525,15 @@ export function runLogPath() {
   return appDataFile("runs.jsonl");
 }
 
-function emitRunEvent(ctx, event) {
+export function emitRunEvent(ctx, event) {
   if (ctx.dry || !ctx.events) return;
   const task = event.task == null ? null : `t#${String(event.task).replace(/^t?#/, "")}`;
   appendRunEvent({ run: ctx.runId, change: `c#${ctx.root.number}`, ...event, task });
+}
+
+export function workerSessionAnnouncer(ctx, task, attempt) {
+  return ({ engine, session, cwd, transcript }) =>
+    emitRunEvent(ctx, { task: task.number, kind: "worker_session", attempt, engine, session, cwd, transcript });
 }
 
 export function appendRunRecord(rec, file) {
@@ -1331,7 +1336,7 @@ async function runOne(ctx, task, wave = []) {
 
   let result;
   try {
-    result = (await ctx.effects.executeStep(begun.brief)) || {};
+    result = (await ctx.effects.executeStep({ ...begun.brief, onSession: workerSessionAnnouncer(ctx, task, begun.attempt) })) || {};
   } catch (err) {
     result = { ok: false, error: String((err && err.message) || err) };
   }

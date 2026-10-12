@@ -50,6 +50,7 @@ export function formatRunEvent(event) {
   if (kind === "step_start") return `${prefix}${attempt}: step start${event.route ? ` (${event.route})` : ""}`.trim();
   if (kind === "worker_done") return `${prefix}${attempt}: worker done${typeof event.cost === "number" ? ` $${Math.round(event.cost * 10000) / 10000}` : ""}`.trim();
   if (kind === "run_start" || kind === "run_end") return `${changeId(event?.change)}: ${kind.replace("_", " ")}`.trim();
+  if (kind === "worker_session") return `${prefix}${attempt}: worker session ${event.engine || "?"} ${event.session || ""}`.trim();
   if (kind === "escalate") return `${prefix}${attempt}: escalate${event.route ? ` (${event.route})` : ""}`.trim();
   return `${prefix}${attempt}: ${kind}`.trim();
 }
