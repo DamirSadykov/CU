@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "profiles": {
+    "architect": { "provider": "openai", "model": "gpt-5.6-sol", "role": "architect" },
+    "worker": { "provider": "anthropic", "model": "sonnet", "role": "worker" },
+    "reviewer": { "provider": "anthropic", "model": "opus", "role": "reviewer" }
+  },
+  "legacyExtension": { "enabled": true }
+}

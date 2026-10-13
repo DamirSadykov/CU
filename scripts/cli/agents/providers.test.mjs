@@ -93,6 +93,15 @@ describe("providerArgv · openai", () => {
 });
 
 describe("providerArgv · anthropic", () => {
+  it("passes an explicit runner guard settings file", () => {
+    const { args } = providerArgv(
+      { provider: "anthropic" },
+      { bin: "claude", settings: "C:/tmp/cu-runner-settings.json", allowedTools: [] },
+    );
+    expect(args.slice(args.indexOf("--settings"), args.indexOf("--settings") + 2))
+      .toEqual(["--settings", "C:/tmp/cu-runner-settings.json"]);
+  });
+
   it("builds the -p json argv with the given permission mode", () => {
     const { file, args } = providerArgv(
       { provider: "anthropic" },

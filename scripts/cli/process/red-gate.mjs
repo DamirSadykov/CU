@@ -20,7 +20,7 @@ export function gitHead(cwd) {
 
 export const UNTRACKED_SNAPSHOT_LIMIT = 2000;
 
-export function snapshotTree(cwd) {
+export function snapshotTree(cwd, { requireComplete = false } = {}) {
   let indexRel;
   try {
     indexRel = execFileSync("git", ["rev-parse", "--git-path", "index"], {
@@ -49,6 +49,19 @@ export function snapshotTree(cwd) {
     }).split("\0").filter(Boolean).length;
   } catch {}
   const trackedOnly = untracked > UNTRACKED_SNAPSHOT_LIMIT;
+  // A checkpoint may deliberately omit a very large untracked set, but that
+  // truncated view can never prove that a failed model attempt had no side
+  // effects. Fallback callers opt into a complete snapshot and fail closed
+  // when producing one would cross the checkpoint's safety bound.
+  if (trackedOnly && requireComplete) {
+    try {
+      fs.rmSync(tmpIndex, { force: true });
+    } catch {}
+    return {
+      ok: false,
+      error: `${untracked} untracked files exceed the complete snapshot limit (${UNTRACKED_SNAPSHOT_LIMIT})`,
+    };
+  }
   if (trackedOnly && !snapshotTree.warned) {
     snapshotTree.warned = true;
     process.stderr.write(

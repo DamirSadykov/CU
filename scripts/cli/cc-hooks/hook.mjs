@@ -38,7 +38,8 @@ import { taskContextMinRank, hookContextEnabled, workflowContextEnabled } from "
 import { appDataDir, appDataFile } from "../kernel/appdata.mjs";
 import { resolveRoot } from "../spec/spec.mjs";
 import { readAgentConfig } from "../agents/agents.mjs";
-import { planGuardWired } from "./claude-hooks.mjs";
+import { planGuardWired } from "../kernel/claude-hooks.mjs";
+import { architectGateState, ARCHITECT_OFF_COMMAND } from "../process/plan-guard.mjs";
 
 // The unified CLI is this module's grandparent-relative entry (scripts/cli.mjs);
 // resolve its absolute path so the contract below can hand Claude exact,
@@ -90,19 +91,26 @@ const prank = (t) => (t && PRANK[t.priority]) || 0;
 // as if this session walked all of it. Every line below is conditioned on what
 // agents.json and Claude's own settings.json actually say, and the two executors
 // are kept apart: what THIS session does, and what the auto runner does.
-export function workflowState(appData, cwd = process.cwd(), host = "claude") {
+export function workflowState(appData, cwd = process.cwd(), host = "claude", availabilityOptions = {}) {
   const cfg = readAgentConfig(appData);
   const model = (duty) => {
     const p = cfg.duties[duty];
-    return p && p.model ? `${p.provider}/${p.model}` : "";
+    const candidate = p?.candidates?.[0] || p;
+    return candidate?.model ? `${candidate.provider}/${candidate.model}` : "";
   };
   const mode = (duty) => cfg.duties[duty]?.mode || "off";
+  const planGuard = host === "claude" && planGuardWired(cwd);
+  const architect = host === "claude" && planGuard
+    ? architectGateState(appData, availabilityOptions)
+    : { mode: mode("architect"), available: false, candidate: null, candidates: [] };
   return {
     critic: mode("critic"),
     criticModel: model("critic"),
-    architect: mode("architect") !== "off",
-    architectModel: model("architect"),
-    planGuard: host === "claude" && planGuardWired(cwd),
+    architect: architect.mode !== "off",
+    architectAvailable: architect.available,
+    architectModel: architect.candidate?.label || model("architect"),
+    architectCandidates: architect.candidates,
+    planGuard,
     worker: model("worker"),
     review: mode("review") !== "off",
     reviewModel: model("review"),
@@ -121,7 +129,9 @@ function architectLine(state) {
     return "   No gate: `plan-guard` is not wired in Claude Code's settings, so nothing checks the plan — not the format, not the architect. Re-run the tracker's hook installer to get it.";
   if (!state.architect)
     return "   Architect gate off; the deterministic format guard still refuses a plan that is not a graph file.";
-  return `   Gate: ${state.architectModel || "the configured architect model"} refuses a plan with unmet obligations — revise and call ExitPlanMode again.`;
+  if (state.architectAvailable === false)
+    return `   Architect gate blocked: no configured candidate is available. ExitPlanMode is refused until a candidate works or you run \`${ARCHITECT_OFF_COMMAND}\`.`;
+  return `   Gate: ${state.architectModel || "the available architect model"} refuses a plan with unmet obligations. A model-call error fails open and the hook reports it; revise a refused plan and call ExitPlanMode again.`;
 }
 
 export function buildWorkflowContext(state = workflowState(), host = "claude") {
@@ -168,7 +178,8 @@ function criticSummary(state) {
 function planGateSummary(state, host) {
   if (host === "codex") return "none (Codex)";
   if (!state.planGuard) return "none";
-  if (!state.architect) return "format only";
+  if (!state.architect) return "off";
+  if (state.architectAvailable === false) return `blocked (no candidate; ${ARCHITECT_OFF_COMMAND})`;
   return `architect ${state.architectModel || "configured"}`;
 }
 

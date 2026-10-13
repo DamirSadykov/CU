@@ -761,9 +761,12 @@ describe("executeStep", () => {
   });
 
   it("reports ok:false when the binary is missing rather than throwing", async () => {
-    const r = await run({ claudeBin: path.join(tmp, "no-such-claude.exe") });
+    const r = await run({
+      claudeBin: path.join(tmp, "no-such-claude.exe"),
+      codexBin: path.join(tmp, "no-such-codex.exe"),
+    });
     expect(r.ok).toBe(false);
-    expect(r.error).toMatch(/cannot start/i);
+    expect(r.error).toMatch(/candidates_exhausted/i);
   });
 
   it("kills a hung step on the deadline and never leaves it running", async () => {

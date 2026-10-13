@@ -44,6 +44,18 @@ describe("Claude Code hook wiring discovery", () => {
     expect(planGuardWired(cwd)).toBe(true);
   });
 
+  it("counts plan-guard as a gate only on PreToolUse with a matcher covering ExitPlanMode", () => {
+    const settings = path.join(cwd, ".claude", "settings.json");
+    write(settings, { hooks: { PreToolUse: [{ matcher: "Bash", hooks: [{ command: tracker("plan-guard") }] }] } });
+    expect(planGuardWired(cwd)).toBe(false);
+    write(settings, { hooks: { UserPromptSubmit: [{ hooks: [{ command: tracker("plan-guard") }] }] } });
+    expect(planGuardWired(cwd)).toBe(false);
+    write(settings, { hooks: { PreToolUse: [{ matcher: "ExitPlanMode", hooks: [{ command: tracker("plan-guard") }] }] } });
+    expect(planGuardWired(cwd)).toBe(true);
+    write(settings, { hooks: { PreToolUse: [{ matcher: "Write|ExitPlanMode", hooks: [{ command: tracker("plan-guard") }] }] } });
+    expect(planGuardWired(cwd)).toBe(true);
+  });
+
   it("tolerates absent and broken settings, and reports no plan guard", () => {
     write(path.join(cwd, ".claude", "settings.local.json"), "{ broken json");
     expect(wiredHookAreas(cwd)).toEqual(new Set());

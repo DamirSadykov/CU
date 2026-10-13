@@ -10,15 +10,17 @@ import {
 } from "node:fs";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
-import { READ_ONLY_TOOLS, parseProviderResult, providerArgv, resolveSpawn } from "./providers.mjs";
+import { READ_ONLY_TOOLS, resolveSpawn } from "./providers.mjs";
 import { dutyModeReader } from "./duty-mode.mjs";
 import { appDataFile, writeJsonAtomic } from "../kernel/appdata.mjs";
 import { withDataDir } from "../kernel/board-lock.mjs";
+import { createCandidate } from "../models/candidate.mjs";
+import { cleanCandidate, isValidV5, migrateAgentConfig } from "./migrate.mjs";
 
 export const AGENT_PROVIDER_MANIFEST = JSON.parse(
   readFileSync(new URL("./agent-providers.json", import.meta.url), "utf8"),
 );
-export const AGENT_CONFIG_VERSION = 4;
+export const AGENT_CONFIG_VERSION = 5;
 export const PROVIDERS = Object.keys(AGENT_PROVIDER_MANIFEST.providers);
 export const DUTIES = ["critic", "architect", "worker", "review", "retro"];
 export const PROVIDER_MODELS = Object.fromEntries(
@@ -48,13 +50,12 @@ export const dutyModes = dutyMode.dutyModes;
 export const starterMode = dutyMode.starterMode;
 export const cleanMode = dutyMode.cleanMode;
 
-function normalizeModel(provider, value) {
-  const model = String(value || "").trim();
-  return PROVIDER_ALIASES[provider]?.[model] || model;
-}
-
 export function agentsPath(appData) {
   return appDataFile("agents.json", appData);
+}
+
+export function agentsBackupPath(appData) {
+  return appDataFile("agents.v4.bak.json", appData);
 }
 
 export function emptyAgentConfig() {
@@ -67,38 +68,12 @@ export function emptyAgentConfig() {
 
 export const RISKS = ["high"];
 
-function normalizeRoutes(raw) {
-  const out = {};
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
-  for (const [risk, riskRoutes] of Object.entries(raw)) {
-    const riskKey = String(risk || "").trim().toLowerCase();
-    if (!RISKS.includes(riskKey)) continue;
-    if (!riskRoutes || typeof riskRoutes !== "object" || Array.isArray(riskRoutes)) continue;
-    const entry = {};
-    for (const [duty, value] of Object.entries(riskRoutes)) {
-      const dutyKey = String(duty || "").trim().toLowerCase();
-      if (!DUTIES.includes(dutyKey)) continue;
-      if (!value || typeof value !== "object" || Array.isArray(value)) continue;
-      const route = {
-        provider: String(value.provider || "").trim().toLowerCase(),
-        model: normalizeModel(String(value.provider || "").trim().toLowerCase(), value.model),
-      };
-      const reasoningEffort = String(value.reasoning_effort || "").trim();
-      if (reasoningEffort) route.reasoning_effort = reasoningEffort;
-      entry[dutyKey] = route;
-    }
-    if (Object.keys(entry).length) out[riskKey] = entry;
-  }
-  return out;
-}
-
 function cleanProfile(value, duty) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  const provider = String(value.provider || "").trim().toLowerCase();
-  const model = normalizeModel(provider, value.model);
-  if (!PROVIDERS.includes(provider) || !PROVIDER_MODELS[provider].includes(model)) return null;
-  const out = { mode: cleanMode(duty, value.mode) || starterMode(duty), provider, model };
-  for (const key of ["role", "instructions", "reasoning_effort"]) {
+  const candidate = cleanCandidate(value);
+  if (!candidate) return null;
+  const out = { mode: cleanMode(duty, value.mode) || starterMode(duty), ...candidate };
+  for (const key of ["role", "instructions"]) {
     const v = String(value[key] || "").trim();
     if (v) out[key] = v;
   }
@@ -112,39 +87,37 @@ function cleanProfile(value, duty) {
 export function readAgentConfig(appData) {
   const file = agentsPath(appData);
   if (!existsSync(file)) return emptyAgentConfig();
+  let raw;
   try {
-    const raw = JSON.parse(readFileSync(file, "utf8"));
-    // v1 used arbitrary task profiles. Read its conventional names once so an
-    // existing architect/reviewer setup keeps working after the lifecycle map.
-    const source = raw?.duties || {
-      architect: raw?.profiles?.architect,
-      worker: raw?.profiles?.worker,
-      review: raw?.profiles?.review || raw?.profiles?.reviewer,
-    };
-    const duties = structuredClone(STARTER_DUTIES);
-    for (const [name, value] of Object.entries(source || {})) {
-      const key = String(name).trim().toLowerCase();
-      if (!DUTIES.includes(key)) continue;
-      const profile = cleanProfile(value, key);
-      if (profile) duties[key] = profile;
-    }
-    // A duty whose own `mode` was absent (v1–v3 files, or a profile the manifest
-    // rejected) takes the mode the legacy switches implied, and the starter mode
-    // only when they said nothing either.
-    for (const duty of DUTIES) {
-      duties[duty].mode = dutyMode.resolveMode(duty, source?.[duty], raw);
-    }
-    return { version: AGENT_CONFIG_VERSION, duties, routes: normalizeRoutes(raw?.routes) };
-  } catch {
-    return emptyAgentConfig();
+    raw = JSON.parse(readFileSync(file, "utf8"));
+  } catch {}
+  if (isValidV5(raw)) return raw;
+
+  // A malformed v5 is never guessed at. The original v4 snapshot is the last
+  // known user-authored configuration and is safe to migrate again.
+  if (raw?.version === 5 || raw === undefined) {
+    try { raw = JSON.parse(readFileSync(agentsBackupPath(appData), "utf8")); }
+    catch { return emptyAgentConfig(); }
   }
+  const migrated = migrateAgentConfig(raw);
+  const backup = agentsBackupPath(appData);
+  mkdirSync(path.dirname(file), { recursive: true });
+  if (!existsSync(backup)) writeJsonAtomic(backup, raw);
+  writeJsonAtomic(file, migrated);
+  return migrated;
 }
 
 export function saveAgentConfig(config, appData) {
   return withDataDir((dir) => {
     const file = path.join(dir, "agents.json");
     mkdirSync(dir, { recursive: true });
-    writeJsonAtomic(file, config);
+    if (existsSync(file) && !existsSync(agentsBackupPath(appData))) {
+      try {
+        const old = JSON.parse(readFileSync(file, "utf8"));
+        if (old?.version < 5) writeJsonAtomic(agentsBackupPath(appData), old);
+      } catch {}
+    }
+    writeJsonAtomic(file, migrateAgentConfig(config));
     return file;
   }, { appData });
 }
@@ -157,49 +130,28 @@ export function resolveDuty(duty, appData, { risk } = {}) {
   if (!DUTIES.includes(duty)) throw new Error(`unknown model duty "${duty}"`);
   const cfg = readAgentConfig(appData);
   const base = cfg.duties[duty] || {};
-  const provider = String(base.provider || "anthropic").toLowerCase();
-  const model = String(base.model || "").trim();
-  if (!PROVIDERS.includes(provider)) {
-    throw new Error(`unknown provider "${provider}" for duty "${duty}"`);
-  }
   const mode = cleanMode(duty, base.mode) || starterMode(duty);
+  const riskKey = String(risk || "").trim().toLowerCase();
+  const routeCandidates = RISKS.includes(riskKey) ? cfg.routes?.[riskKey]?.[duty] : null;
+  const profiles = (Array.isArray(routeCandidates) && routeCandidates.length ? routeCandidates : base.candidates)
+    .map((candidate) => ({ ...base, ...candidate, candidates: undefined }))
+    .map((profile) => { delete profile.candidates; return profile; });
+  const candidates = profiles.map(createCandidate);
+  const primary = candidates[0]?.profile || {};
   const resolved = {
     name: duty,
     duty,
-    ...base,
-    provider,
-    model: model || null,
+    ...base, ...primary,
+    candidates,
     mode,
     enabled: mode !== "off",
     runsAsAgent: mode === "agent" || mode === "always",
   };
-  const riskKey = String(risk || "").trim().toLowerCase();
   if (!RISKS.includes(riskKey)) return resolved;
-  const route = cfg.routes?.[riskKey]?.[duty];
-  if (!route) {
-    return { ...resolved, route: { applied: false, risk: riskKey, note: `risk ${riskKey}, no route configured for ${duty}` } };
+  if (!Array.isArray(routeCandidates) || !routeCandidates.length) {
+    return { ...resolved, route: { applied: false, risk: riskKey, note: `risk ${riskKey}, invalid or no route configured for ${duty}` } };
   }
-  if (!PROVIDERS.includes(route.provider) || !PROVIDER_MODELS[route.provider]?.includes(route.model)) {
-    return {
-      ...resolved,
-      route: {
-        applied: false,
-        risk: riskKey,
-        note: `risk ${riskKey}: the configured route for ${duty} (${route.provider || "?"}/${route.model || "?"}) is invalid — falling back to the duty profile`,
-      },
-    };
-  }
-  const carried = Object.fromEntries(
-    Object.entries(resolved).filter(([k]) => k !== "reasoning_effort" && !k.endsWith("_cost_per_million")),
-  );
-  const routed = {
-    ...carried,
-    provider: route.provider,
-    model: route.model,
-    route: { applied: true, risk: riskKey, note: `risk ${riskKey} routed ${duty} to ${route.provider}/${route.model}` },
-  };
-  if (route.reasoning_effort) routed.reasoning_effort = route.reasoning_effort;
-  return routed;
+  return { ...resolved, route: { applied: true, risk: riskKey, note: `risk ${riskKey} routed ${duty} to ${primary.provider}/${primary.model}` } };
 }
 
 // `off` | `session` | `agent`. Callers that inject context ask for the mode; the
@@ -210,6 +162,39 @@ export function criticMode(appData) {
 
 export function criticRunsAsAgent(appData) {
   return resolveDuty("critic", appData).runsAsAgent;
+}
+
+export function checkAgentDuties(appData, {
+  duties = DUTIES,
+  claudeBin = process.env.CLAUDE_BIN || "claude",
+  codexBin = process.env.CODEX_BIN || "codex",
+  run,
+  settingsPath,
+  rulesFile,
+} = {}) {
+  const results = [];
+  for (const duty of duties) {
+    const resolved = resolveDuty(duty, appData);
+    if (!resolved.runsAsAgent) continue;
+    const attempts = resolved.candidates.map((candidate) => candidate.check({
+      bin: candidate.provider.engine.id === "codex" ? codexBin : claudeBin,
+      run, settingsPath, rulesFile,
+    }));
+    results.push({ duty, ok: attempts.some((candidate) => candidate.ok), candidates: attempts });
+  }
+  return { ok: results.every((result) => result.ok), duties: results };
+}
+
+export function assertAgentDutiesAvailable(appData, options) {
+  const report = checkAgentDuties(appData, options);
+  const unavailable = report.duties.filter((duty) => !duty.ok);
+  if (unavailable.length) {
+    const detail = unavailable.map(({ duty, candidates }) =>
+      `${duty}: ${candidates.map((item) => `${item.provider}/${item.model} (${item.binary.reason || "missing"})`).join(", ")}`,
+    ).join("; ");
+    throw new Error(`no available candidate for enabled duties — ${detail}`);
+  }
+  return report;
 }
 
 export function buildDutyPrompt(profile, prompt) {
@@ -227,32 +212,34 @@ export function invokeDutySync(duty, prompt, {
 } = {}) {
   const p = resolveDuty(duty, appData);
   if (!p.runsAsAgent || !p.model) return { skipped: true, ok: true, text: "", profile: p };
-  const { file, args } = providerArgv(p, {
-    bin: p.provider === "openai" ? codexBin : claudeBin,
-    sandbox: "read-only",
-    allowedTools: READ_ONLY_TOOLS,
-    addDirs,
-  });
-  const fullPrompt = buildDutyPrompt(p, prompt);
-  const target = resolveSpawn(file, args);
-  const run = spawnSync(target.file, target.args, {
-    ...target.opts,
-    cwd, input: String(fullPrompt), encoding: "utf8", windowsHide: true,
-    timeout: timeoutMs, maxBuffer: 4 * 1024 * 1024,
-    // A child CLI can use the same global lifecycle hook as an interactive
-    // session. Tell that hook the assigned duty explicitly: model inference is
-    // only a fallback and must not turn an Opus reviewer into an architect.
-    env: {
-      ...process.env,
-      TRACKER_DUTY: p.role || duty,
-      TRACKER_SESSION_KIND: "runner",
-    },
-  });
-  if (run.error || run.status !== 0)
-    return { ok: false, error: run.error?.message || String(run.stderr || `exit ${run.status}`), text: "", profile: p };
-  const parsed = parseProviderResult(p.provider, run.stdout);
-  const text = String(parsed?.answer || "");
-  return { ok: !!text && !parsed?.error, error: parsed?.error || "", text, profile: p };
+  const fallback = [];
+  for (const candidate of p.candidates) {
+    const bin = candidate.provider.id === "openai" ? codexBin : claudeBin;
+    const options = { bin, sandbox: "read-only", allowedTools: READ_ONLY_TOOLS, addDirs };
+    const available = candidate.check(options);
+    if (!available.ok) {
+      fallback.push({ provider: candidate.provider.id, model: candidate.model, reason: "missing" });
+      continue;
+    }
+    const { file, args } = candidate.argv(options);
+    const fullPrompt = buildDutyPrompt({ ...p, ...candidate.profile }, prompt);
+    const target = resolveSpawn(file, args);
+    const run = spawnSync(target.file, target.args, {
+      ...target.opts,
+      cwd, input: String(fullPrompt), encoding: "utf8", windowsHide: true,
+      timeout: timeoutMs, maxBuffer: 4 * 1024 * 1024,
+      env: { ...process.env, TRACKER_DUTY: p.role || duty, TRACKER_SESSION_KIND: "runner" },
+    });
+    const parsed = candidate.provider.engine.parse(run.stdout);
+    const text = String(parsed?.answer || "");
+    const error = run.error?.message || parsed?.error || (run.status !== 0 ? String(run.stderr || `exit ${run.status}`) : "") || (!text ? `${candidate.provider.engine.id} returned no answer` : "");
+    if (!error) return { ok: true, error: "", text, profile: { ...p, ...candidate.profile }, fallback };
+    const reason = candidate.provider.engine.classifyFailure({ error: run.error || error, stderr: run.stderr, stdout: run.stdout, code: run.status, timedOut: run.error?.code === "ETIMEDOUT" });
+    if (!["missing", "auth", "limit"].includes(reason))
+      return { ok: false, error, text: "", profile: { ...p, ...candidate.profile }, fallback, failureReason: reason };
+    fallback.push({ provider: candidate.provider.id, model: candidate.model, reason });
+  }
+  return { ok: false, error: `candidates_exhausted: ${fallback.map((item) => `${item.provider}/${item.model} (${item.reason})`).join(", ")}`, text: "", profile: p, fallback, failureReason: "candidates_exhausted" };
 }
 
 function parseFlags(args) {
@@ -290,8 +277,9 @@ function cmdSet(args) {
   if (!DUTIES.includes(name)) fail(`usage: cli agents set <${DUTIES.join("|")}> --provider anthropic|openai --model <id>`);
   const cfg = readAgentConfig();
   const before = cfg.duties[name] || {};
+  const first = before.candidates?.[0] || {};
   const candidate = {
-    ...before,
+    ...first,
     ...(flags.mode ? { mode: flags.mode } : {}),
     ...(flags.provider ? { provider: flags.provider } : {}),
     ...(flags.model ? { model: flags.model } : {}),
@@ -303,7 +291,16 @@ function cmdSet(args) {
     fail(`${name} takes mode ${dutyModes(name).join(" | ")}`);
   const profile = cleanProfile(candidate, name);
   if (!profile) fail(`model does not belong to provider (anthropic: ${PROVIDER_MODELS.anthropic.join(", ")}; openai: ${PROVIDER_MODELS.openai.join(", ")})`);
-  cfg.duties[name] = profile;
+  cfg.duties[name] = {
+    ...before,
+    mode: profile.mode,
+    ...(profile.role ? { role: profile.role } : {}),
+    ...(profile.instructions ? { instructions: profile.instructions } : {}),
+    candidates: [
+      Object.fromEntries(Object.entries(profile).filter(([key]) => !["mode", "role", "instructions"].includes(key))),
+      ...(before.candidates || []).slice(1),
+    ],
+  };
   saveAgentConfig(cfg);
   process.stdout.write(`ok: ${name} [${profile.mode}] -> ${profile.provider}/${profile.model}\n`);
 }
@@ -344,9 +341,19 @@ function cmdList(json = false) {
     const p = cfg.duties[name];
     if (!p) continue;
     process.stdout.write(
-      `${name.padEnd(10)} ${String(p.mode).padEnd(8)} ${p.provider}/${p.model}\n`,
+      `${name.padEnd(10)} ${String(p.mode).padEnd(8)} ${(p.candidates || []).map((candidate) => `${candidate.provider}/${candidate.model}`).join(" -> ")}\n`,
     );
   }
+}
+
+function cmdCheck(args) {
+  const { flags } = parseFlags(args);
+  const report = checkAgentDuties();
+  if (flags.json) process.stdout.write(JSON.stringify(report, null, 2) + "\n");
+  else for (const item of report.duties) {
+    process.stdout.write(`${item.ok ? "ok" : "missing"}: ${item.duty} — ${item.candidates.map((candidate) => `${candidate.provider}/${candidate.model}:${candidate.binary.available ? "available" : candidate.binary.reason},guard:${candidate.guard.active ? "active" : "absent"}`).join("; ")}\n`);
+  }
+  if (!report.ok) fail("one or more enabled duties have no available candidate");
 }
 
 function usage() {
@@ -354,6 +361,7 @@ function usage() {
     "cli agents - lifecycle duty -> provider/model map\n\n" +
       "  init [--force]\n" +
       "  list [--json]\n" +
+      "  check [--json]   verify engine binaries and guards before a run\n" +
       `  set <${DUTIES.join("|")}> --provider anthropic|openai --model <id> [--mode <value>]\n` +
       "             [--role <name>] [--instructions <text>] [--reasoning <level>]\n" +
       `  mode <duty> <value>   who performs the duty — ${DUTIES.map((d) => `${d}: ${dutyModes(d).join("|")}`).join("; ")}\n` +
@@ -372,6 +380,7 @@ export function run(args) {
   if (cmd === "hook") return cmdHook(rest);
   if (cmd === "critic-mode") return cmdCriticMode(rest);
   if (cmd === "list") return cmdList(rest.includes("--json"));
+  if (cmd === "check") return cmdCheck(rest);
   if (cmd === "path") return process.stdout.write(agentsPath() + "\n");
   if (cmd === undefined || ["help", "-h", "--help"].includes(cmd)) return usage();
   fail(`unknown agents command: ${cmd}`);

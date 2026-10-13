@@ -1,0 +1,20 @@
+{
+  "version": 3,
+  "duties": {
+    "critic": { "provider": "openai", "model": "gpt-5.6-terra" },
+    "architect": { "provider": "openai", "model": "gpt-5.6-terra" },
+    "worker": { "provider": "anthropic", "model": "sonnet" },
+    "review": { "provider": "anthropic", "model": "opus" },
+    "pluginDuty": { "implementation": "external" }
+  },
+  "hooks": { "critic": true, "architect": false, "review": true },
+  "criticMode": "agent",
+  "routes": {
+    "high": {
+      "worker": { "provider": "openai", "model": "gpt-5.6-luna", "reasoning_effort": "high" },
+      "pluginDuty": { "implementation": "external" }
+    },
+    "experimental": { "pluginDuty": "untouched" }
+  },
+  "unknownTopLevel": "survives"
+}

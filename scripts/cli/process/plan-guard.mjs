@@ -32,11 +32,69 @@
 // the plan through.
 
 import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { DSL_DOC_FIELDS, readDocument, validate } from "./apply.mjs";
 import { boardPath, loadBoard, resolveTask } from "../board/todos.mjs";
-import { invokeDutySync } from "../agents/agents.mjs";
+import { resolveDuty } from "../agents/agents.mjs";
+import { resolveSpawn } from "../models/engine.mjs";
+
+export const ARCHITECT_OFF_COMMAND = "cli agents mode architect off";
+
+// Availability is a property of a candidate's engine, not of its position in
+// the configured list. Both the SessionStart banner and the gate use this same
+// reading so they cannot promise the primary while the hook would use a reserve
+// (or silently open when neither CLI exists).
+export function architectGateState(appData, {
+  resolve = resolveDuty,
+  claudeBin = process.env.CLAUDE_BIN || "claude",
+  codexBin = process.env.CODEX_BIN || "codex",
+  run,
+  settingsPath,
+  rulesFile,
+} = {}) {
+  let duty;
+  try {
+    duty = resolve("architect", appData);
+  } catch (error) {
+    return {
+      mode: "agent",
+      available: false,
+      candidate: null,
+      candidates: [{ label: "configuration", binary: { available: false, reason: error?.message || "invalid" } }],
+    };
+  }
+  if (!duty?.runsAsAgent) {
+    return { mode: "off", available: false, candidate: null, candidates: [] };
+  }
+  const candidates = [];
+  for (const candidate of duty.candidates || []) {
+    let checked;
+    try {
+      const bin = candidate.provider.engine.id === "codex" ? codexBin : claudeBin;
+      checked = candidate.check({
+        bin,
+        run,
+        settingsPath,
+        rulesFile,
+      });
+      candidates.push({ ...checked, label: `${checked.provider}/${checked.model}`, source: candidate, bin });
+    } catch (error) {
+      const profile = candidate.profile || {};
+      candidates.push({
+        label: `${profile.provider || "unknown"}/${profile.model || "unknown"}`,
+        binary: { available: false, reason: error?.message || "check failed" },
+      });
+    }
+    // The ordered list chooses its first available member. Candidates after it
+    // cannot affect either the banner or this invocation, so do not add another
+    // CLI startup to a blocking hook.
+    if (candidates.at(-1)?.binary?.available) break;
+  }
+  const candidate = candidates.find((item) => item.binary?.available) || null;
+  return { mode: duty.mode || "agent", available: !!candidate, candidate, candidates };
+}
 
 const DOCS_DIR = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -346,6 +404,38 @@ const deny = (reason) => ({
   permissionDecisionReason: reason,
 });
 
+// Do not return permissionDecision:"allow": that could bypass Claude Code's
+// own user approval. additionalContext reports the degraded check while leaving
+// the ordinary ExitPlanMode permission flow intact.
+const failOpen = (reason) => ({
+  hookEventName: "PreToolUse",
+  additionalContext: reason,
+});
+
+function invokeAvailableArchitect(gate, prompt, { cwd = process.cwd(), timeoutMs = 90_000 } = {}) {
+  const candidate = gate.candidate?.source;
+  if (!candidate) return { ok: false, error: "available candidate details are missing", text: "" };
+  const { file, args } = candidate.argv({ bin: gate.candidate.bin, sandbox: "read-only" });
+  const target = resolveSpawn(file, args);
+  const fullPrompt = [candidate.profile?.instructions, prompt].filter(Boolean).join("\n\n");
+  const run = spawnSync(target.file, target.args, {
+    ...target.opts,
+    cwd,
+    input: fullPrompt,
+    encoding: "utf8",
+    windowsHide: true,
+    timeout: timeoutMs,
+    maxBuffer: 4 * 1024 * 1024,
+    env: { ...process.env, TRACKER_DUTY: "architect", TRACKER_SESSION_KIND: "runner" },
+  });
+  if (run.error || run.status !== 0) {
+    return { ok: false, error: run.error?.message || String(run.stderr || `exit ${run.status}`), text: "" };
+  }
+  const parsed = candidate.provider.engine.parse(run.stdout);
+  const text = String(parsed?.answer || "");
+  return { ok: !!text && !parsed?.error, error: parsed?.error || (!text ? "empty response" : ""), text };
+}
+
 // The hookSpecificOutput payload, or null for "no opinion". Exported for the
 // unit tests so the contract is pinned without spawning a process.
 export function decide(input, opts = {}) {
@@ -375,10 +465,30 @@ export function decide(input, opts = {}) {
   return deny(buildRefusal(errors, warnings));
 }
 
-export function architectDecision(input, invoke = invokeDutySync) {
+export function architectDecision(input, invoke, options = {}) {
   if (input?.tool_name !== "ExitPlanMode") return null;
   const plan = input?.tool_input?.plan;
   if (typeof plan !== "string" || !plan.trim() || discussionDeclaration(plan)) return null;
+  // An injected invoker is a unit/integration seam used by callers that already
+  // own execution. Preserve that seam unless they also supply the gate state;
+  // the real hook uses the default invoker and always performs the preflight.
+  const gate = options.gate || (typeof invoke === "function"
+    ? { mode: "agent", available: true, candidate: { label: "configured architect" }, candidates: [] }
+    : architectGateState(options.appData, options));
+  if (gate.mode === "off") return null;
+  if (!gate.available) {
+    const tried = gate.candidates?.length
+      ? gate.candidates.map((item) => `${item.label} (${item.binary?.reason || "missing"})`).join(", ")
+      : "no configured candidates";
+    return deny([
+      "PLAN REFUSED — architect mode is agent, but no configured candidate is available.",
+      "The gate cannot honestly review this plan and will not open silently.",
+      "",
+      `Checked: ${tried}.`,
+      `Install or repair a candidate, or explicitly disable the model gate: ${ARCHITECT_OFF_COMMAND}`,
+      "Then call ExitPlanMode again.",
+    ].join("\n"));
+  }
   const prompt = [
     "You are the architect hook reviewing a plan before it reaches the user.",
     "Judge the declared obligations: boundaries, dependency order, produces, verify, retries and review gates.",
@@ -388,11 +498,25 @@ export function architectDecision(input, invoke = invokeDutySync) {
     plan,
   ].join("\n");
   let result;
-  try { result = invoke("architect", prompt, { cwd: input?.cwd || process.cwd() }); }
-  catch { return null; }
-  // Hooks fail open on unavailable CLIs/auth/timeouts; the deterministic format
-  // guard above still ran and remains authoritative.
-  if (!result || result.skipped || !result.ok) return null;
+  try {
+    result = typeof invoke === "function"
+      ? invoke("architect", prompt, { cwd: input?.cwd || process.cwd() })
+      : invokeAvailableArchitect(gate, prompt, { cwd: input?.cwd || process.cwd() });
+  }
+  catch (error) {
+    result = { ok: false, error: error?.message || String(error) };
+  }
+  // A candidate existed at preflight, so a failure here belongs to the model
+  // call. It remains fail-open, but is visible in hook output rather than being
+  // indistinguishable from a gate that never ran.
+  if (!result || result.skipped || !result.ok) {
+    const detail = String(result?.error || result?.reason || "no result").trim().slice(0, 1000);
+    return failOpen([
+      `ARCHITECT CHECK FAILED OPEN — ${gate.candidate.label} was available, but its review failed.`,
+      `Reason: ${detail || "unknown model error"}.`,
+      "The deterministic plan-format guard passed; ExitPlanMode continues to the normal user approval.",
+    ].join("\n"));
+  }
   const verdicts = [...String(result.text || "").matchAll(/^[\s*_`]*VERDICT:[\s*_`]*(approve|issue)[\s*_`]*$/gim)];
   if (verdicts.at(-1)?.[1]?.toLowerCase() !== "issue") return null;
   const reason = String(result.text || "").replace(/^[\s*_`]*VERDICT:.*$/gim, "").trim().slice(0, 4000);

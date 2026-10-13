@@ -100,7 +100,11 @@ export function formatRunEvent(event) {
   if (kind === "rollback") return `${prefix}${attempt}: rollback to ${event.to ?? "previous attempt"}`.trim();
   if (kind === "park") return `${prefix}: park ${event.park_kind || event.stop_kind || "unknown"}${event.reason ? ` — ${event.reason}` : ""}`.trim();
   if (kind === "step_start") return `${prefix}${attempt}: step start${event.route ? ` (${event.route})` : ""}`.trim();
-  if (kind === "worker_done") return `${prefix}${attempt}: worker done${typeof event.cost === "number" ? ` $${Math.round(event.cost * 10000) / 10000}` : ""}`.trim();
+  if (kind === "worker_done") {
+    const fallback = Array.isArray(event.fallback) && event.fallback.length ? `, fallback ${event.fallback.map((item) => `${item.provider}/${item.model}:${item.reason}`).join(" -> ")}` : "";
+    const inherit = event.inherit_dropped ? ", inherit dropped" : "";
+    return `${prefix}${attempt}: worker done${typeof event.cost === "number" ? ` $${Math.round(event.cost * 10000) / 10000}` : ""} [guard ${event.guard || "absent"}${fallback}${inherit}]`.trim();
+  }
   if (kind === "run_start" || kind === "run_end") return `${changeId(event?.change)}: ${kind.replace("_", " ")}`.trim();
   if (kind === "worker_session") return `${prefix}${attempt}: worker session ${event.engine || "?"} ${event.session || ""}`.trim();
   if (kind === "attempt_snapshot") return `${prefix}${attempt}: snapshot ${String(event.snapshot || "").slice(0, 12)}`.trim();

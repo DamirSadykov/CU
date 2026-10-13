@@ -137,6 +137,7 @@ describe("buildWorkflowContext", () => {
   const base = {
     criticModel: "openai/gpt-5.6-terra",
     architect: true,
+    architectAvailable: true,
     architectModel: "openai/gpt-5.6-terra",
     worker: "anthropic/sonnet",
     review: true,
@@ -152,11 +153,17 @@ describe("buildWorkflowContext", () => {
   });
 
   it.each([
-    [true, true, "Gate: openai/gpt-5.6-terra refuses"],
-    [true, false, "Architect gate off"],
-    [false, true, "No gate: `plan-guard` is not wired"],
-  ])("describes architect wiring=%s and enabled=%s truthfully", (planGuard, architect, expected) => {
-    expect(buildWorkflowContext({ ...base, critic: "session", planGuard, architect })).toContain(expected);
+    [true, true, true, "Gate: openai/gpt-5.6-terra refuses"],
+    [true, false, false, "Architect gate off"],
+    [false, true, true, "No gate: `plan-guard` is not wired"],
+    [true, true, false, "Architect gate blocked: no configured candidate is available"],
+  ])("describes architect wiring=%s enabled=%s available=%s truthfully", (planGuard, architect, architectAvailable, expected) => {
+    expect(buildWorkflowContext({ ...base, critic: "session", planGuard, architect, architectAvailable })).toContain(expected);
+  });
+
+  it("gives the explicit escape command when agent mode has no candidate", () => {
+    const context = buildWorkflowContext({ ...base, critic: "session", planGuard: true, architectAvailable: false });
+    expect(context).toContain("cli agents mode architect off");
   });
 
   it("keeps the auto runner explicitly separate from this session", () => {
@@ -178,6 +185,7 @@ describe("buildWorkflowSummary", () => {
   const base = {
     criticModel: "openai/gpt-5.6-terra",
     architect: true,
+    architectAvailable: true,
     architectModel: "openai/gpt-5.6-terra",
     worker: "anthropic/sonnet",
     review: true,
@@ -204,6 +212,20 @@ describe("buildWorkflowSummary", () => {
     const state = { ...base, critic: "off", planGuard: false, architect: false };
     expect(buildWorkflowSummary(state)).toContain("critic: off");
     expect(buildWorkflowSummary(state)).toContain("plan gate: none");
+    expect(buildWorkflowContext(state)).toContain("No gate: `plan-guard` is not wired");
+    expect(buildWorkflowContext(state)).not.toContain("format guard still refuses");
+  });
+
+  it("calls the architect gate off explicitly when its format guard is wired", () => {
+    const state = { ...base, critic: "off", planGuard: true, architect: false };
+    expect(buildWorkflowSummary(state)).toContain("plan gate: off");
+    expect(buildWorkflowContext(state)).toContain("Architect gate off");
+  });
+
+  it("summarizes an enabled gate with no available candidate as blocked", () => {
+    const state = { ...base, critic: "session", planGuard: true, architectAvailable: false };
+    expect(buildWorkflowSummary(state)).toContain("plan gate: blocked (no candidate");
+    expect(buildWorkflowSummary(state)).toContain("agents mode architect off");
   });
 
   it("marks the Codex plan gate as absent, matching the full Codex map", () => {

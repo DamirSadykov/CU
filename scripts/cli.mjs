@@ -24,6 +24,7 @@ const AREAS = {
   "task-cost": "./cli/analytics/task-cost.mjs",
   trace: "./cli/analytics/trace.mjs",
   agents: "./cli/agents/agents.mjs",
+  guard: "./cli/guard/guard.mjs",
   spec: "./cli/spec/spec.mjs",
   hook: "./cli/cc-hooks/hook.mjs",
   "stop-hook": "./cli/cc-hooks/stop-hook.mjs",
@@ -91,6 +92,7 @@ function usage(code) {
       "  task-cost <…> session->task attribution for tokens-per-task (scan / publish)\n" +
       "  trace     <…> restart-point reports and restart calibration\n" +
       "  agents  <…>   model/provider profiles used by autonomous task runs\n" +
+      "  guard [rules] enforce write/command policy or print Codex execpolicy rules\n" +
       "  spec    <…>   spec registry (t#339): domains / show / refs / lint over docs/specs\n" +
       "  hook [--host claude|codex]  SessionStart context for an AI CLI\n" +
       "  stop-hook     Stop hook — blocks a stop that leaves a worked task without a handoff baton\n" +
@@ -127,6 +129,10 @@ if (HOOK_AREAS.has(area) && inSandbox() && process.env.TRACKER_HOOKS_IGNORE_SAND
 try {
   const sub = SUBCOMMANDS[area]?.[rest[0]];
   if (sub) {
+    if (area === "todos" && rest[0] === "run" && rest.includes("--go")) {
+      const agents = await import(new URL("./cli/agents/agents.mjs", import.meta.url));
+      agents.assertAgentDutiesAvailable();
+    }
     const m = await import(new URL(sub, import.meta.url));
     await m.run(rest.slice(1));
   } else if (area === "todos") {

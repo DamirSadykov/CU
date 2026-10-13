@@ -246,7 +246,7 @@ export function runRetro(ref, {
     error.reportFile = reportFile;
     throw error;
   }
-  if (!parsed) return { parsed: false, reportFile, proposals: [], profile: invoked.profile };
+  if (!parsed) return { parsed: false, reportFile, proposals: [], profile: invoked.profile, fallback: invoked.fallback || [] };
 
   const episodeById = new Map(parsed.episodes.map((episode) => [episode.id, episode]));
   const signalById = new Map((collected.facts.signals || []).map((signal) => [signal.id, signal]));
@@ -276,7 +276,7 @@ export function runRetro(ref, {
   } else {
     lock(file, () => storeProposals(file));
   }
-  return { parsed: true, reportFile, proposals, profile: invoked.profile };
+  return { parsed: true, reportFile, proposals, profile: invoked.profile, fallback: invoked.fallback || [] };
 }
 
 export function runRetroSession(session, {
@@ -309,7 +309,7 @@ export function runRetroSession(session, {
     error.reportFile = reportFile;
     throw error;
   }
-  return { parsed: !!parsed, reportFile, proposals: [], profile: invoked.profile, factsFile: collected.file };
+  return { parsed: !!parsed, reportFile, proposals: [], profile: invoked.profile, fallback: invoked.fallback || [], factsFile: collected.file };
 }
 
 export async function run(args) {
