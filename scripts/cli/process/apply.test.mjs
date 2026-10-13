@@ -107,6 +107,38 @@ describe("change brief fields in apply", () => {
   });
 });
 
+describe("change addressed by c#N", () => {
+  it("joins the existing record instead of opening one titled by the address", () => {
+    const file = path.join(mkdtempSync(path.join(os.tmpdir(), "cut-apply-ref-")), "todos.json");
+    try {
+      const data = {
+        version: 1,
+        todos: [],
+        changes: [{ id: "ch-7", number: 7, title: "Раннер 1.0", delta: "", project: "fixture", out: [], measure: [] }],
+      };
+      const doc = readDocument(["change: c#7", "vision: Новая дельта", "budget: 80", "parallel: 2", "steps:", "  1:", "    title: Проверка", "    size: S", "    produces: [src/a.mjs]", "    verify: npm test"].join("\n"));
+      const result = applyDocument(doc, { go: true, project: "fixture", board: { data, file } });
+      expect(result.ok).toBe(true);
+      expect(data.changes).toHaveLength(1);
+      expect(data.changes[0].delta).toBe("Новая дельта");
+      expect(data.changes[0].budget_usd).toBe(80);
+      expect(data.changes[0].parallel_limit).toBe(2);
+      expect(data.todos[0].change_id).toBe("ch-7");
+    } finally {
+      rmSync(path.dirname(file), { recursive: true, force: true });
+    }
+  });
+
+  it("refuses an address that names no record", () => {
+    const data = { version: 1, todos: [], changes: [] };
+    const doc = readDocument(["change: c#9", "steps:", "  1:", "    title: Проверка", "    size: S", "    produces: [src/a.mjs]", "    verify: npm test"].join("\n"));
+    const result = applyDocument(doc, { go: false, project: "fixture", board: { data, file: "unused" } });
+    expect(result.ok).toBe(false);
+    expect(result.errors.join(" ")).toMatch(/no change c#9/);
+    expect(data.changes).toHaveLength(0);
+  });
+});
+
 describe("flow diagrams in apply", () => {
   it("records a plan diagram from flowcheck", () => {
     const file = path.join(mkdtempSync(path.join(os.tmpdir(), "cut-flow-plan-")), "todos.json");

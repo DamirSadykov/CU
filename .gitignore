@@ -21,6 +21,7 @@ settings.local.json
 *.swp
 .claude/phases/
 src-tauri/target-test/
+src-tauri/target-runner/
 target-test/
 /.codex-cargo-target/
 

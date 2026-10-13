@@ -60,7 +60,7 @@ import {
   notifyTaskEvent,
 } from "../board/todos.mjs";
 import { checkGraph, splitFindings } from "./graph-rules.mjs";
-import { createChange, findChangeByTitle, changeAddress } from "../board/change.mjs";
+import { createChange, findChangeByTitle, changeAddress, CHANGE_REF, findChange } from "../board/change.mjs";
 import { parseYamlSubset } from "../kernel/yaml-subset.mjs";
 import { withBoardLock, withDataDir } from "../kernel/board-lock.mjs";
 import path from "node:path";
@@ -405,7 +405,11 @@ function mergeChangeItems(existing, planned) {
 // steps sharing a phrase must not collapse onto one row, and a board that
 // already holds duplicates must not have them silently merged.
 function matchExisting(data, doc, project) {
-  const record = doc.change ? findChangeByTitle(data, doc.change, project) : null;
+  const record = doc.change
+    ? CHANGE_REF.test(doc.change)
+      ? findChange(data, doc.change)
+      : findChangeByTitle(data, doc.change, project)
+    : null;
   const children = record ? data.todos.filter((t) => t && t.change_id === record.id) : [];
   const board = data.todos.filter((t) => t && boardOf(t) === project);
   const byStep = new Map();
@@ -525,6 +529,19 @@ export function applyDocument(doc, { go = false, force = false, project, board, 
     };
 
   const { record: existingChange, byStep, adopted, renamed } = matchExisting(data, doc, project);
+  if (doc.change && CHANGE_REF.test(doc.change) && !existingChange)
+    return {
+      ok: false,
+      errors: [`no change ${doc.change.trim()} on the board — a \`change:\` address names an existing record; to open a new one write \`change: CHANGE: <что меняем>\``],
+      warnings,
+      plan: [],
+      notes: [],
+      log: [],
+      created: [],
+      root: null,
+      applied: false,
+      inferred: inferredResult.inferred,
+    };
   const plan = [];
   const say = (line) => plan.push(line);
 
