@@ -139,6 +139,14 @@ describe("path matching", () => {
     expect(pathMatches("scripts/cli/process/outcome.mjs", "D:/p/scripts/cli/process/outcome.test.mjs")).toBe(false);
   });
 
+  it("t#1129: a declared directory matches a file written under it, trailing slash or not", () => {
+    expect(pathMatches("src-tauri/tests/fixtures/projects", "D:/p/src-tauri/tests/fixtures/projects/a.json")).toBe(true);
+    expect(pathMatches("pristine/exec-ledger/", "pristine/exec-ledger/run-1/ledger.json")).toBe(true);
+    expect(pathMatches("pristine/exec-ledger/", "D:/p/pristine/exec-ledger/ledger.json")).toBe(true);
+    expect(pathMatches("src-tauri/tests/fixtures/projects", "D:/p/src-tauri/tests/fixtures/projects-old/a.json")).toBe(false);
+    expect(pathMatches("src-tauri/tests/fixtures/projects", "D:/p/src-tauri/tests/fixtures/a.json")).toBe(false);
+  });
+
   it("tells a path-shaped declaration from a prose one", () => {
     expect(isPathLike("scripts/cli/process/outcome.mjs")).toBe(true);
     expect(isPathLike("поле outcome на задаче")).toBe(false);

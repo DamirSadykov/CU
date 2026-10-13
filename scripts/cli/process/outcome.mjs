@@ -33,7 +33,9 @@ import {
   readFileSync,
   readdirSync,
   existsSync,
+  statSync,
 } from "node:fs";
+import { execFileSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 
@@ -70,10 +72,49 @@ export function normalizePath(p) {
 const pathKey = (p) => normalizePath(p).toLowerCase();
 
 export function pathMatches(declared, touched) {
-  const d = pathKey(declared);
-  const t = pathKey(touched);
+  const d = pathKey(declared).replace(/\/+$/, "");
+  const t = pathKey(touched).replace(/\/+$/, "");
   if (!d || !t) return false;
-  return t === d || t.endsWith("/" + d) || d.endsWith("/" + t);
+  if (t === d || t.endsWith("/" + d) || d.endsWith("/" + t)) return true;
+  return t.startsWith(d + "/") || t.includes("/" + d + "/");
+}
+
+export function outsideRepoEvidence({ cwd, repoRoot, since, until, statFile = fileMtime }) {
+  if (!cwd || !since) return () => null;
+  const root = repoRoot ? path.resolve(repoRoot) : null;
+  const inside = (abs) => {
+    if (!root) return false;
+    const back = path.relative(root, abs);
+    return !back.startsWith("..") && !path.isAbsolute(back);
+  };
+  return (item) => {
+    const abs = path.resolve(cwd, normalizePath(item));
+    if (inside(abs)) return null;
+    const mtime = statFile(abs);
+    if (!mtime || mtime < since || (until && mtime > until)) return null;
+    return mtime;
+  };
+}
+
+function fileMtime(abs) {
+  try {
+    const st = statSync(abs);
+    return st.isFile() ? st.mtime.toISOString() : null;
+  } catch {
+    return null;
+  }
+}
+
+function gitTopLevel(cwd) {
+  try {
+    return execFileSync("git", ["rev-parse", "--show-toplevel"], {
+      cwd,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    }).trim() || null;
+  } catch {
+    return null;
+  }
 }
 
 // `produces` may declare things that are not files at all (DSL §6 allows
@@ -219,6 +260,7 @@ export function buildOutcomeReport({
   touches = new Map(),
   verify,
   gitChanged = null,
+  outsideEvidence = null,
 }) {
   const board = (data && Array.isArray(data.todos) ? data.todos : []).filter(Boolean);
   const own = blocks.filter((b) => b.task === todo.id);
@@ -250,7 +292,9 @@ export function buildOutcomeReport({
     const hit = checkable ? wrote.find((t) => pathMatches(item, t.path)) : undefined;
     const gitHit =
       checkable && !hit && gitChanged ? [...gitChanged].find((p) => pathMatches(item, p)) : undefined;
-    const evidence = hit ? "transcript" : gitHit ? "git" : null;
+    const mtimeHit =
+      checkable && !hit && !gitHit && typeof outsideEvidence === "function" ? outsideEvidence(item) : null;
+    const evidence = hit ? "transcript" : gitHit ? "git" : mtimeHit ? "mtime" : null;
     const consumers = checkable
       ? dependents.filter((d) =>
           (seenByDependent.get(d.id) || []).some((t) => pathMatches(item, t.path)),
@@ -259,8 +303,8 @@ export function buildOutcomeReport({
     return {
       path: item,
       checkable,
-      produced: !!hit || !!gitHit,
-      produced_at: hit ? hit.ts : null,
+      produced: !!hit || !!gitHit || !!mtimeHit,
+      produced_at: hit ? hit.ts : mtimeHit || null,
       produced_by: hit ? hit.tool : null,
       produced_in_session: hit ? hit.session : null,
       evidence,
@@ -422,7 +466,7 @@ function reconcile(ref, verify, write = false) {
 // Shared by `todos outcome --write` and the interactive close path.  The
 // latter already owns a locked, freshly loaded board, so it must reconcile
 // that same in-memory row rather than opening a second load/save race.
-export function reconcileTodo({ file, data, todo, verify }) {
+export function reconcileTodo({ file, data, todo, verify, cwd = process.cwd(), now = new Date().toISOString() }) {
 
   const dependents = data.todos.filter(
     (t) => t && Array.isArray(t.depends_on) && t.depends_on.includes(todo.id),
@@ -459,18 +503,28 @@ export function reconcileTodo({ file, data, todo, verify }) {
     events.filter((e) => sessions.has(e.session)),
     sessionEnd,
   );
+  const own = blocks.filter((b) => b.task === todo.id);
+  const since = own.length ? own.map((b) => b.from).sort()[0] : null;
   return {
     file,
     data,
     todo,
-    report: buildOutcomeReport({ data, todo, blocks, touches, verify, gitChanged: stepChanges(todo, process.cwd()) }),
+    report: buildOutcomeReport({
+      data,
+      todo,
+      blocks,
+      touches,
+      verify,
+      gitChanged: stepChanges(todo, cwd),
+      outsideEvidence: outsideRepoEvidence({ cwd, repoRoot: gitTopLevel(cwd), since, until: now }),
+    }),
   };
 }
 
 export function stepChanges(todo, cwd) {
   const base = typeof todo?.step_base === "string" ? todo.step_base.trim() : "";
   if (!base) return null;
-  const end = snapshotTree(cwd);
+  const end = snapshotTree(cwd, { produces: todo?.produces });
   if (!end.ok) return null;
   const diff = diffNameStatus(cwd, base, end.sha);
   if (!Array.isArray(diff)) return null;
@@ -516,7 +570,9 @@ function printReport(r) {
     const by =
       p.evidence === "git"
         ? "git diff"
-        : `${p.produced_by}${p.produced_at ? ` ${p.produced_at}` : ""}`;
+        : p.evidence === "mtime"
+          ? `file outside the repo, modified ${p.produced_at}`
+          : `${p.produced_by}${p.produced_at ? ` ${p.produced_at}` : ""}`;
     out.push(`  ✓ ${p.path} — produced (${by}), ${taken}\n`);
   }
   if (r.side_effects.length) {

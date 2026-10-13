@@ -438,7 +438,7 @@ export function liveEffects({ cwd } = {}) {
       });
     },
     stepBase: async ({ task, cwd }) => {
-      const based = gitBase(cwd);
+      const based = gitBase(cwd, { produces: task.produces });
       if (!based.ok) return { ok: false, error: based.error };
       const write = withDataDir((dir) => {
         const file = path.join(dir, "todos.json");
@@ -454,7 +454,7 @@ export function liveEffects({ cwd } = {}) {
       return { ok: true, sha: based.sha };
     },
     recordAttempt: async ({ task, cwd, entry }) => {
-      const snap = snapshotTree(cwd);
+      const snap = snapshotTree(cwd, { produces: task.produces });
       const saved = { ...entry, snapshot: snap.ok ? snap.sha : null };
       return withDataDir((dir) => {
         const file = path.join(dir, "todos.json");
@@ -480,7 +480,7 @@ export function liveEffects({ cwd } = {}) {
       if (!task.step_base) return { ok: true, skip: true };
       const head = gitHead(cwd);
       if (!head.ok) return { ok: false, error: head.error };
-      const end = snapshotTree(cwd);
+      const end = snapshotTree(cwd, { produces: task.produces });
       if (!end.ok) return { ok: false, error: end.error };
       const damage = computeNeighbourDamage({
         cwd,
@@ -495,7 +495,7 @@ export function liveEffects({ cwd } = {}) {
     },
     reviewContext: async ({ task, cwd, neighbours = [] }) => {
       const previousAttempt = priorAttempts(task).at(-1);
-      const current = snapshotTree(cwd);
+      const current = snapshotTree(cwd, { produces: task.produces });
       let attemptDiff = null;
       let attemptPatch = null;
       let changedLocations = null;
