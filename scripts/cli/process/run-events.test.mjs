@@ -253,7 +253,7 @@ describe("worker_session contract", () => {
       todos: [
         root,
         { id: "id-1", number: 1, subject: "claude step", status: "queue", kind: "auto", verify: "npm test", retry_limit: 2 },
-        { id: "id-2", number: 2, subject: "codex step", status: "queue", kind: "auto", verify: "npm test", retry_limit: 2 },
+        { id: "id-2", number: 2, subject: "codex step", status: "queue", kind: "auto", verify: "npm test", retry_limit: 2, produces: ["src/b.ts"] },
         { id: "id-3", number: 3, subject: "manual check", status: "queue", kind: "manual", depends_on: ["id-1", "id-2"] },
       ],
     };
@@ -379,12 +379,12 @@ describe("worker_session contract", () => {
       ["t#1", 1, "approve"], ["t#2", 1, "issue"], ["t#2", 2, "approve"],
     ]);
     expect(reviews[0].findings).toEqual([
-      { level: "medium", file: "src/app.ts", line: 12, text: "absolute path inside the repository", evidence: "a reload drops the filter" },
-      { level: "low", file: "src/util.ts", line: 3, text: "dot-relative path", evidence: null },
-      { level: "low", file: null, line: null, text: "path outside the repository", evidence: null },
+      { level: "medium", file: "src/app.ts", line: 12, text: "absolute path inside the repository", evidence: "a reload drops the filter", scope: "out" },
+      { level: "low", file: "src/util.ts", line: 3, text: "dot-relative path", evidence: null, scope: "out" },
+      { level: "low", file: null, line: null, text: "path outside the repository", evidence: null, scope: "out" },
     ]);
     expect(reviews[1].findings).toEqual([
-      { level: "high", file: "src/b.ts", line: 7, text: "the obligation is unmet", evidence: "saving twice keeps the stale row" },
+      { level: "high", file: "src/b.ts", line: 7, text: "the obligation is unmet", evidence: "saving twice keeps the stale row", scope: "in" },
     ]);
     const verifies = events.filter((event) => event.kind === "verify");
     expect(verifies.map((event) => [event.task, event.attempt, event.ok])).toEqual([["t#1", 1, true], ["t#2", 2, false]]);
@@ -676,11 +676,11 @@ describe("finding paths", () => {
       { level: "low", file: null, line: 9, text: "no file", evidence: null },
       { level: "low", file: path.join(path.dirname(root), "x.ts"), line: 2, text: "outside" },
     ], root)).toEqual([
-      { level: "high", file: "src/a.ts", line: 4, text: "t", evidence: "e" },
-      { level: "medium", file: null, line: null, text: "no line", evidence: null },
-      { level: "medium", file: null, line: null, text: "zero line", evidence: null },
-      { level: "low", file: null, line: null, text: "no file", evidence: null },
-      { level: "low", file: null, line: null, text: "outside", evidence: null },
+      { level: "high", file: "src/a.ts", line: 4, text: "t", evidence: "e", scope: "out" },
+      { level: "medium", file: null, line: null, text: "no line", evidence: null, scope: "out" },
+      { level: "medium", file: null, line: null, text: "zero line", evidence: null, scope: "out" },
+      { level: "low", file: null, line: null, text: "no file", evidence: null, scope: "out" },
+      { level: "low", file: null, line: null, text: "outside", evidence: null, scope: "out" },
     ]);
   });
 });

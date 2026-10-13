@@ -5,10 +5,10 @@
 // Same layer split as task-cost.mjs / corrections.mjs: Node owns TRANSCRIPT
 // PARSING, Rust owns the join with SQLite. It has to be that way here — the
 // database has no project file paths at all (`cc_files` stores transcripts), so
-// "what did the step actually produce" is knowable from the strong source: a
-// mutating tool_use in the transcript of the session bound to the task. Both
-// supported workflows bind every step to its session, so no filesystem-mtime
-// inference is needed.
+// runner work uses the strong source: a mutating tool_use in the transcript of
+// the session bound to the task. Manual work has no bound runner attempt; for
+// that path, the current git delta or an mtime after the task entered
+// `in_progress` supplies the evidence instead.
 //
 // What the reconciliation reads:
 //   produces (t#302)          what the step promised BEFORE the work (DSL §6)
@@ -42,7 +42,7 @@ import path from "node:path";
 import { resolveTask, readTaskSessionEvents, loadBoard, loadBoardForWrite, saveBoard } from "../board/todos.mjs";
 import { withBoardLock, withDataDir } from "../kernel/board-lock.mjs";
 import { appDataFile } from "../kernel/appdata.mjs";
-import { snapshotTree, diffNameStatus } from "./red-gate.mjs";
+import { snapshotTree, diffNameStatus, gitHead } from "./red-gate.mjs";
 
 // Tools that CHANGE a file — the only evidence that something was produced.
 // `Read` carries a `file_path` too and is deliberately NOT here: reading a file
@@ -94,6 +94,15 @@ export function outsideRepoEvidence({ cwd, repoRoot, since, until, statFile = fi
     if (!mtime || mtime < since || (until && mtime > until)) return null;
     return mtime;
   };
+}
+
+export function latestInProgressAt(todo) {
+  const history = Array.isArray(todo?.status_history) ? todo.status_history : [];
+  for (let i = history.length - 1; i >= 0; i--) {
+    const entry = history[i];
+    if (entry?.status === "in_progress" && Number.isFinite(Date.parse(entry.at))) return entry.at;
+  }
+  return null;
 }
 
 function fileMtime(abs) {
@@ -505,6 +514,8 @@ export function reconcileTodo({ file, data, todo, verify, cwd = process.cwd(), n
   );
   const own = blocks.filter((b) => b.task === todo.id);
   const since = own.length ? own.map((b) => b.from).sort()[0] : null;
+  const manual = !(typeof todo?.step_base === "string" && todo.step_base.trim());
+  const evidenceSince = manual ? latestInProgressAt(todo) : since;
   return {
     file,
     data,
@@ -516,14 +527,24 @@ export function reconcileTodo({ file, data, todo, verify, cwd = process.cwd(), n
       touches,
       verify,
       gitChanged: stepChanges(todo, cwd),
-      outsideEvidence: outsideRepoEvidence({ cwd, repoRoot: gitTopLevel(cwd), since, until: now }),
+      outsideEvidence: outsideRepoEvidence({
+        cwd,
+        repoRoot: manual ? null : gitTopLevel(cwd),
+        since: evidenceSince,
+        until: now,
+      }),
     }),
   };
 }
 
 export function stepChanges(todo, cwd) {
-  const base = typeof todo?.step_base === "string" ? todo.step_base.trim() : "";
-  if (!base) return null;
+  let base = typeof todo?.step_base === "string" ? todo.step_base.trim() : "";
+  if (!base) {
+    if (!latestInProgressAt(todo)) return null;
+    const head = gitHead(cwd);
+    if (!head.ok) return null;
+    base = head.sha;
+  }
   const end = snapshotTree(cwd, { produces: todo?.produces });
   if (!end.ok) return null;
   const diff = diffNameStatus(cwd, base, end.sha);
@@ -571,7 +592,7 @@ function printReport(r) {
       p.evidence === "git"
         ? "git diff"
         : p.evidence === "mtime"
-          ? `file outside the repo, modified ${p.produced_at}`
+          ? `file modified ${p.produced_at}`
           : `${p.produced_by}${p.produced_at ? ` ${p.produced_at}` : ""}`;
     out.push(`  ✓ ${p.path} — produced (${by}), ${taken}\n`);
   }

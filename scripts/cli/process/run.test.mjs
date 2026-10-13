@@ -44,6 +44,7 @@ import {
   summarizeRuns,
   formatRunHistory,
   isEmptyHumanGate,
+  scopeReviewFindings,
 } from "./run.mjs";
 import { formatRunEvent } from "./run-events.mjs";
 import { isReadyNode, loadBoard } from "../board/todos.mjs";
@@ -119,6 +120,7 @@ function harness(overrides = {}) {
       return { outcome: verify, outcome_reason: `verify:${verify}` };
     },
     recordIssue: async () => ({ written: true }),
+    createReviewFinding: async () => ({ written: true }),
     recordAttempt: async () => ({ written: true, snapshot: null }),
     recordFlowDiagram: async () => ({ written: false }),
     setStatus: async ({ task: t, status }) => {
@@ -412,6 +414,62 @@ describe("runChange — lifecycle review", () => {
     expect(r.stop.kind).toBe("retry");
     expect(r.stop.reason).toContain("model review issue");
     expect(statusOf(r, 2)).toBe("review");
+  });
+
+  it("files a parallel neighbour's high finding in backlog and lets the step pass", async () => {
+    const data = board(changeRoot(1, [2], { id: "change-1", change: true }), auto(2, {
+      change_id: "change-1", produces: ["src/own.mjs"],
+    }));
+    const filed = [];
+    const h = harness({
+      ownChanges: async () => ({
+        ok: true,
+        own: [{ status: "M", path: "src/own.mjs" }],
+        outside: [{ status: "M", path: "src/b.mjs" }],
+        damaged: [],
+      }),
+      reviewStep: async () => ({
+        approved: false, ok: true,
+        findings: [{ level: "high", file: "src/b.mjs", line: 4, text: "other defect", evidence: "fails elsewhere" }],
+      }),
+      createReviewFinding: async (finding) => { filed.push(finding); return { written: true }; },
+    });
+    const r = await go(data, "1", h.effects);
+
+    expect(r.stop).toBeNull();
+    expect(statusOf(r, 2)).toBe("done");
+    expect(filed).toEqual([expect.objectContaining({
+      changeId: "change-1",
+      task: expect.objectContaining({ number: 2 }),
+      finding: expect.objectContaining({ level: "high", scope: "out" }),
+    })]);
+    expect(r.steps[0].review.findings[0].scope).toBe("out");
+  });
+
+  it("blocks critical/high findings inside produces or this attempt's diff", async () => {
+    const data = board(changeRoot(1, [2]), auto(2, {
+      retry_limit: 1, produces: ["src/declared.mjs"], step_base: "base",
+    }));
+    const h = harness({
+      ownChanges: async () => ({ ok: true, own: [{ status: "M", path: "src/touched.mjs" }], outside: [], damaged: [] }),
+      reviewStep: async () => ({ approved: false, ok: true, result: "issues", findings: [
+        { level: "high", file: "src/touched.mjs", line: 1, text: "touched defect", evidence: "call fails" },
+        { level: "low", file: "src/declared.mjs", line: 2, text: "style" },
+      ] }),
+    });
+    const r = await go(data, "1", h.effects);
+
+    expect(r.stop.kind).toBe("retry");
+    expect(r.steps[0].review.findings.map((finding) => finding.scope)).toEqual(["in", "in"]);
+  });
+
+  it("counts a finding inside a declared produces directory as in scope", () => {
+    const task = { produces: ["src-tauri/tests/fixtures/projects"] };
+    const scoped = scopeReviewFindings([
+      { level: "high", file: "src-tauri/tests/fixtures/projects/sample.json", line: 1, text: "bad fixture" },
+      { level: "high", file: "src-tauri/src/lib.rs", line: 1, text: "elsewhere" },
+    ], task, [], process.cwd());
+    expect(scoped.map((finding) => finding.scope)).toEqual(["in", "out"]);
   });
 });
 
@@ -1192,14 +1250,15 @@ describe("runChange — a refused transition", () => {
 
 describe("runChange — budget", () => {
   it("stops on the step boundary and rolls nothing back", async () => {
-    const data = board(changeRoot(1, [2, 3], { budget_usd: 1 }), auto(2), auto(3, { depends_on: deps(2) }));
+    const data = board(changeRoot(1, [2, 3], { budget_usd: 0.9 }), auto(2), auto(3, { depends_on: deps(2) }));
     const h = harness({ stepCost: async () => 1 });
     const r = await go(data, "1", h.effects);
 
     expect(h.calls.steps).toEqual([2]); // #3 was never started, not killed
     expect(r.stop.kind).toBe("budget");
     expect(r.stop.not_started.number).toBe(3);
-    expect(r.spend).toMatchObject({ usd: 1, group_budget: 1 });
+    expect(r.stop).toMatchObject({ spent: 1, ceiling: 0.9, source: "group", budget: 0.9, budget_source: "declared" });
+    expect(r.spend).toMatchObject({ usd: 1, group_budget: 0.9 });
     // Nothing is rolled back and no status is rewritten after the fact.
     expect(statusOf(r, 2)).toBe("done");
     expect(statusOf(r, 3)).toBe("queue");
@@ -1207,6 +1266,21 @@ describe("runChange — budget", () => {
       [2, "in_progress"],
       [2, "done"],
     ]);
+  });
+
+  it("does not stop at equality with a declared group ceiling", async () => {
+    const data = board(
+      changeRoot(1, [2, 3, 4], { budget_usd: 1 }),
+      auto(2),
+      auto(3, { depends_on: deps(2) }),
+      auto(4, { depends_on: deps(3) }),
+    );
+    const h = harness({ stepCost: async () => 1 });
+    const r = await go(data, "1", h.effects);
+
+    expect(h.calls.steps).toEqual([2, 3]);
+    expect(r.stop).toMatchObject({ kind: "budget", spent: 2, ceiling: 1, source: "group" });
+    expect(r.stop.not_started.number).toBe(4);
   });
 
   it("stops on a node's own declared ceiling too", async () => {
@@ -1221,10 +1295,11 @@ describe("runChange — budget", () => {
     expect(h.calls.steps).toEqual([2]);
     expect(r.stop.kind).toBe("budget");
     expect(r.stop.task.number).toBe(2);
+    expect(r.stop).toMatchObject({ spent: 0.75, ceiling: 0.5, source: "node" });
     expect(statusOf(r, 2)).toBe("done");
   });
 
-  it("retries inside a node ceiling of the first-attempt budget times the retry limit", async () => {
+  it("treats the historical node estimate as a warning and retries to its declared limit", async () => {
     const history = [{ kind: "run", steps: [
       { cost_usd: 0.1, risk: "", produces_count: 0 },
       { cost_usd: 0.1, risk: "", produces_count: 0 },
@@ -1238,11 +1313,11 @@ describe("runChange — budget", () => {
     const r = await go(data, "1", h.effects, { history });
 
     expect(h.calls.steps).toEqual([2, 2, 2]);
-    expect(r.stop).toMatchObject({ kind: "budget", budget: 1.5, budget_source: "historical", spent: 1.5 });
+    expect(r.stop.kind).toBe("retry");
     expect(statusOf(r, 2)).toBe("review");
   });
 
-  it("parks a failed retry that costs more than twice the first attempt", async () => {
+  it("warns on a retry costing more than twice the first attempt and keeps retrying", async () => {
     const history = [{ kind: "run", steps: [
       { cost_usd: 1, risk: "", produces_count: 0 },
       { cost_usd: 1, risk: "", produces_count: 0 },
@@ -1256,11 +1331,11 @@ describe("runChange — budget", () => {
     });
     const r = await go(data, "1", h.effects, { history });
 
-    expect(h.calls.steps).toEqual([2, 2]);
-    expect(r.stop).toMatchObject({ kind: "budget", budget: 0.6, budget_source: "attempt", spent: 0.7 });
+    expect(h.calls.steps).toEqual([2, 2, 2]);
+    expect(r.stop.kind).toBe("retry");
   });
 
-  it("parks a failed first attempt over its budget before retrying, but not a finished one", async () => {
+  it("does not park either a failed or finished first attempt over its historical estimate", async () => {
     const history = [{ kind: "run", steps: [
       { cost_usd: 0.3, risk: "", produces_count: 0 },
       { cost_usd: 0.3, risk: "", produces_count: 0 },
@@ -1272,7 +1347,7 @@ describe("runChange — budget", () => {
       harness({ reconcile: async () => ({ outcome: "issue", outcome_reason: "verify:issue" }), stepCost: async () => 0.8 }).effects,
       { history },
     );
-    expect(failed.stop).toMatchObject({ kind: "budget", budget: 0.6, budget_source: "attempt", spent: 0.8 });
+    expect(failed.stop.kind).toBe("retry");
 
     const finished = await go(
       board(changeRoot(1, [2], { budget_usd: 10 }), auto(2, { retry_limit: 3 })),
@@ -1281,6 +1356,46 @@ describe("runChange — budget", () => {
       { history },
     );
     expect(finished.stop).toBeNull();
+  });
+
+  it("emits historical and attempt overruns as budget_warn without stopping", async () => {
+    const history = [{ kind: "run", steps: [
+      { cost_usd: 0.3, risk: "", produces_count: 0 },
+      { cost_usd: 0.3, risk: "", produces_count: 0 },
+      { cost_usd: 0.3, risk: "", produces_count: 0 },
+    ] }];
+    const r = await go(
+      board(changeRoot(123201, [123202], { budget_usd: 10 }), auto(123202, { retry_limit: 1 })),
+      "123201",
+      harness({ stepCost: async () => 0.8 }).effects,
+      { history },
+    );
+
+    expect(r.stop).toBeNull();
+    const eventsFile = path.join(sandboxAppData, "com.cu.app", "run-events.jsonl");
+    const warnings = readFileSync(eventsFile, "utf8").trim().split("\n").map(JSON.parse)
+      .filter((event) => event.change === "c#123201" && event.task === "t#123202" && event.kind === "budget_warn");
+    expect(warnings).toEqual([
+      expect.objectContaining({ spent: 0.8, ceiling: 0.6, attempt: 1, source: "attempt" }),
+      expect.objectContaining({ spent: 0.8, ceiling: 0.6, attempt: 1, source: "historical" }),
+    ]);
+    expect(warnings.map(formatRunEvent)).toEqual([
+      "c#123201 t#123202 attempt 1/-: budget warn attempt — $0.8 spent of $0.6",
+      "c#123201 t#123202 attempt 1/-: budget warn historical — $0.8 spent of $0.6",
+    ]);
+  });
+
+  it("puts spent, ceiling, attempt and source on a budget park event", async () => {
+    await go(
+      board(changeRoot(123211, [123212], { budget_usd: 10 }), auto(123212, { budget_usd: 0.5 })),
+      "123211",
+      harness({ stepCost: async () => 0.75 }).effects,
+    );
+
+    const eventsFile = path.join(sandboxAppData, "com.cu.app", "run-events.jsonl");
+    const parked = readFileSync(eventsFile, "utf8").trim().split("\n").map(JSON.parse)
+      .find((event) => event.change === "c#123211" && event.task === "t#123212" && event.kind === "park" && event.park_kind === "budget");
+    expect(parked).toMatchObject({ spent: 0.75, ceiling: 0.5, attempt: 1, source: "node" });
   });
 
   it("uses twice the p90 of the same-risk nearby-produces bucket for an undeclared node", () => {
@@ -1356,7 +1471,7 @@ describe("runChange — budget", () => {
       harness({ stepCost: async () => 0.75 }).effects,
       { history },
     );
-    expect(inferred.stop).toMatchObject({ kind: "budget", budget: 0.5, budget_source: "historical" });
+    expect(inferred.stop).toBeNull();
 
     const empty = await go(
       board(changeRoot(1, [2], { budget_usd: 10 }), auto(2)),
@@ -1797,7 +1912,7 @@ describe("finishStep", () => {
   });
 
   it("sends medium/low-only review findings to the architect while continuing to reconciliation", async () => {
-    const t = auto(7);
+    const t = auto(7, { produces: ["src/a.mjs"] });
     const comments = [];
     const ctx = finishCtx(t, { recordIssue: async ({ comment }) => { comments.push(comment); return { written: true }; } });
     const out = await finishStep(ctx, t, {
@@ -1811,7 +1926,7 @@ describe("finishStep", () => {
   });
 
   it("parks a review with three blocking findings for a changed approach", async () => {
-    const t = auto(8);
+    const t = auto(8, { produces: ["src/a.mjs"] });
     const ctx = finishCtx(t);
     const out = await finishStep(ctx, t, {
       result: { ok: true },
@@ -1841,11 +1956,15 @@ describe("finishStep", () => {
   });
 
   it("treats a medium/low-only rejected review followed by verify failure as mechanics", async () => {
-    const t = auto(10, { retry_limit: 1, attempts: [{ attempt: 1, findings: [], verify_tail: "runner unavailable" }] });
+    const t = auto(10, {
+      retry_limit: 1,
+      produces: ["src/a.mjs"],
+      attempts: [{ attempt: 1, findings: [], verify_tail: "runner unavailable" }],
+    });
     const ctx = finishCtx(t, { runVerify: async () => ({ code: 1, stderr: "runner unavailable" }) });
     const out = await finishStep(ctx, t, {
       result: { ok: true },
-      review: { approved: false, ok: true, findings: [{ level: "low", text: "formatting" }] },
+      review: { approved: false, ok: true, findings: [{ level: "low", file: "src/a.mjs", text: "formatting" }] },
     });
 
     expect(out.kind).toBe("mechanics");

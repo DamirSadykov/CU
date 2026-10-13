@@ -39,8 +39,9 @@
 //                 boundary — the current step is finished, never killed
 //                 mid-flight); an empty frontier while the change is still open
 //                 (that means the graph lies and edges are missing).
-//   7. THE GROUP  the runner never closes the change and never creates a task.
-//                 Everything it executes already stands in the graph.
+//   7. THE GROUP  the runner never closes the change. Everything it executes
+//                 already stands in the graph; review findings outside a
+//                 step's scope may be recorded as non-executable backlog tasks.
 //
 // Invariants it holds (and the tests name one by one):
 //   * `auto` without a declared `verify` runs as a GATE — the authority to close
@@ -79,6 +80,7 @@ import {
   loadBoard,
   loadBoardForWrite,
   saveBoard,
+  newTodo,
 } from "../board/todos.mjs";
 import { findChange } from "../board/change.mjs";
 import { assertAgentDutiesAvailable, resolveDuty } from "../agents/agents.mjs";
@@ -93,8 +95,9 @@ import {
   runRedGate,
   recoverMarkers,
 } from "./red-gate.mjs";
-import { bestAttempt, blockingCount, restoreCheckpoint } from "./checkpoint.mjs";
+import { restoreCheckpoint } from "./checkpoint.mjs";
 import { appendRunEvent, createVerifyLog, runEventsPath, verifyLogPath, watchRunEvents, writeVerifyLog } from "./run-events.mjs";
+import { pathMatches } from "./outcome.mjs";
 import { runFlowGate } from "./flow-gate.mjs";
 import { flowDeclared } from "./graph-rules.mjs";
 import { readSettings } from "../kernel/settings.mjs";
@@ -140,7 +143,21 @@ export function eventFindings(findings, root) {
       line: located ? line : null,
       text: f?.text ?? null,
       evidence: f?.evidence ?? null,
+      scope: f?.scope === "in" ? "in" : "out",
     };
+  });
+}
+
+const changedPath = (change) => reviewPath(change?.path).replace(/^\.\//, "");
+
+export function scopeReviewFindings(findings, task, changes = [], root) {
+  const produced = new Set((Array.isArray(task?.produces) ? task.produces : [])
+    .map((file) => findingFile(file, root)).filter(Boolean));
+  const changed = new Set((Array.isArray(changes) ? changes : []).map(changedPath).filter(Boolean));
+  const covers = (set, file) => set.has(file) || [...set].some((declared) => pathMatches(declared, file));
+  return (Array.isArray(findings) ? findings : []).map((finding) => {
+    const file = findingFile(finding?.file, root);
+    return { ...finding, scope: file !== null && (covers(produced, file) || covers(changed, file)) ? "in" : "out" };
   });
 }
 
@@ -326,6 +343,7 @@ export function simulationEffects() {
     setStatus: async () => {},
     recordHandoff: async () => ({ written: false }),
     recordIssue: async () => ({ written: false }),
+    createReviewFinding: async () => ({ written: false }),
     stepBase: async () => ({ ok: true, sha: "dry" }),
     priorChanges: async () => ({ ok: true, changes: null }),
     ownChanges: async () => ({ ok: true, skip: true }),
@@ -427,6 +445,32 @@ export function liveEffects({ cwd } = {}) {
         todo.updated_at = comment.created_at;
         saveBoard(file, data);
         return { written: true };
+      });
+    },
+    createReviewFinding: async ({ task, finding, changeId }) => {
+      return withDataDir((dir) => {
+        const file = path.join(dir, "todos.json");
+        const data = loadBoardForWrite(file);
+        const source = data.todos.find((todo) => todo && todo.id === task.id);
+        if (!source) return { written: false, error: `task ${task.id} not found on the board` };
+        const location = finding.file ? `${finding.file}${finding.line ? `:${finding.line}` : ""}` : "file not specified";
+        const created = newTodo(data, {
+          subject: `[review ${finding.level || "unknown"}] ${finding.text || location}`.slice(0, 150),
+          description: `Out-of-scope review finding from t#${task.number}\n[${finding.level || "unknown"}] ${location} — ${finding.text || "(no details)"}${finding.evidence ? `\nEvidence: ${finding.evidence}` : ""}`,
+          status: "backlog",
+          project: source.project || task.project || null,
+          by: "runner",
+        });
+        if (changeId) created.change_id = changeId;
+        created.links = [source.id];
+        created.review_finding = {
+          source_task: source.id,
+          level: finding.level || null,
+          file: finding.file || null,
+          line: finding.line || null,
+        };
+        saveBoard(file, data);
+        return { written: true, task: created };
       });
     },
     recordFlowDiagram: async ({ task, diagram }) => {
@@ -795,12 +839,18 @@ function park(ctx, kind, task, reason, extra = {}) {
     ...extra,
   };
   if (!ctx.stop) ctx.stop = stop;
+  const budgetFields = kind === "budget" ? {
+    spent: extra.spent,
+    ceiling: extra.ceiling ?? extra.budget,
+    source: extra.source ?? extra.budget_source,
+  } : {};
   emitRunEvent(ctx, {
     task: task?.number,
     kind: "park",
     ...(task ? { attempt: Math.max(1, ctx.attempts.get(task.id) || 1), limit: retryLimitOf(task) } : {}),
     park_kind: kind,
     reason,
+    ...budgetFields,
     attempts: task ? (task.attempts || []).map((entry, index) => ({
       attempt: entry.attempt ?? index + 1,
       reason: entry.reason ?? null,
@@ -901,34 +951,53 @@ function attemptOverrun(ctx, task) {
   if (costs.length === 1) {
     const budget = ctx.attemptBudgets?.get(task.id) ?? null;
     return budget !== null && last > budget
-      ? { reason: `first attempt overrun — ${round(last)} spent against a historical ${budget}`, spent: round(last), budget }
+      ? { reason: `first attempt overrun — ${round(last)} spent against a historical ${budget}`, spent: round(last), ceiling: budget, attempt: 1 }
       : null;
   }
   const ceiling = round(costs[0] * RETRY_COST_FACTOR);
   return last > ceiling
-    ? { reason: `retry overrun — ${round(last)} spent against ${ceiling} (${RETRY_COST_FACTOR}× the first attempt)`, spent: round(last), budget: ceiling }
+    ? { reason: `retry overrun — ${round(last)} spent against ${ceiling} (${RETRY_COST_FACTOR}× the first attempt)`, spent: round(last), ceiling, attempt: costs.length }
     : null;
 }
 
-async function parkNodeBudgetOverrun(ctx, task, { review = false, exhausted = false } = {}) {
+function warnBudgetOverrun(ctx, task, { spent, ceiling, attempt, source }) {
+  emitRunEvent(ctx, {
+    task: task.number,
+    kind: "budget_warn",
+    spent: round(spent),
+    ceiling: round(ceiling),
+    attempt,
+    source,
+  });
+}
+
+async function parkNodeBudgetOverrun(ctx, task, { review = false } = {}) {
   const own = ctx.nodeSpent.get(task.id) || 0;
-  const budget = nodeBudgetOf(ctx, task);
-  const attempt = exhausted ? attemptOverrun(ctx, task) : null;
-  const nodeOver = budget !== null && (exhausted ? own >= budget : own > budget);
-  if (!nodeOver && !attempt) return false;
+  const attempt = attemptOverrun(ctx, task);
+  if (attempt) warnBudgetOverrun(ctx, task, { ...attempt, source: "attempt" });
+
+  const declared = typeof task.budget_usd === "number" ? task.budget_usd : null;
+  const historical = declared === null ? nodeBudgetOf(ctx, task) : null;
+  if (historical !== null && own > historical) {
+    warnBudgetOverrun(ctx, task, {
+      spent: own,
+      ceiling: historical,
+      attempt: Math.max(1, ctx.attempts.get(task.id) || 1),
+      source: "historical",
+    });
+  }
+
+  if (declared === null || own <= declared) return false;
   if (review) {
     await moveTo(ctx, task, "review");
     ctx.parked.add(task.id);
   }
-  const source = typeof task.budget_usd === "number" ? "declared" : "historical";
-  if (!nodeOver) {
-    park(ctx, "budget", task, attempt.reason, { spent: attempt.spent, budget: attempt.budget, budget_source: "attempt" });
-    return true;
-  }
-  park(ctx, "budget", task, `node budget overrun — ${round(own)} spent against a ${source} ${budget}`, {
+  park(ctx, "budget", task, `node budget overrun — ${round(own)} spent against a declared ${declared}`, {
     spent: round(own),
-    budget,
-    budget_source: source,
+    ceiling: declared,
+    source: "node",
+    budget: declared,
+    budget_source: "declared",
   });
   return true;
 }
@@ -1121,6 +1190,22 @@ async function recordArchitectComment(ctx, task, { attempt, findings }) {
   return comment;
 }
 
+async function recordOutOfScopeFindings(ctx, task, findings) {
+  const changeId = task.change_id || (ctx.root?.change ? ctx.root.id : null);
+  for (const finding of findings) {
+    try {
+      const written = await ctx.effects.createReviewFinding?.({ task, finding, changeId });
+      if (written?.written === false && written.error) emitRunEvent(ctx, {
+        task: task.number, kind: "warning", warning: "review_finding_backlog", error: written.error,
+      });
+    } catch (err) {
+      emitRunEvent(ctx, {
+        task: task.number, kind: "warning", warning: "review_finding_backlog", error: String(err?.message || err),
+      });
+    }
+  }
+}
+
 async function recordGateSkippedComment(ctx, task, reason) {
   const comment = {
     id: randomUUID(),
@@ -1172,9 +1257,14 @@ function findingCounts(findings) {
   return counts;
 }
 
-const blockingFindings = (findings) => (findings || []).filter((f) => f?.level === "critical" || f?.level === "high");
+const blockingFindings = (findings) => (findings || []).filter((f) =>
+  f?.scope !== "out" && (f?.level === "critical" || f?.level === "high"));
 const findingKey = (f) => `${f?.file || ""}\u0000${f?.text || ""}`;
 const priorAttempts = (task) => Array.isArray(task?.attempts) ? task.attempts : [];
+const bestInScopeAttempt = (attempts) => (attempts || []).reduce((best, attempt) => {
+  if (!attempt?.reviewed || !attempt?.snapshot) return best;
+  return !best || blockingFindings(attempt.findings).length < blockingFindings(best.findings).length ? attempt : best;
+}, null);
 
 function convergenceStop(ctx, task, base) {
   const findings = blockingFindings(base.review?.findings);
@@ -1246,8 +1336,8 @@ async function finishAttempt(ctx, task, outcome) {
   const journal = await recordAttempt(ctx, task, outcome);
   if (outcome.review && outcome.review.skipped !== true && outcome.review.ok !== false) {
     const earlier = priorAttempts(task).slice(0, -1);
-    const best = bestAttempt(earlier);
-    if (best && blockingCount(journal) > blockingCount(best)) {
+    const best = bestInScopeAttempt(earlier);
+    if (best && blockingFindings(journal.findings).length > blockingFindings(best.findings).length) {
       const restored = restoreCheckpoint({
         cwd: ctx.cwd,
         sha: best.snapshot,
@@ -1270,14 +1360,26 @@ async function finishAttempt(ctx, task, outcome) {
 // `?issue` transition) is only RETURNED as an intent here — it is applied in
 // board order afterwards, never from inside a single node's own step.
 export async function finishStep(ctx, task, { result, review, baton, cost, ownChanges, outsideChanges }) {
+  const scopedFindings = scopeReviewFindings(
+    review?.findings,
+    task,
+    ownChanges,
+    () => repoRoot(ctx),
+  );
+  if (review && Array.isArray(review.findings)) review = { ...review, findings: scopedFindings };
   const base = resultBase(ctx, task, result, review, baton, cost, ownChanges, outsideChanges);
   const { attempt, limit } = base;
 
-  const findings = Array.isArray(review?.findings) ? review.findings : [];
-  const blocking = blockingFindings(findings);
-  const architectFindings = findings.filter((f) => f?.level === "medium" || f?.level === "low");
+  const findings = scopedFindings;
+  const inFindings = findings.filter((f) => f.scope === "in");
+  const outFindings = findings.filter((f) => f.scope === "out");
+  const blocking = blockingFindings(inFindings);
+  const architectFindings = inFindings.filter((f) => f?.level === "medium" || f?.level === "low");
   const onlyArchitectural = review && review.skipped !== true && blocking.length === 0 && architectFindings.length;
-  const reviewIssue = !!review && review.skipped !== true && !!(blocking.length || (!onlyArchitectural && (review.ok === false || review.approved !== true)));
+  const findingsAllowProgress = findings.length > 0 && blocking.length === 0;
+  const reviewIssue = !!review && review.skipped !== true && !!(
+    blocking.length || review.ok === false || (!onlyArchitectural && !findingsAllowProgress && review.approved !== true)
+  );
   if (review) emitRunEvent(ctx, {
     task: task.number,
     kind: "review",
@@ -1289,6 +1391,7 @@ export async function finishStep(ctx, task, { result, review, baton, cost, ownCh
     fallback: Array.isArray(review.fallback) ? review.fallback : [],
     guard: review.guard || "absent",
   });
+  if (outFindings.length) await recordOutOfScopeFindings(ctx, task, outFindings);
   if (onlyArchitectural) {
     await recordArchitectComment(ctx, task, { attempt, findings: architectFindings });
     base.architectFindings = architectFindings;
@@ -1888,7 +1991,7 @@ export async function applyResult(ctx, r, { dry, log }) {
     return record;
   }
   if (r.kind === "issue") {
-    if (await parkNodeBudgetOverrun(ctx, r.task, { review: true, exhausted: true })) {
+    if (await parkNodeBudgetOverrun(ctx, r.task, { review: true })) {
       record.status = r.task.status;
       return record;
     }
@@ -1973,10 +2076,13 @@ export async function runChange({
     // Budget is checked on the BOUNDARY of a step, before a new wave is
     // dispatched: whatever is running is always finished, never killed
     // mid-flight, and nothing already spent is given back.
-    if (groupBudget !== null && ctx.spent >= groupBudget) {
+    if (groupBudget !== null && ctx.spent > groupBudget) {
       park(ctx, "budget", runnable[0], budgetExhaustedReason(ctx.spent, groupBudget, runnable[0]), {
         spent: round(ctx.spent),
+        ceiling: groupBudget,
+        source: "group",
         budget: groupBudget,
+        budget_source: "declared",
         not_started: brief(runnable[0]),
       });
       break;

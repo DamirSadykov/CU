@@ -99,6 +99,7 @@ export function formatRunEvent(event) {
   if (kind === "verify") return `${prefix}${attempt}: verify ${event.ok ? "ok" : "issue"}`.trim();
   if (kind === "rollback") return `${prefix}${attempt}: rollback to ${event.to ?? "previous attempt"}`.trim();
   if (kind === "park") return `${prefix}: park ${event.park_kind || event.stop_kind || "unknown"}${event.reason ? ` — ${event.reason}` : ""}`.trim();
+  if (kind === "budget_warn") return `${prefix}${attempt}: budget warn ${event.source || "unknown"} — $${event.spent} spent of $${event.ceiling}`.trim();
   if (kind === "gate_skipped") return `${prefix}: gate skipped${event.reason ? ` — ${event.reason}` : ""}`.trim();
   if (kind === "step_start") return `${prefix}${attempt}: step start${event.route ? ` (${event.route})` : ""}`.trim();
   if (kind === "worker_done") {

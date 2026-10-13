@@ -269,6 +269,14 @@ export function auditTasks(todos, project, sinceMs, movedBy, mode = "both") {
           ? "unfinished"
           : null;
     if (!kind || !wants(mode, kind)) continue;
+    const blocking =
+      mode === "both" ||
+      todos.some(
+        (candidate) =>
+          candidate &&
+          Array.isArray(candidate.depends_on) &&
+          candidate.depends_on.includes(t.id),
+      );
 
     // A baton written BEFORE this session belongs to older work — the session's
     // own findings never made it in.
@@ -284,6 +292,7 @@ export function auditTasks(todos, project, sinceMs, movedBy, mode = "both") {
         stale: true,
         hadBaton: !!String(t.handoff || "").trim(),
         complaints: [],
+        blocking,
       });
       continue;
     }
@@ -303,6 +312,7 @@ export function auditTasks(todos, project, sinceMs, movedBy, mode = "both") {
         stale: false,
         hadBaton: true,
         complaints,
+        blocking,
       });
   }
   return out;
@@ -528,6 +538,15 @@ function reason(tasks) {
   return lines.join("\n");
 }
 
+function hint(tasks) {
+  const refs = tasks.map((t) => `#${t.number}`).join(", ");
+  return (
+    `HANDOFF suggested for ${refs}, but STOP is not blocked: these tasks have no dependents.\n` +
+    `If someone may continue the work, leave the decision/gotcha and next step with ` +
+    `node "${CLI}" todos handoff set <task> --text "<what's done; gotcha; next step>"`
+  );
+}
+
 // The spec side needs the board's up-walk (a task inherits its change root's
 // `spec`) and the registry's reader. Both are heavy relative to a hook that
 // runs on EVERY stop, so they are pulled in only once a closing task is in
@@ -600,6 +619,8 @@ async function main() {
   // those, never to another session's or a merely-touched task (#219).
   const movedBy = sessionMovedTasks(input.transcript_path);
   const tasks = auditTasks(todos, project, since, movedBy, taskMode);
+  const blockingTasks = tasks.filter((task) => task.blocking);
+  const advisoryTasks = tasks.filter((task) => !task.blocking);
 
   // BOTH guards are judged in one pass and reported together, on purpose: the
   // hook fires once per stop cycle (`stop_hook_active`), so a session blocked
@@ -634,8 +655,11 @@ async function main() {
   if (!tasks.length && !specTasks.length) return;
 
   const parts = [];
-  if (tasks.length) parts.push(reason(tasks));
+  if (blockingTasks.length) parts.push(reason(blockingTasks));
   if (specTasks.length) parts.push(specReason(specTasks, sections));
+
+  if (advisoryTasks.length) process.stdout.write(hint(advisoryTasks) + "\n");
+  if (!parts.length) return;
 
   // Exit 2 is the Stop hook's "block": stderr goes back to Claude as the reason.
   process.stderr.write(parts.join("\n") + "\n");

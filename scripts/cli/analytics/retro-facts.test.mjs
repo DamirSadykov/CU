@@ -72,7 +72,10 @@ describe("retro facts", () => {
         { event: "start", task: "task-1", session: "session-1", ts: "2026-01-01T00:00:00Z" },
         { event: "end", task: "task-1", session: "session-1", ts: "2026-01-01T00:00:20Z" },
       ],
-      runRecords: [{ change: { number: 3 }, stop: { kind: "retry", task: 7 }, steps: [{ task: 7, attempt: 2, result: "ok", cost_usd: 1.25, review: { cost_usd: 0.2 } }] }],
+      runRecords: [{ change: { number: 3 }, stop: { kind: "retry", task: 7 }, steps: [{
+        task: 7, attempt: 2, result: "ok", cost_usd: 1.25,
+        review: { cost_usd: 0.2, findings: [{ level: "high", scope: "out", text: "neighbour defect" }] },
+      }] }],
       transcripts: new Map([["session-1", transcript]]),
       commits: [{ sha: "abc", date: "2026-01-01T00:00:30Z", subject: "finish c#3" }],
     };
@@ -82,7 +85,7 @@ describe("retro facts", () => {
       worker: { cost_usd: 1.05, measured: 1 },
       reviewer: { cost_usd: 0.2, measured: 1 },
     });
-    expect(facts.summary).toMatchObject({ tasks: 1, sessions: 1, empty_bindings: 1, attempts: 1, parks: 1, commits: 1 });
+    expect(facts.summary).toMatchObject({ tasks: 1, sessions: 1, empty_bindings: 1, attempts: 1, parks: 1, commits: 1, out_of_scope_findings: 1 });
     expect(facts.summary.negative_components).toBe(facts.negative_components.length);
   });
 

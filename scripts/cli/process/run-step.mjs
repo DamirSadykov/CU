@@ -805,6 +805,7 @@ export function buildReviewPrompt({ task, workerResult = "", execution, appData,
     "Before it, list every finding exactly as `- [critical|high|medium|low] file:line — substance — evidence`.",
     "Levels: critical = the project does not build, data is lost/corrupted, or the function is unavailable; high = a step obligation is unmet or a visible regression; medium = the goal is only partly met or an edge case; low = style or a minor detail.",
     "Critical and high findings require both file:line and evidence (a concrete scenario); without either, label them medium. An obligation absent from the files is an issue.",
+    "Report out-of-scope defects too, but do not use them to reject this step: the runner classifies each finding by produces and this attempt's diff and files out-of-scope findings separately.",
   ].filter(Boolean).join("\n");
 }
 

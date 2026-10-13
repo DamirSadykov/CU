@@ -1054,6 +1054,12 @@ describe("clampOutput / parseClaudeResult", () => {
       .toEqual({ approved: false, verdict: "issue", findings: [{ level: "high", file: null, line: null, text: "looks good but omitted the contract line", evidence: null }] });
   });
 
+  it("tells review to report out-of-scope defects without rejecting the step", () => {
+    const prompt = buildReviewPrompt({ task: { number: 7, subject: "scope", produces: ["src/a.mjs"], verify: "npm test" } });
+    expect(prompt).toContain("Report out-of-scope defects too");
+    expect(prompt).toContain("do not use them to reject this step");
+  });
+
   it("parses structured findings and downgrades unsupported critical/high findings", () => {
     const verdict = parseReviewVerdict([
       "- [critical] src/data.mjs:42 — deletes records — delete flow drops existing rows",

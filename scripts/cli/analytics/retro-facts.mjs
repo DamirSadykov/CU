@@ -467,11 +467,18 @@ function negativeComponents(facts) {
   }
   for (const task of facts.tasks) for (const attempt of task.attempts || []) {
     for (const finding of attempt.findings || []) {
-      if (finding?.level === "critical" || finding?.level === "high")
+      if (finding?.scope !== "out" && (finding?.level === "critical" || finding?.level === "high"))
         out.push({ kind: "blocking_finding", task: task.task, level: finding.level, text: finding.text || null });
     }
   }
   return out;
+}
+
+function outOfScopeFindingCount(runs) {
+  let count = 0;
+  for (const run of runs) for (const step of run.steps || [])
+    for (const finding of step.review?.findings || []) if (finding?.scope === "out") count += 1;
+  return count;
 }
 
 export function summarizeRetroFacts(facts) {
@@ -490,6 +497,9 @@ export function summarizeRetroFacts(facts) {
     parks: facts.runs.filter((r) => r.stop).length,
     commits: facts.commits.length,
     cost_by_role: facts.cost_by_role,
+    out_of_scope_findings: Number.isInteger(facts.out_of_scope_findings)
+      ? facts.out_of_scope_findings
+      : outOfScopeFindingCount(facts.runs || []),
     negative_components: components.length,
   };
 }
@@ -543,6 +553,7 @@ export function buildRetroFacts({ board, change, taskSessionEvents = [], runReco
     coverage: factsCoverage(tasks, runs, sessions, chains),
     commits,
     cost_by_role: costsByRole(runs),
+    out_of_scope_findings: outOfScopeFindingCount(runs),
   };
   facts.negative_components = negativeComponents(facts);
   facts.summary = summarizeRetroFacts(facts);

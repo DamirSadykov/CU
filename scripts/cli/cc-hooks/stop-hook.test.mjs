@@ -152,6 +152,25 @@ describe("auditTasks", () => {
     expect(nums("unfinished")).toEqual([2]);
     expect(nums("both")).toEqual([1, 2]);
   });
+
+  it("makes a leaf-task complaint advisory unless strict both mode is selected", () => {
+    const leaf = task({ handoff: "", handoff_at: undefined });
+    expect(auditTasks([leaf], "tracker", SESSION_START, moved(), "submitted")[0].blocking).toBe(false);
+    expect(auditTasks([leaf], "tracker", SESSION_START, moved(), "both")[0].blocking).toBe(true);
+  });
+
+  it("blocks a complaint when another task depends on the closing task", () => {
+    const prerequisite = task({ handoff: "", handoff_at: undefined });
+    const dependent = task({ id: "id-2", number: 60, status: "queue", depends_on: ["id-1"] });
+    const found = auditTasks(
+      [prerequisite, dependent],
+      "tracker",
+      SESSION_START,
+      moved(),
+      "submitted",
+    );
+    expect(found[0].blocking).toBe(true);
+  });
 });
 
 describe("parseSessionMoves", () => {
@@ -541,6 +560,24 @@ describe("cli stop-hook — the spec guard end to end", () => {
   it("stays completely silent by default when only the spec answer is missing", () => {
     board(closing());
     expect(runHook().code).toBe(0);
+  });
+
+  it("prints a non-blocking handoff hint for a leaf task in submitted mode", () => {
+    settings({ taskHandoffGuard: "submitted" });
+    board(closing({ spec: [], handoff: "", handoff_at: undefined }));
+    const { code, out } = runHook();
+    expect(code).toBe(0);
+    expect(out).toMatch(/HANDOFF suggested/);
+    expect(out).toMatch(/not blocked/);
+  });
+
+  it("still blocks submitted mode when the task has a dependent", () => {
+    settings({ taskHandoffGuard: "submitted" });
+    board(
+      closing({ spec: [], handoff: "", handoff_at: undefined }),
+      { id: "id-2", number: 2, subject: "next", status: "queue", depends_on: ["id-1"] },
+    );
+    expect(runHook().code).toBe(2);
   });
 
   it("does not crash on an unreadable board — prints one recovery line and stands down clean", () => {
