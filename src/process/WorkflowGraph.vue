@@ -4,8 +4,7 @@ import { useI18n } from "vue-i18n";
 
 interface DutyState {
   mode: string;
-  provider: string;
-  model: string;
+  candidates: Array<{ provider: string; model: string }>;
 }
 
 interface FlowNode {
@@ -27,23 +26,24 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
+const candidateChain = (duty: DutyState) => duty.candidates.map((candidate) => `${candidate.provider}/${candidate.model}`).join(" → ");
 
 const criticOff = computed(() => props.critic.mode === "off");
 const criticSub = computed(() => {
   if (criticOff.value) return t("agentMode_off");
   if (props.critic.mode === "session") return t("agentMode_session");
-  return `${props.critic.provider}/${props.critic.model}`;
+  return candidateChain(props.critic);
 });
 
 const architectOff = computed(() => props.architect.mode === "off");
 const gateSub = computed(() => {
   if (!props.planInstalled) return t("wfGateNotWired");
   if (architectOff.value) return t("wfGateFormatOnly");
-  return `${props.architect.provider}/${props.architect.model}`;
+  return candidateChain(props.architect);
 });
 
 const reviewOff = computed(() => props.review.mode === "off");
-const reviewSub = computed(() => (reviewOff.value ? t("agentMode_off") : `${props.review.provider}/${props.review.model}`));
+const reviewSub = computed(() => (reviewOff.value ? t("agentMode_off") : candidateChain(props.review)));
 
 const interactiveNodes = computed<FlowNode[]>(() => [
   { key: "request", label: t("wfUserRequest") },
@@ -69,7 +69,7 @@ const interactiveNodes = computed<FlowNode[]>(() => [
 
 const runnerNodes = computed<FlowNode[]>(() => [
   { key: "ready", label: t("wfReadyStep") },
-  { key: "worker", label: t("agentDuty_worker"), sub: `${props.worker.provider}/${props.worker.model}` },
+  { key: "worker", label: t("agentDuty_worker"), sub: candidateChain(props.worker) },
   {
     key: "review",
     label: t("agentDuty_review"),

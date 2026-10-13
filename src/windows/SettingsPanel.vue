@@ -355,51 +355,95 @@ onMounted(loadIgnoredInsights);
 
 // --- Global responsibility -> provider/model lifecycle map ---
 // agents.json is also consumed by the Node CLI. Tasks never select a model.
+type AgentProvider = keyof typeof agentProviderManifest.providers;
+
+interface AgentCandidateForm {
+  provider: AgentProvider;
+  model: string;
+  reasoning_effort: string;
+  [key: string]: unknown;
+}
+
 interface AgentProfileForm {
   duty: "critic" | "architect" | "worker" | "review" | "retro";
-  provider: "anthropic" | "openai";
-  model: string;
+  candidates: AgentCandidateForm[];
   mode: string;
   role: string;
-  reasoning_effort: string;
   instructions: string;
+  [key: string]: unknown;
 }
 const agentProfiles = ref<AgentProfileForm[]>([]);
+const storedAgentDuties = ref<Record<string, Record<string, unknown>>>({});
 const agentConfigMsg = ref("");
 const dutyModes = agentProviderManifest.modes as Record<AgentProfileForm["duty"], string[]>;
-const providerNames = Object.keys(agentProviderManifest.providers) as AgentProfileForm["provider"][];
+const providerNames = Object.keys(agentProviderManifest.providers) as AgentProvider[];
 const providerModels = Object.fromEntries(
   providerNames.map((provider) => [provider, [...agentProviderManifest.providers[provider].models]]),
-) as Record<AgentProfileForm["provider"], string[]>;
+) as Record<AgentProvider, string[]>;
 const providerAliases = Object.fromEntries(
   providerNames.map((provider) => [provider, (agentProviderManifest.providers[provider] as { aliases?: Record<string, string> }).aliases ?? {}]),
-) as Record<AgentProfileForm["provider"], Record<string, string>>;
+) as Record<AgentProvider, Record<string, string>>;
 const providerLabels = Object.fromEntries(
   providerNames.map((provider) => [provider, agentProviderManifest.providers[provider].label]),
-) as Record<AgentProfileForm["provider"], string>;
+) as Record<AgentProvider, string>;
 const agentDuties: AgentProfileForm["duty"][] = ["critic", "architect", "worker", "review", "retro"];
 const starterAgents: AgentProfileForm[] = agentDuties.map((duty) => {
   const profile = agentProviderManifest.duties[duty];
-  return { duty, ...profile, provider: profile.provider as AgentProfileForm["provider"] };
+  return {
+    duty,
+    ...profile,
+    candidates: profile.candidates.map((candidate) => ({
+      ...candidate,
+      provider: candidate.provider as AgentProvider,
+      reasoning_effort: candidate.reasoning_effort ?? "",
+    })),
+  };
 });
 
 const dutyMode = dutyModeReader(agentProviderManifest);
 const cleanMode = dutyMode.cleanMode as (duty: AgentProfileForm["duty"], value: unknown) => string;
 
-function normalizeAgentProfile(value: Record<string, unknown> | undefined, fallback: AgentProfileForm): AgentProfileForm {
-  if (!value) return { ...fallback };
-  const provider = String(value.provider ?? "").trim().toLowerCase();
-  const model = providerAliases[provider as AgentProfileForm["provider"]]?.[String(value.model ?? "").trim()] ?? String(value.model ?? "").trim();
-  if ((provider !== "anthropic" && provider !== "openai") || !providerModels[provider].includes(model)) {
-    return { ...fallback };
-  }
+function cloneAgentProfile(profile: AgentProfileForm): AgentProfileForm {
+  return { ...profile, candidates: profile.candidates.map((candidate) => ({ ...candidate })) };
+}
+
+function normalizeAgentCandidate(value: unknown): AgentCandidateForm | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const raw = value as Record<string, unknown>;
+  const provider = String(raw.provider ?? "").trim().toLowerCase();
+  if (!providerNames.includes(provider as AgentProvider)) return null;
+  const typedProvider = provider as AgentProvider;
+  const sourceModel = String(raw.model ?? "").trim();
+  const model = providerAliases[typedProvider][sourceModel] ?? sourceModel;
+  if (!providerModels[typedProvider].includes(model)) return null;
   return {
-    duty: fallback.duty,
-    provider,
+    ...raw,
+    provider: typedProvider,
     model,
+    reasoning_effort: String(raw.reasoning_effort ?? "").trim(),
+  };
+}
+
+function normalizeAgentProfile(value: Record<string, unknown> | undefined, fallback: AgentProfileForm): AgentProfileForm {
+  if (!value) return cloneAgentProfile(fallback);
+  const sourceCandidates = Array.isArray(value.candidates)
+    ? value.candidates
+    : [{ provider: value.provider, model: value.model, reasoning_effort: value.reasoning_effort }];
+  const candidates = sourceCandidates.map(normalizeAgentCandidate).filter((candidate): candidate is AgentCandidateForm => !!candidate);
+  for (const starter of fallback.candidates) {
+    if (candidates.length >= 2) break;
+    if (!candidates.some((candidate) => candidate.provider === starter.provider && candidate.model === starter.model)) {
+      candidates.push({ ...starter });
+    }
+  }
+  if (!candidates.length) candidates.push(...fallback.candidates.map((candidate) => ({ ...candidate })));
+  return {
+    ...fallback,
+    ...value,
+    duty: fallback.duty,
+    candidates,
     mode: fallback.mode,
     role: String(value.role ?? fallback.role).trim(),
-    reasoning_effort: provider === "openai" ? String(value.reasoning_effort ?? "").trim() : "",
     instructions: String(value.instructions ?? fallback.instructions).trim(),
   };
 }
@@ -415,6 +459,7 @@ async function loadAgentProfiles() {
       worker: legacy.worker,
       review: legacy.review ?? legacy.reviewer,
     } : undefined);
+    storedAgentDuties.value = duties ?? {};
     const hooks = await store.get<Record<string, boolean>>("hooks");
     const storedCriticMode = await store.get<string>("criticMode");
     agentProfiles.value = starterAgents.map((fallback) => {
@@ -427,7 +472,7 @@ async function loadAgentProfiles() {
 }
 
 function installStarterAgents() {
-  agentProfiles.value = starterAgents.map((p) => ({ ...p }));
+  agentProfiles.value = starterAgents.map(cloneAgentProfile);
   agentConfigMsg.value = "";
 }
 
@@ -437,26 +482,34 @@ function restoreAgentInstructions(p: AgentProfileForm) {
 
 function dutyState(duty: AgentProfileForm["duty"]) {
   const p = agentProfiles.value.find((profile) => profile.duty === duty);
-  return { mode: p?.mode ?? "off", provider: p?.provider ?? "anthropic", model: p?.model ?? "" };
+  return { mode: p?.mode ?? "off", candidates: p?.candidates.map(({ provider, model }) => ({ provider, model })) ?? [] };
 }
 
-function changeAgentProvider(p: AgentProfileForm, provider: AgentProfileForm["provider"]) {
-  p.provider = provider;
-  if (!providerModels[provider].includes(p.model)) p.model = providerModels[provider][0];
-  if (provider !== "openai") p.reasoning_effort = "";
+function changeAgentProvider(candidate: AgentCandidateForm, provider: AgentProvider) {
+  candidate.provider = provider;
+  if (!providerModels[provider].includes(candidate.model)) candidate.model = providerModels[provider][0];
+  if (provider !== "openai") candidate.reasoning_effort = "";
 }
 
 async function saveAgentProfiles() {
   agentConfigMsg.value = "";
-  const duties: Record<string, Record<string, string>> = {};
+  const duties: Record<string, Record<string, unknown>> = { ...storedAgentDuties.value };
   for (const p of agentProfiles.value) {
-    const model = p.model.trim();
-    if (!providerModels[p.provider].includes(model)) {
+    const candidates = p.candidates.map((candidate) => {
+      const model = candidate.model.trim();
+      if (!providerModels[candidate.provider].includes(model)) return null;
+      const saved: Record<string, unknown> = { ...candidate, provider: candidate.provider, model };
+      if (!candidate.reasoning_effort.trim()) delete saved.reasoning_effort;
+      else saved.reasoning_effort = candidate.reasoning_effort.trim();
+      return saved;
+    });
+    if (candidates.length < 2 || candidates.some((candidate) => !candidate)) {
       agentConfigMsg.value = t("agentProfilesInvalid");
       return;
     }
-    duties[p.duty] = { mode: cleanMode(p.duty, p.mode) || p.mode, provider: p.provider, model };
-    for (const k of ["role", "reasoning_effort", "instructions"] as const) {
+    const { duty: _duty, candidates: _candidates, mode: _mode, role: _role, instructions: _instructions, ...unknown } = p;
+    duties[p.duty] = { ...unknown, mode: cleanMode(p.duty, p.mode) || p.mode, candidates };
+    for (const k of ["role", "instructions"] as const) {
       const value = p[k].trim();
       if (value) duties[p.duty][k] = value;
     }
@@ -464,11 +517,12 @@ async function saveAgentProfiles() {
   try {
     const { load: loadStore } = await import("@tauri-apps/plugin-store");
     const store = await loadStore("agents.json");
-    await store.set("version", 4);
+    await store.set("version", 5);
     await store.set("duties", duties);
     await store.delete("hooks");
     await store.delete("criticMode");
     await store.save();
+    storedAgentDuties.value = duties;
     agentConfigMsg.value = t("agentProfilesSaved");
   } catch (e) {
     agentConfigMsg.value = String(e);
@@ -524,6 +578,7 @@ onMounted(loadCcHookStatus);
 
 interface CodexHookStatus {
   installed: boolean;
+  guard_active: boolean;
   script_path: string;
   wired_path: string;
   wired_path_exists: boolean;
@@ -1585,34 +1640,37 @@ function handleSave() {
               <strong>{{ t(`agentDuty_${p.duty}`) }}</strong>
               <span>{{ t(`agentTrigger_${p.duty}`) }}</span>
             </div>
-            <span class="model-chip" :class="modelFamilyClass(p.model, p.provider)">{{ p.model || t('agentModel') }}</span>
+            <span class="model-chip" :class="modelFamilyClass(p.candidates[0]?.model ?? '', p.candidates[0]?.provider ?? '')">{{ p.candidates[0]?.model || t('agentModel') }}</span>
           </div>
           <div class="agent-profile-grid">
-            <label>
+            <label class="agent-mode-field">
               <span class="field-label">{{ t('agentMode') }}</span>
               <select v-model="p.mode" class="field-input" :disabled="dutyModes[p.duty].length <= 1">
                 <option v-for="m in dutyModes[p.duty]" :key="m" :value="m">{{ t(`agentMode_${m}`) }}</option>
               </select>
             </label>
-            <label>
-              <span class="field-label">{{ t('agentProvider') }}</span>
-              <select :value="p.provider" class="field-input" @change="changeAgentProvider(p, ($event.target as HTMLSelectElement).value as AgentProfileForm['provider'])">
-                <option v-for="provider in providerNames" :key="provider" :value="provider">{{ providerLabels[provider] }}</option>
-              </select>
-            </label>
-            <label>
-              <span class="field-label">{{ t('agentModel') }}</span>
-              <select v-model="p.model" class="field-input">
-                <option v-for="model in providerModels[p.provider]" :key="model" :value="model">{{ model }}</option>
-              </select>
-            </label>
-            <label>
-              <span class="field-label">{{ t('agentReasoning') }}</span>
-              <select v-model="p.reasoning_effort" class="field-input" :disabled="p.provider !== 'openai'">
-                <option value="">—</option>
-                <option v-for="r in ['low','medium','high','xhigh','max','ultra']" :key="r" :value="r">{{ r }}</option>
-              </select>
-            </label>
+            <template v-for="(candidate, candidateIndex) in p.candidates.slice(0, 2)" :key="candidateIndex">
+              <div class="agent-candidate-label">{{ candidateIndex === 0 ? t('agentPrimary') : t('agentReserve') }}</div>
+              <label>
+                <span class="field-label">{{ t('agentProvider') }}</span>
+                <select :value="candidate.provider" class="field-input" @change="changeAgentProvider(candidate, ($event.target as HTMLSelectElement).value as AgentProvider)">
+                  <option v-for="provider in providerNames" :key="provider" :value="provider">{{ providerLabels[provider] }}</option>
+                </select>
+              </label>
+              <label>
+                <span class="field-label">{{ t('agentModel') }}</span>
+                <select v-model="candidate.model" class="field-input">
+                  <option v-for="model in providerModels[candidate.provider]" :key="model" :value="model">{{ model }}</option>
+                </select>
+              </label>
+              <label>
+                <span class="field-label">{{ t('agentReasoning') }}</span>
+                <select v-model="candidate.reasoning_effort" class="field-input" :disabled="candidate.provider !== 'openai'">
+                  <option value="">—</option>
+                  <option v-for="r in ['low','medium','high','xhigh','max','ultra']" :key="r" :value="r">{{ r }}</option>
+                </select>
+              </label>
+            </template>
           </div>
           <div class="field-hint">{{ t(`agentModeHint_${p.mode}`) }}</div>
           <label>
@@ -1648,6 +1706,7 @@ function handleSave() {
               — {{ ccHookStatus.wired_path }}
             </span>
           </div>
+          <div class="field-hint guard-state guard-state-active">{{ t('agentGuardActiveClaude') }}</div>
           <!-- Wired, but the script is gone: Claude Code has been running
                `node "<gone>"` and getting nothing. -->
           <div
@@ -1682,6 +1741,9 @@ function handleSave() {
             <span v-if="codexHookStatus.installed && codexHookStatus.wired_path" class="muted">
               — {{ codexHookStatus.wired_path }}
             </span>
+          </div>
+          <div v-if="codexHookStatus" class="field-hint guard-state" :class="codexHookStatus.guard_active ? 'guard-state-active' : 'guard-state-absent'">
+            {{ codexHookStatus.guard_active ? t('agentGuardActive') : t('agentGuardAbsent') }}
           </div>
           <div
             v-if="codexHookStatus && codexHookStatus.installed && !codexHookStatus.wired_path_exists"
@@ -2125,7 +2187,7 @@ function handleSave() {
 }
 .agent-profile-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 .agent-duty {
@@ -2164,6 +2226,18 @@ function handleSave() {
 .model-anthropic-sonnet { color: var(--ok); }
 .model-anthropic-haiku { color: var(--next); }
 .model-anthropic { color: var(--ag-claude); }
+.agent-candidate-label {
+  grid-column: 1 / -1;
+  align-self: end;
+  padding-bottom: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-3);
+}
+.agent-mode-field { grid-column: 1 / -1; }
+.guard-state { margin-top: 4px; }
+.guard-state-active { color: var(--ok); }
+.guard-state-absent { color: var(--warn); }
 .model-unknown { color: var(--text-4); }
 
 .field-range {

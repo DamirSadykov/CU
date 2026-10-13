@@ -7,6 +7,17 @@ declare module "*.vue" {
 }
 
 declare module "*/duty-mode.mjs" {
+  export interface DutyCandidate {
+    provider: string;
+    model: string;
+    reasoning_effort?: string;
+    [key: string]: unknown;
+  }
+  export interface DutyProfile {
+    mode?: unknown;
+    candidates?: DutyCandidate[];
+    [key: string]: unknown;
+  }
   export interface DutyModeLegacy {
     hooks?: Record<string, boolean> | null;
     criticMode?: string | null;
@@ -18,7 +29,7 @@ declare module "*/duty-mode.mjs" {
     migratedMode(duty: string, legacy: DutyModeLegacy | null | undefined): string;
     resolveMode(
       duty: string,
-      profile: { mode?: unknown } | null | undefined,
+      profile: DutyProfile | null | undefined,
       legacy: DutyModeLegacy | null | undefined,
     ): string;
   }
