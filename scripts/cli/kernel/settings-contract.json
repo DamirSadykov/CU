@@ -60,7 +60,8 @@
     { "key": "specRoot", "scope": "shared", "writer": "manual", "readers": ["rust", "cli"], "default": "docs/specs" },
     { "key": "specDeltaGuard", "scope": "hook", "writer": "manual", "readers": ["cli"], "default": "on" },
     { "key": "matchPlanCli", "scope": "hook", "writer": "manual", "readers": ["cli"], "default": "" },
-    { "key": "specRepos", "scope": "hook", "writer": "manual", "readers": ["cli"], "default": {} }
+    { "key": "specRepos", "scope": "hook", "writer": "manual", "readers": ["cli"], "default": {} },
+    { "key": "parkedStepExpiryHours", "scope": "hook", "writer": "manual", "readers": ["cli"], "default": 24 }
   ],
   "legacy": [
     { "key": "thresholds", "note": "до разделения на thresholdsSession/thresholdsWeekly; читается только как fallback миграции в settingsStore.ts" },

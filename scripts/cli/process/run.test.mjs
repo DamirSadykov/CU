@@ -147,6 +147,110 @@ const statusOf = (report, number) =>
 // ── the loop ─────────────────────────────────────────────────────────────────
 
 describe("runChange — the frontier", () => {
+  it("expires an old parked step to backlog with its reason/card baton and runs the next ready step", async () => {
+    const parkedAt = "2026-10-12T09:00:00.000Z";
+    const parked = auto(2, {
+      status: "review",
+      status_history: [{ status: "review", at: parkedAt }],
+      comments: [{
+        author: "review",
+        created_at: parkedAt,
+        body: "Decision card — mechanics\nreason: worker lost\nactions:\n  fix by hand",
+      }],
+    });
+    const data = board(changeRoot(123333, [2, 3], { budget_usd: 10 }), parked, auto(3));
+    const h = harness();
+
+    const report = await go(data, "123333", h.effects, {
+      parkedExpiryHours: 24,
+      now: () => Date.parse("2026-10-14T09:00:00.000Z"),
+    });
+
+    expect(h.calls.steps).toEqual([3]);
+    expect(h.calls.statuses).toContainEqual([2, "backlog"]);
+    expect(h.calls.batons[0][0]).toBe(2);
+    expect(h.calls.batons[0][1]).toMatch(/Parking reason: worker lost/);
+    expect(h.calls.batons[0][1]).toMatch(/Decision card — mechanics/);
+    expect(statusOf(report, 2)).toBe("backlog");
+
+    const eventsFile = path.join(sandboxAppData, "com.cu.app", "run-events.jsonl");
+    const expired = readFileSync(eventsFile, "utf8").trim().split("\n").map(JSON.parse)
+      .find((event) => event.change === "c#123333" && event.task === "t#2" && event.kind === "parked_expired");
+    expect(expired).toMatchObject({ expiry_hours: 24, reason: "worker lost", parked_at: parkedAt });
+
+    const preview = await runChange({
+      data,
+      change: "123333",
+      dry: true,
+      parkedExpiryHours: 24,
+      now: () => Date.parse("2026-10-14T09:00:00.000Z"),
+    });
+    expect(preview.waves).toEqual([[3]]);
+    expect(statusOf(preview, 2)).toBe("backlog");
+
+    const again = await go(report.board, "123333", h.effects, {
+      parkedExpiryHours: 24,
+      now: () => Date.parse("2026-10-15T09:00:00.000Z"),
+    });
+    expect(again.steps).toEqual([]);
+    expect(again.stop).toBeNull();
+  });
+
+  it("rechecks parked expiry before the next wave", async () => {
+    const parkedAt = "2026-10-13T09:00:00.000Z";
+    const parked = auto(3, {
+      status: "review",
+      status_history: [{ status: "review", at: parkedAt }],
+      comments: [{ author: "review", created_at: parkedAt, body: "Decision card — gate\nreason: needs input" }],
+    });
+    const data = board(
+      changeRoot(1, [2, 3, 4], { budget_usd: 10 }),
+      auto(2),
+      parked,
+      auto(4, { depends_on: deps(2) }),
+    );
+    const h = harness();
+    let clockReads = 0;
+
+    const report = await go(data, "1", h.effects, {
+      parkedExpiryHours: 24,
+      now: () => Date.parse(clockReads++ === 0 ? "2026-10-14T08:59:00.000Z" : "2026-10-14T09:01:00.000Z"),
+    });
+
+    expect(report.waves).toEqual([[2], [4]]);
+    expect(h.calls.steps).toEqual([2, 4]);
+    expect(h.calls.statuses).toContainEqual([3, "backlog"]);
+    expect(report.stop).toBeNull();
+  });
+
+  it("does not expire resumed work that retains an old decision card", async () => {
+    const parkedAt = "2026-10-12T09:00:00.000Z";
+    const resumed = auto(2, {
+      status: "in_progress",
+      status_history: [
+        { status: "review", at: parkedAt },
+        { status: "in_progress", at: "2026-10-13T09:00:00.000Z" },
+      ],
+      comments: [{
+        author: "review",
+        created_at: parkedAt,
+        body: "Decision card — mechanics\nreason: needs input",
+      }],
+    });
+    const data = board(changeRoot(1, [2], { budget_usd: 10 }), resumed);
+    const h = harness();
+
+    const report = await go(data, "1", h.effects, {
+      parkedExpiryHours: 24,
+      now: () => Date.parse("2026-10-14T09:00:00.000Z"),
+    });
+
+    expect(h.calls.steps).toEqual([2]);
+    expect(h.calls.statuses).not.toContainEqual([2, "backlog"]);
+    expect(h.calls.batons).toEqual([]);
+    expect(statusOf(report, 2)).toBe("done");
+  });
+
   it("passes outside changes from the executor-scoped diff to review", async () => {
     const data = board(changeRoot(1, [2]), auto(2, { step_base: "base" }));
     let reviewed;
@@ -754,6 +858,38 @@ describe("runChange — issue, transition and the retry limit", () => {
   it("labels the run header with c# for a change", async () => {
     const r = await runChange({ data: board(changeRoot(1, [2]), auto(2)), change: "1", dry: true });
     expect(formatRunReport(r)).toMatch(/^change c#1 /);
+  });
+
+  it("tells the architect to launch a dry run in the background without watching it", async () => {
+    const r = await runChange({ data: board(changeRoot(1, [2]), auto(2)), change: "1", dry: true });
+    const text = formatRunReport(r);
+    expect(text).toContain("todos run c#1 --go");
+    expect(text).toContain("run_in_background: true");
+    expect(text).toContain("do not observe or narrate");
+    expect(text).not.toContain("todos run watch");
+    expect(text).not.toContain("Monitor");
+  });
+
+  it("leaves the decision card and restart command at the end of stopped-run stdout", () => {
+    const text = formatRunReport({
+      change: { number: 1, subject: "change", parallel_limit: 1, parallel_declared: 1, budget_usd: 1 },
+      members: [{ number: 2 }],
+      dry: false,
+      steps: [],
+      architect_findings: [],
+      transitions: [],
+      refused: [],
+      spend: { usd: 0, group_budget: 1, unmeasured_steps: 0 },
+      stop: {
+        kind: "gate",
+        task: { number: 2, subject: "decision" },
+        status: "review",
+        reason: "needs input",
+        card: "Decision card — gate\nreason: needs input\nactions:\n  decide\n",
+      },
+      complete: false,
+    });
+    expect(text).toMatch(/Decision card — gate[\s\S]*restart: todos run c#1 --go\n$/);
   });
 
   it("never starts attempt M+1", async () => {

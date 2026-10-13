@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { mkdirSync, writeFileSync } from "node:fs";
 import contract from "./settings-contract.json" with { type: "json" };
 import {
   SETTINGS_KEYS,
   hookContextEnabled,
   matchPlanCli,
+  parkedStepExpiryHours,
   specDeltaGuard,
   specRepoPath,
   specRepos,
@@ -43,6 +45,14 @@ describe("CLI settings contract", () => {
       expect(specRepos(appData)).toEqual(defaults.get("specRepos"));
       expect(specRepoPath("unlisted", appData)).toBe("");
       expect(uiLocale(appData)).toBe(defaults.get("locale"));
+      expect(parkedStepExpiryHours(appData)).toBe(defaults.get("parkedStepExpiryHours"));
+
+      const dir = path.join(appData, "com.cu.app");
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(path.join(dir, "settings.json"), JSON.stringify({ parkedStepExpiryHours: 0 }));
+      expect(parkedStepExpiryHours(appData)).toBe(0);
+      writeFileSync(path.join(dir, "settings.json"), JSON.stringify({ parkedStepExpiryHours: -1 }));
+      expect(parkedStepExpiryHours(appData)).toBe(24);
     } finally {
       rmSync(appData, { recursive: true, force: true });
     }

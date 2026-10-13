@@ -155,7 +155,8 @@ export function buildWorkflowContext(state = workflowState(), host = "claude") {
       "   Any L step or open branch → plan; keep it current as evidence changes.",
       "   No tracker ExitPlanMode gate is wired for Codex; this session owns plan quality and review.",
       "3 implement → verify. Check fails → fix and re-verify. The PLAN was wrong → back to 2. Out of moves → ask the user.",
-      `Auto runner — \`cli run\`, its own process, NOT this session: ${runner}`,
+      `Auto runner — \`<cli> todos run <c#N> --go\`, its own background process, NOT this session: ${runner}`,
+      "   Start it with background execution (`run_in_background: true` in Claude Code) and do not observe it from this session. On a stop the process exits; its final stdout lines are the decision card and restart command.",
     ].join("\n");
   }
   return [
@@ -167,7 +168,8 @@ export function buildWorkflowContext(state = workflowState(), host = "claude") {
     "   Any L step or open branch → plan mode → ExitPlanMode.",
     architectLine(state),
     "3 implement → verify. Check fails → fix and re-verify. The PLAN was wrong → back to 2. Out of moves → ask the user.",
-    `Auto runner — \`cli run\`, its own process, NOT this session: ${runner}`,
+    `Auto runner — \`<cli> todos run <c#N> --go\`, its own background process, NOT this session: ${runner}`,
+    "   Start it with background execution (`run_in_background: true` in Claude Code) and do not observe it from this session. On a stop the process exits; its final stdout lines are the decision card and restart command.",
   ].join("\n");
 }
 

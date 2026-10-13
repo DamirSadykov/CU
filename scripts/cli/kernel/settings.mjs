@@ -27,6 +27,7 @@ export const SETTINGS_KEYS = [
   "specRoot",
   "specRepos",
   "flowLanguages",
+  "parkedStepExpiryHours",
   "locale",
 ];
 
@@ -163,4 +164,9 @@ export function flowLanguages(project, appData) {
   if (!Array.isArray(configured)) return ["cs"];
   const selected = [...new Set(configured.filter((value) => typeof value === "string" && FLOW_LANGUAGES.has(value)))];
   return selected.length ? selected : ["cs"];
+}
+
+export function parkedStepExpiryHours(appData) {
+  const v = readSettings(appData).parkedStepExpiryHours;
+  return typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : 24;
 }

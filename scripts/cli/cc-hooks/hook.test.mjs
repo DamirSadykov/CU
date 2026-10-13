@@ -168,8 +168,13 @@ describe("buildWorkflowContext", () => {
 
   it("keeps the auto runner explicitly separate from this session", () => {
     const context = buildWorkflowContext({ ...base, critic: "session", planGuard: true });
-    expect(context).toContain("Auto runner — `cli run`, its own process, NOT this session");
+    expect(context).toContain("Auto runner — `<cli> todos run <c#N> --go`, its own background process, NOT this session");
     expect(context).toContain("runner → worker (anthropic/sonnet) → review (anthropic/opus)");
+    expect(context).toContain("run_in_background: true");
+    expect(context).toContain("do not observe it from this session");
+    expect(context).toContain("final stdout lines are the decision card and restart command");
+    expect(context).not.toContain("todos run watch");
+    expect(context).not.toContain("Monitor");
     expect(context).not.toContain("flowchart LR");
   });
 
@@ -399,7 +404,7 @@ describe("cli.mjs hook (stdin payload)", () => {
     expect(out).toContain("──────── WORKFLOW · this session");
     expect(out).toContain("0 scout");
     expect(out).toContain("all steps S or M, files known, no open branch → no plan");
-    expect(out).toContain("Auto runner — `cli run`, its own process, NOT this session");
+    expect(out).toContain("Auto runner — `<cli> todos run <c#N> --go`, its own background process, NOT this session");
   });
 
   it("injects host-correct workflow text for Codex", () => {
