@@ -1239,6 +1239,12 @@ export async function executeReview(options = {}) {
 // never assembled from anything else: no task subject, path, session id or
 // model output is ever concatenated into a command line. A caller that wants no
 // shell at all passes an argv array instead, which is spawned directly.
+export function verifyEnv(cwd, env) {
+  const base = env || process.env;
+  if (String(base.CARGO_TARGET_DIR || "").trim()) return base;
+  return { ...base, CARGO_TARGET_DIR: path.join(cwd || process.cwd(), "src-tauri", "target-runner") };
+}
+
 export async function runVerify({
   cmd,
   cwd,
@@ -1247,6 +1253,7 @@ export async function runVerify({
   env,
   onOutput,
 } = {}) {
+  env = verifyEnv(cwd, env);
   if (Array.isArray(cmd)) {
     const [file, ...args] = cmd.filter((x) => x != null).map(String);
     if (!file)
