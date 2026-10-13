@@ -250,12 +250,74 @@ describe("apply refuses an invalid graph", () => {
     expect(errors).toEqual([]);
   });
 
-  it("infers nothing for a step bound to a board task", () => {
+  it("adds the layers test when a verified step produces under scripts/cli", () => {
+    const doc = readDocument(
+      [
+        "steps:",
+        "  1:",
+        "    task: 12",
+        "    produces: [scripts\\cli\\process\\apply.mjs]",
+        "    verify: npx vitest run scripts/cli/process/apply.test.mjs",
+      ].join("\n"),
+    );
+    const { doc: next, inferred } = inferDocument(doc);
+    expect(next.steps[0].verify).toBe(
+      "npx vitest run scripts/cli/process/apply.test.mjs && npx vitest run scripts/cli/kernel/layers.test.mjs",
+    );
+    expect(inferred).toEqual([
+      { step: "1", field: "verify", value: next.steps[0].verify },
+      { step: "1", field: "retry", value: "2" },
+    ]);
+  });
+
+  it("infers retry for a bound task only when the task declares none", () => {
+    const file = path.join(mkdtempSync(path.join(os.tmpdir(), "cut-apply-retry-")), "todos.json");
+    try {
+      const data = {
+        version: 1,
+        todos: [
+          { id: "t-a", number: 21, subject: "A", status: "backlog", project: "fixture", change_id: "ch-1", kind: "auto", verify: "npm test" },
+          { id: "t-b", number: 22, subject: "B", status: "backlog", project: "fixture", change_id: "ch-1", kind: "auto", verify: "npm test", retry_limit: 4 },
+        ],
+        changes: [{ id: "ch-1", number: 1, title: "Раннер", delta: "x", project: "fixture", out: [], measure: [] }],
+      };
+      const doc = readDocument(["change: c#1", "steps:", "  a:", "    task: 21", "    size: S", "  b:", "    task: 22", "    size: S"].join("\n"));
+      expect(applyDocument(doc, { go: true, project: "fixture", board: { data, file } }).ok).toBe(true);
+      expect(data.todos[0].retry_limit).toBe(2);
+      expect(data.todos[1].retry_limit).toBe(4);
+    } finally {
+      rmSync(path.dirname(file), { recursive: true, force: true });
+    }
+  });
+
+  it("does not add the layers test without verify, outside scripts/cli, or when it is already present", () => {
+    const doc = readDocument(
+      [
+        "steps:",
+        "  1:",
+        "    title: No verify",
+        "    produces: [scripts/cli/process/apply.mjs]",
+        "  2:",
+        "    title: Outside",
+        "    produces: [src/app.mjs]",
+        "    verify: npm test",
+        "  3:",
+        "    title: Already covered",
+        "    produces: [scripts/cli/process/apply.mjs]",
+        "    verify: npx vitest run scripts/cli/kernel/layers.test.mjs",
+      ].join("\n"),
+    );
+    const { doc: next, inferred } = inferDocument(doc);
+    expect(next.steps.map((step) => step.verify)).toEqual(["", "npm test", "npx vitest run scripts/cli/kernel/layers.test.mjs"]);
+    expect(inferred.filter((item) => item.field === "verify")).toEqual([]);
+  });
+
+  it("infers only retry for a step bound to a board task, never its kind", () => {
     const doc = readDocument(["steps:", "  1:", "    task: 12"].join("\n"));
     const { doc: next, inferred } = inferDocument(doc);
-    expect(inferred).toEqual([]);
+    expect(inferred).toEqual([{ step: "1", field: "retry", value: "2" }]);
     expect(next.steps[0].kind).toBeFalsy();
-    expect(next.steps[0].retry).toBeFalsy();
+    expect(next.steps[0].retry).toBe("2");
   });
 
   it("infers red-tests only from test paths, not from produced source", () => {
@@ -464,7 +526,7 @@ describe("apply records the graph", () => {
     expect([one, two, three].map((t) => t.change_id)).toEqual([change.id, change.id, change.id]);
 
     expect(one.produces).toEqual(["scripts/cli/process/apply.mjs", "tests/apply.red.spec.js"]);
-    expect(one.verify).toBe("npm test");
+    expect(one.verify).toBe("npm test && npx vitest run scripts/cli/kernel/layers.test.mjs");
     expect(one.retry_limit).toBe(3);
     expect(one.kind).toBe("auto");
     expect(one.size).toBe("M");
@@ -503,6 +565,23 @@ describe("apply records the graph", () => {
     expect(inferredManual).toMatchObject({ kind: "manual", retry_limit: 2 });
     expect(out).toMatch(/выведено: .*1\.kind=auto.*1\.retry=2.*1\.red-tests=test\/inferred\.test\.mjs/s);
     expect(out).not.toMatch(/2\.kind|2\.retry/);
+  });
+
+  it("records and reports the inferred layers verify command", () => {
+    writeFileSync(path.join(dir, "layers.yaml"), [
+      "change: CHANGE: проверка слоёв",
+      "steps:",
+      "  1:",
+      "    title: Правлю CLI",
+      "    size: S",
+      "    produces: [scripts/cli/process/apply.mjs]",
+      "    verify: npx vitest run scripts/cli/process/apply.test.mjs",
+    ].join("\n"));
+    const out = say(path.join(dir, "layers.yaml"), "--go");
+    expect(board().todos[0].verify).toBe(
+      "npx vitest run scripts/cli/process/apply.test.mjs && npx vitest run scripts/cli/kernel/layers.test.mjs",
+    );
+    expect(out).toMatch(/выведено: 1\.verify=.*layers\.test\.mjs/);
   });
 
   it("keeps a flow object on the task when it applies the plan", () => {
@@ -602,7 +681,9 @@ describe("apply records the graph", () => {
     const out = say(path.join(dir, "graph.yaml"), "--go");
     expect(out).toMatch(/its declarations were left as they are/);
     expect(out).toMatch(/0 new step\(s\)/);
-    expect(board().todos.find((t) => t.subject === "Собираю каркас").verify).toBe("npm test");
+    expect(board().todos.find((t) => t.subject === "Собираю каркас").verify).toBe(
+      "npm test && npx vitest run scripts/cli/kernel/layers.test.mjs",
+    );
   });
 
   it("refuses the whole file when a rule is broken — nothing half-written", () => {

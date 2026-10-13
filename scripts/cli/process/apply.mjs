@@ -140,11 +140,36 @@ export function inferRedTests(red) {
   return [...new Set(found)];
 }
 
+export const CLI_LAYERS_VERIFY = "npx vitest run scripts/cli/kernel/layers.test.mjs";
+
+const isUnderCli = (file) => {
+  const normalized = String(file || "").trim().replace(/\\/g, "/").replace(/^\.\/+/, "").toLowerCase();
+  return normalized.startsWith("scripts/cli/") || normalized.includes("/scripts/cli/");
+};
+
+const RUNS_LAYERS_TEST = /vitest\s+run\b[^&|;]*layers\.test\.mjs/i;
+
+export function needsCliLayersVerify(step) {
+  return Boolean(
+    step?.verify && (step.produces || []).some(isUnderCli) && !RUNS_LAYERS_TEST.test(String(step.verify)),
+  );
+}
+
 export function inferDocument(doc) {
   const inferred = [];
   const steps = doc.steps.map((step) => {
     const next = { ...step, redTests: [...(step.redTests || [])] };
-    if (next.task) return next;
+    if (needsCliLayersVerify(next)) {
+      next.verify = `${next.verify} && ${CLI_LAYERS_VERIFY}`;
+      inferred.push({ step: next.id, field: "verify", value: next.verify });
+    }
+    if (next.task) {
+      if (!next.retry) {
+        next.retry = "2";
+        inferred.push({ step: next.id, field: "retry", value: "2" });
+      }
+      return next;
+    }
     if (!next.kind) {
       next.kind = next.verify ? "auto" : "manual";
       inferred.push({ step: next.id, field: "kind", value: next.kind });
@@ -730,7 +755,7 @@ export function applyDocument(doc, { go = false, force = false, project, board, 
         }
         if (s.priority) set(t, "priority", s.priority);
         if (s.verify) set(t, "verify", s.verify);
-        if (s.retry) {
+        if (s.retry && !(wasInferred(s.id, "retry") && t.retry_limit != null)) {
           const oldLimit = t.retry_limit;
           const newLimit = Number(s.retry);
           set(t, "retry", s.retry);
