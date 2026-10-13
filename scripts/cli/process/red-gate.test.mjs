@@ -119,8 +119,9 @@ describe("red-gate — the mechanics", () => {
         produces: ["src/fix.js"],
       };
       const seen = {};
+      const { CARGO_TARGET_DIR: _dropped, ...env } = process.env;
       const runCmd = async (opts) => {
-        const r = await runVerify(opts);
+        const r = await runVerify({ ...opts, env });
         seen.stdout = r.stdout;
         return r;
       };

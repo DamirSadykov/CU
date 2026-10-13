@@ -617,7 +617,8 @@ describe("runVerify", () => {
   });
 
   it("points cargo at its own target dir so a live dev build does not lock the check", async () => {
-    const r = await runVerify({ cmd: [process.execPath, "-e", "console.log(process.env.CARGO_TARGET_DIR)"], cwd: tmp });
+    const { CARGO_TARGET_DIR: _dropped, ...env } = process.env;
+    const r = await runVerify({ cmd: [process.execPath, "-e", "console.log(process.env.CARGO_TARGET_DIR)"], cwd: tmp, env });
     expect(r.code).toBe(0);
     expect(r.stdout.trim()).toBe(path.join(tmp, "src-tauri", "target-runner"));
   });
