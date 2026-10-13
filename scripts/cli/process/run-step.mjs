@@ -42,12 +42,11 @@ import { specsEnabled } from "../kernel/settings.mjs";
 import {
   READ_ONLY_TOOLS,
   resolveSpawn,
-  observeCodexThread,
   parseClaudeResult,
   parseCodexResult,
-  parseProviderResult,
-  providerArgv,
 } from "../agents/providers.mjs";
+import { openAiCost } from "../models/providers.mjs";
+import { createCandidate } from "../models/candidate.mjs";
 
 // Re-exported: the parsers moved to the provider seam, their callers and
 // tests did not.
@@ -834,32 +833,7 @@ export function parseReviewVerdict(text) {
 
 // ── the step ────────────────────────────────────────────────────────────────
 
-const OPENAI_PRICES = [
-  [/gpt-5\.6-terra/i, [2, 0.2, 12]],
-  [/gpt-5\.6-luna/i, [0.2, 0.02, 1.2]],
-  [/^gpt-5\.6(?:-sol)?$/i, [4, 0.4, 20]],
-  [/gpt-5\.3-codex/i, [1.75, 0.175, 14]],
-  [/gpt-5\.2(?:-codex)?/i, [1.75, 0.175, 14]],
-];
-
-export function openAiCost(model, usage, profile = {}) {
-  if (!usage) return null;
-  const configured = [
-    profile.input_cost_per_million,
-    profile.cached_input_cost_per_million,
-    profile.output_cost_per_million,
-  ];
-  const rates = configured.every((n) => typeof n === "number")
-    ? configured
-    : OPENAI_PRICES.find(([re]) => re.test(String(model || "")))?.[1];
-  if (!rates) return null;
-  const input = Number(usage.input_tokens ?? usage.input ?? 0);
-  const cached = Number(usage.cached_input_tokens ?? usage.cached_input ?? 0);
-  const cacheWrite = Number(usage.cache_write_input_tokens ?? usage.cache_write_input ?? 0);
-  const output = Number(usage.output_tokens ?? usage.output ?? 0);
-  const fresh = Math.max(0, input - cached - cacheWrite);
-  return ((fresh * rates[0]) + (cached * rates[1]) + (cacheWrite * rates[0] * 1.25) + (output * rates[2])) / 1_000_000;
-}
+export { openAiCost };
 
 // Run one step: bind, work, unbind. Resolves `{ sessionId, ok, error }` (plus
 // the material the caller needs to route the outcome) and never rejects.
@@ -915,27 +889,32 @@ export async function executeStep({
 
   if (execution.provider === "openai") {
     const requestedMode = inherit ? "fork" : "fresh";
-    const { file, args } = providerArgv(execution, { bin: codexBin, inherit, sandbox: "workspace-write" });
     const startedAt = new Date().toISOString();
     let boundSession = "";
-    const onStdout = observeCodexThread((session) => {
+    const candidate = createCandidate(execution);
+    const run = await candidate.run({
+      bin: codexBin,
+      inherit,
+      sandbox: "workspace-write",
+      cwd,
+      timeoutMs,
+      prompt,
+      role: "worker",
+      env: brainSessionEnv(env, execution, "worker"),
+      spawn: (file, args, options) => spawnCaptured(file, args, {
+        ...options,
+        maxChars: MAX_STEP_CAPTURE_CHARS,
+      }),
+      onSession: (session) => {
       if (bind && !boundSession && session !== inherit) {
         boundSession = session;
         bindSession({ session, task, event: "start", ts: startedAt, execution });
       }
       if (session !== inherit) announce("codex", session, codexRolloutPath(session));
-    });
-    const run = await spawnCaptured(file, args, {
-      cwd,
-      timeoutMs,
-      input: prompt,
-      maxChars: MAX_STEP_CAPTURE_CHARS,
-      env: brainSessionEnv(env, execution, "worker"),
-      onStdout,
+      },
     });
     const endedAt = new Date().toISOString();
-    const parsed = parseCodexResult(run.stdout);
-    const actual = parsed?.sessionId || "";
+    const actual = run.sessionId || "";
     const distinctSession = !!actual && actual !== inherit;
     if (distinctSession) announce("codex", actual, codexRolloutPath(actual));
     if (bind && distinctSession) {
@@ -943,14 +922,14 @@ export async function executeStep({
         bindSession({ session: actual, task, event: "start", ts: startedAt, execution });
       bindSession({ session: actual, task, event: "end", ts: endedAt, execution });
     }
-    let error = run.error || parsed?.error || "";
-    if (!error && run.code !== 0)
+    let error = run.error || "";
+    if (run.code !== 0 && !run.timedOut)
       error = `codex exited ${run.code}${run.stderr.trim() ? `: ${clampOutput(run.stderr.trim(), 2000)}` : ""}`;
-    if (!error && !parsed) error = "codex produced no parseable JSONL result — cannot confirm the step ran";
+    if (!run.raw && run.code === 0) error = "codex produced no parseable JSONL result — cannot confirm the step ran";
     if (!error && !actual) error = "codex did not report a thread id — usage cannot be attributed to the task";
     if (!error && inherit && actual === inherit)
       error = "codex fork reported the parent thread id — child usage cannot be attributed safely";
-    const answer = parsed?.answer || "";
+    const answer = run.answer || "";
     return {
       provider: "openai",
       agent: execution.name,
@@ -966,21 +945,34 @@ export async function executeStep({
       code: run.code,
       result: answer,
       handoff: extractHandoff(answer),
-      costUsd: openAiCost(execution.model, parsed?.usage, execution),
-      usage: parsed?.usage || null,
+      costUsd: run.costUsd,
+      usage: run.usage,
       editedPaths: distinctSession ? editedPathsOf(actual, cwd) : null,
       stderr: clampOutput(run.stderr, MAX_CAPTURE_CHARS),
       prompt,
+      failureReason: run.reason,
+      guard: run.guard,
     };
   }
 
   const sessionId = randomUUID();
-  const { file, args } = providerArgv(execution, {
+  const candidate = createCandidate(execution);
+  const runCandidate = () => candidate.run({
     bin: claudeBin,
     session: sessionId,
     inherit,
+    sandbox: "workspace-write",
     permissionMode,
     allowedTools,
+    cwd,
+    timeoutMs,
+    prompt,
+    role: "worker",
+    env: brainSessionEnv(env, execution, "worker"),
+    spawn: (file, args, options) => spawnCaptured(file, args, {
+      ...options,
+      maxChars: MAX_STEP_CAPTURE_CHARS,
+    }),
   });
 
   // A fork's id is minted by the CLI, so there is nothing honest to bind until
@@ -992,15 +984,8 @@ export async function executeStep({
   // id of the session that launched the runner: whatever inside it reads
   // CLAUDE_CODE_SESSION_ID — the project's own SessionStart hook among them —
   // would write a binding under a session that is elsewhere (t#312).
-  const run = await spawnCaptured(file, args, {
-    cwd,
-    timeoutMs,
-    input: prompt,
-    maxChars: MAX_STEP_CAPTURE_CHARS,
-    env: brainSessionEnv(env, execution, "worker"),
-  });
-
-  const parsed = parseClaudeResult(run.stdout);
+  const run = await runCandidate();
+  const parsed = run.raw;
   const reported =
     parsed && typeof parsed.session_id === "string" ? parsed.session_id.trim() : "";
   const actual = reported || sessionId;
@@ -1013,7 +998,7 @@ export async function executeStep({
   if (bind) bindSession({ session: actual, task, event: "end", execution });
 
   let error = "";
-  if (run.error) error = run.error;
+  if (run.timedOut || (run.error && run.code == null)) error = run.error;
   else if (run.code !== 0)
     error =
       `claude exited ${run.code}` +
@@ -1036,11 +1021,13 @@ export async function executeStep({
     code: run.code,
     result: answer,
     handoff: extractHandoff(answer),
-    costUsd: parsed && typeof parsed.total_cost_usd === "number" ? parsed.total_cost_usd : null,
+    costUsd: run.costUsd,
     numTurns: parsed && typeof parsed.num_turns === "number" ? parsed.num_turns : null,
     editedPaths: null,
     stderr: clampOutput(run.stderr, MAX_CAPTURE_CHARS),
     prompt,
+    failureReason: run.reason,
+    guard: run.guard,
   };
 }
 
@@ -1068,42 +1055,63 @@ export async function executeReview({
   if (!execution.enabled || !execution.model)
     return { approved: true, ok: true, skipped: true, duty: "review", costUsd: 0, route: execution.route || null };
   const prompt = buildReviewPrompt({ task, workerResult, execution, appData, ownChanges, outsideChanges, retryContext });
+  const candidate = createCandidate(execution);
 
   if (execution.provider === "openai") {
-    const { file, args } = providerArgv(execution, { bin: codexBin, sandbox: "read-only" });
     const startedAt = new Date().toISOString();
     let boundSession = "";
-    const onStdout = observeCodexThread((session) => {
-      if (bind && !boundSession) {
-        boundSession = session;
-        bindSession({ session, task, event: "start", ts: startedAt, execution });
-      }
+    const run = await candidate.run({
+      bin: codexBin,
+      sandbox: "read-only",
+      cwd,
+      timeoutMs,
+      prompt,
+      role: "reviewer",
+      env: brainSessionEnv(env, execution, "reviewer"),
+      spawn: (file, args, options) => spawnCaptured(file, args, {
+        ...options,
+        maxChars: MAX_STEP_CAPTURE_CHARS,
+      }),
+      onSession: (session) => {
+        if (bind && !boundSession) {
+          boundSession = session;
+          bindSession({ session, task, event: "start", ts: startedAt, execution });
+        }
+      },
     });
-    const run = await spawnCaptured(file, args, { cwd, timeoutMs, input: prompt, maxChars: MAX_STEP_CAPTURE_CHARS, env: brainSessionEnv(env, execution, "reviewer"), onStdout });
-    const parsed = parseCodexResult(run.stdout);
-    const session = parsed?.sessionId || "";
+    const session = run.sessionId || "";
     if (bind && session) {
       if (boundSession !== session)
         bindSession({ session, task, event: "start", ts: startedAt, execution });
       bindSession({ session, task, event: "end", execution });
     }
-    const answer = parsed?.answer || "";
+    const answer = run.answer || "";
     const decision = parseReviewVerdict(answer);
-    const error = run.error || parsed?.error || (run.code !== 0 ? `codex review exited ${run.code}` : "");
+    const error = run.code !== 0 && !run.timedOut ? `codex review exited ${run.code}` : run.error;
     return { ...decision, ok: !error, error, result: answer, sessionId: session,
       duty: "review", provider: "openai", model: execution.model, route: execution.route || null,
-      costUsd: openAiCost(execution.model, parsed?.usage, execution) };
+      costUsd: run.costUsd, failureReason: run.reason, guard: run.guard };
   }
 
   const session = randomUUID();
-  const { file, args } = providerArgv(execution, {
+  const runCandidate = () => candidate.run({
     bin: claudeBin,
     session,
+    sandbox: "read-only",
     allowedTools: READ_ONLY_TOOLS,
+    cwd,
+    timeoutMs,
+    prompt,
+    role: "reviewer",
+    env: brainSessionEnv(env, execution, "reviewer"),
+    spawn: (file, args, options) => spawnCaptured(file, args, {
+      ...options,
+      maxChars: MAX_STEP_CAPTURE_CHARS,
+    }),
   });
   if (bind) bindSession({ session, task, event: "start", execution });
-  const run = await spawnCaptured(file, args, { cwd, timeoutMs, input: prompt, maxChars: MAX_STEP_CAPTURE_CHARS, env: brainSessionEnv(env, execution, "reviewer") });
-  const parsed = parseClaudeResult(run.stdout);
+  const run = await runCandidate();
+  const parsed = run.raw;
   const actual = typeof parsed?.session_id === "string" && parsed.session_id.trim() ? parsed.session_id.trim() : session;
   if (bind) bindSession({ session: actual, task, event: "end", execution });
   const answer = typeof parsed?.result === "string" ? parsed.result : "";
@@ -1111,7 +1119,7 @@ export async function executeReview({
   const error = run.error || (run.code !== 0 ? `claude review exited ${run.code}` : "") || (parsed?.is_error ? "review model reported an error" : "");
   return { ...decision, ok: !error, error, result: answer, sessionId: actual,
     duty: "review", provider: "anthropic", model: execution.model, route: execution.route || null,
-    costUsd: typeof parsed?.total_cost_usd === "number" ? parsed.total_cost_usd : null };
+    costUsd: run.costUsd, failureReason: run.reason, guard: run.guard };
 }
 
 // ── the check ───────────────────────────────────────────────────────────────

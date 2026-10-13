@@ -1,10 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
 import {
   AGENT_PROVIDER_MANIFEST,
+  agentsBackupPath,
+  agentsPath,
+  checkAgentDuties,
   DUTY_MODES,
   emptyAgentConfig,
   readAgentConfig,
@@ -32,8 +35,8 @@ describe("lifecycle duty map", () => {
   it("uses the starter duty map when no settings file exists", () => {
     expect(readAgentConfig()).toEqual(emptyAgentConfig());
     expect(resolveDuty("worker")).toMatchObject({ duty: "worker", mode: "always", provider: "anthropic", model: "claude-sonnet-5-5" });
-    expect(resolveDuty("critic")).toMatchObject({ mode: "session", provider: "openai", model: "gpt-5.6-terra" });
-    expect(resolveDuty("architect")).toMatchObject({ mode: "agent", provider: "openai", model: "gpt-5.6-terra" });
+    expect(resolveDuty("critic")).toMatchObject({ mode: "session", provider: "anthropic", model: "claude-sonnet-5-5" });
+    expect(resolveDuty("architect")).toMatchObject({ mode: "agent", provider: "anthropic", model: "claude-opus-5-5" });
     expect(resolveDuty("review")).toMatchObject({ mode: "agent", provider: "anthropic", model: "claude-opus-5-5" });
   });
 
@@ -63,7 +66,7 @@ describe("lifecycle duty map", () => {
 
   it("migrates a legacy Anthropic alias in a duty to its explicit model id", () => {
     saveAgentConfig({ version: 4, duties: { worker: { mode: "always", provider: "anthropic", model: "haiku" } } });
-    expect(readAgentConfig().duties.worker.model).toBe("claude-haiku-4-5-20251001");
+    expect(readAgentConfig().duties.worker.candidates[0].model).toBe("claude-haiku-4-5-20251001");
   });
 
   it("migrates a legacy Anthropic alias in a route to its explicit model id", () => {
@@ -104,7 +107,7 @@ describe("lifecycle duty map", () => {
       criticMode: "agent",
     });
     const cfg = readAgentConfig();
-    expect(cfg.version).toBe(4);
+    expect(cfg.version).toBe(5);
     expect(cfg.duties.critic.mode).toBe("agent");
     expect(cfg.duties.architect.mode).toBe("off");
     expect(cfg.duties.review.mode).toBe("agent");
@@ -188,7 +191,7 @@ describe("lifecycle duty map", () => {
     expect(resolved.route).toBeUndefined();
   });
 
-  it("falls back to the duty profile with a note when the routed pair is invalid", () => {
+  it("drops an invalid legacy route and falls back to the duty profile with a note", () => {
     saveAgentConfig({
       version: 4,
       duties: { review: { mode: "agent", provider: "anthropic", model: "opus" } },
@@ -196,7 +199,7 @@ describe("lifecycle duty map", () => {
     });
     const resolved = resolveDuty("review", undefined, { risk: "high" });
     expect(resolved).toMatchObject({ provider: "anthropic", model: "claude-opus-5-5", route: { applied: false, risk: "high" } });
-    expect(resolved.route.note).toMatch(/invalid/);
+    expect(resolved.route.note).toMatch(/no route configured/);
   });
 
   it("falls back to the duty profile with a note when no route is configured for that duty", () => {
@@ -233,5 +236,40 @@ describe("lifecycle duty map", () => {
     expect(readAgentConfig().duties.critic.mode).toBe("agent");
     expect(criticMode()).toBe("agent");
     expect(criticRunsAsAgent()).toBe(true);
+  });
+
+  it("writes one v4 backup and recovers an invalid v5 from it", () => {
+    const file = agentsPath();
+    mkdirSync(path.dirname(file), { recursive: true });
+    const legacy = {
+      version: 4,
+      custom: "preserved",
+      duties: { worker: { mode: "always", provider: "openai", model: "gpt-5.6-sol" } },
+    };
+    writeFileSync(file, JSON.stringify(legacy));
+    const migrated = readAgentConfig();
+    expect(migrated.duties.worker.candidates[0]).toMatchObject({ provider: "openai", model: "gpt-5.6-sol" });
+    expect(existsSync(agentsBackupPath())).toBe(true);
+    expect(JSON.parse(readFileSync(agentsBackupPath(), "utf8"))).toEqual(legacy);
+
+    writeFileSync(file, JSON.stringify({ version: 5, duties: {} }));
+    const recovered = readAgentConfig();
+    expect(recovered.custom).toBe("preserved");
+    expect(recovered.duties.worker.candidates[0]).toMatchObject({ provider: "openai", model: "gpt-5.6-sol" });
+  });
+
+  it("checks candidates in order and accepts a duty when its reserve is available", () => {
+    const run = () => ({ status: 0, stderr: "" });
+    const report = checkAgentDuties(undefined, { duties: ["worker"], run });
+    expect(report.ok).toBe(true);
+    expect(report.duties[0].candidates).toHaveLength(2);
+  });
+
+  it("fails a duty whose primary is unavailable even if the reserve is", () => {
+    let calls = 0;
+    const run = () => ({ status: calls++ === 0 ? 1 : 0, stderr: "" });
+    const report = checkAgentDuties(undefined, { duties: ["worker"], run });
+    expect(report.duties[0].candidates[0].ok).toBe(false);
+    expect(report.ok).toBe(false);
   });
 });

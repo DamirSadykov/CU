@@ -50,8 +50,11 @@ import {
   planFormatDoc,
   planFormatIssuesDoc,
   planFormatCuttingDoc,
+  architectGateState,
+  ARCHITECT_OFF_COMMAND,
 } from "./plan-guard.mjs";
 import { criticRunsAsAgent, invokeDutySync } from "../agents/agents.mjs";
+import { planGuardWired } from "../cc-hooks/claude-hooks.mjs";
 
 const CLI = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "cli.mjs");
 
@@ -158,8 +161,18 @@ export function buildCriticContext(promptText, {
 }
 
 // Exported for the unit tests.
-export function buildEnterContext() {
-  return [
+export function buildArchitectGateNotice(gate, planGuard = true) {
+  if (!planGuard)
+    return "Plan gate: not installed — `plan-guard` is not wired, so ExitPlanMode is not checked.";
+  if (!gate) return "";
+  if (gate.mode === "off") return "Architect model gate: off.";
+  if (!gate.available)
+    return `Architect model gate: blocked — no candidate is available; repair one or run \`${ARCHITECT_OFF_COMMAND}\`.`;
+  return `Architect model gate: ${gate.candidate.label}; a model-call error fails open and is reported by the hook.`;
+}
+
+export function buildEnterContext({ architectGate, planGuard = true } = {}) {
+  const lines = [
     "──────── PLAN MODE · the plan IS the graph file ────────",
     "Write the plan as the YAML graph file the tracker records, one step per task.",
     "READ THE BASE NOW — it contains the field legend, inference rules and examples:",
@@ -171,7 +184,10 @@ export function buildEnterContext() {
     "If this only settles a question and opens no work, start with:",
     `  ${DISCUSSION_KEY}: <what is being settled, and why it opens no task>`,
     "The reason is required; use this only when true.",
-  ].join("\n");
+  ];
+  const gateNotice = buildArchitectGateNotice(architectGate, planGuard);
+  if (gateNotice) lines.push("", gateNotice);
+  return lines.join("\n");
 }
 
 // --- exit: record the plan + surface KB warnings -----------------------------
@@ -522,7 +538,12 @@ function main(args) {
     const session = typeof input.session_id === "string" ? input.session_id : "";
     if (formatAlreadySent(session)) return; // `prompt` got there first
     markFormatSent(session);
-    emit("PostToolUse", buildEnterContext());
+    const cwd = typeof input.cwd === "string" && input.cwd ? input.cwd : process.cwd();
+    const planGuard = planGuardWired(cwd);
+    emit("PostToolUse", buildEnterContext({
+      planGuard,
+      architectGate: planGuard ? architectGateState() : undefined,
+    }));
     return;
   }
   if (sub === "prompt") {
@@ -538,12 +559,15 @@ function main(args) {
     // carry the format. The tool events cover that: whatever the session reads or
     // greps while planning arrives with permission_mode already "plan". The reply
     // must name the event that actually fired, which the payload carries.
-    const critic = buildCriticContext(input.prompt, {
-      cwd: typeof input.cwd === "string" && input.cwd ? input.cwd : process.cwd(),
-    });
+    const cwd = typeof input.cwd === "string" && input.cwd ? input.cwd : process.cwd();
+    const critic = buildCriticContext(input.prompt, { cwd });
+    const planGuard = planGuardWired(cwd);
     emit(
       typeof input.hook_event_name === "string" ? input.hook_event_name : "UserPromptSubmit",
-      [buildEnterContext(), critic].filter(Boolean).join("\n\n"),
+      [buildEnterContext({
+        planGuard,
+        architectGate: planGuard ? architectGateState() : undefined,
+      }), critic].filter(Boolean).join("\n\n"),
     );
     return;
   }

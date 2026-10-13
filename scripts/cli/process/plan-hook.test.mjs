@@ -12,6 +12,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   buildEnterContext,
+  buildArchitectGateNotice,
   buildCriticContext,
   buildExitContext,
   buildDiscussionContext,
@@ -135,6 +136,37 @@ describe("buildEnterContext", () => {
       if (saved === undefined) delete process.env.PLAN_FORMAT_MODE;
       else process.env.PLAN_FORMAT_MODE = saved;
     }
+  });
+});
+
+describe("buildArchitectGateNotice", () => {
+  it("names off, the available candidate, and the blocking escape command", () => {
+    expect(buildArchitectGateNotice({ mode: "off", available: false })).toContain("gate: off");
+    expect(buildArchitectGateNotice({
+      mode: "agent",
+      available: true,
+      candidate: { label: "anthropic/claude-opus-5-5" },
+    })).toContain("anthropic/claude-opus-5-5");
+    expect(buildArchitectGateNotice({ mode: "agent", available: false })).toContain("cli agents mode architect off");
+  });
+
+  it("puts the current gate state into the plan-mode banner", () => {
+    const context = buildEnterContext({
+      architectGate: { mode: "agent", available: false, candidate: null },
+    });
+    expect(context).toContain("Architect model gate: blocked");
+  });
+
+  it("does not advertise an architect gate when plan-guard is not wired", () => {
+    const gate = {
+      mode: "agent",
+      available: true,
+      candidate: { label: "anthropic/claude-opus-5-5" },
+    };
+    const context = buildEnterContext({ architectGate: gate, planGuard: false });
+    expect(context).toContain("Plan gate: not installed");
+    expect(context).toContain("ExitPlanMode is not checked");
+    expect(context).not.toContain("Architect model gate: anthropic/claude-opus-5-5");
   });
 });
 

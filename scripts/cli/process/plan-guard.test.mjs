@@ -13,9 +13,10 @@
 //   • the CONTRACT — the PreToolUse deny payload, and the promise that no input
 //     whatsoever makes the hook exit non-zero or print anything but that payload.
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -29,11 +30,13 @@ import {
   isReason,
   decide,
   architectDecision,
+  architectGateState,
   planFormatDoc,
   planFormatIssuesDoc,
   planFormatCuttingDoc,
 } from "./plan-guard.mjs";
 import { readDocument, validate } from "./apply.mjs";
+import { emptyAgentConfig } from "../agents/agents.mjs";
 
 const CLI = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "cli.mjs");
 
@@ -376,6 +379,13 @@ describe("decide · the PreToolUse contract", () => {
 });
 
 describe("architectDecision · configured lifecycle hook", () => {
+  const AVAILABLE = {
+    mode: "agent",
+    available: true,
+    candidate: { label: "anthropic/claude-opus-5-5" },
+    candidates: [],
+  };
+
   it("lets an approved plan continue and passes the workspace to the architect", () => {
     const calls = [];
     const seen = architectDecision(
@@ -384,6 +394,7 @@ describe("architectDecision · configured lifecycle hook", () => {
         calls.push({ duty, prompt, opts });
         return { ok: true, text: "No structural findings.\nVERDICT: approve" };
       },
+      { gate: AVAILABLE },
     );
     expect(seen).toBeNull();
     expect(calls).toHaveLength(1);
@@ -395,14 +406,41 @@ describe("architectDecision · configured lifecycle hook", () => {
     const seen = architectDecision(exitPlan(VALID), () => ({
       ok: true,
       text: "Step 2 has no dependency on step 1.\nVERDICT: issue",
-    }));
+    }), { gate: AVAILABLE });
     expect(seen).toMatchObject({ hookEventName: "PreToolUse", permissionDecision: "deny" });
     expect(seen.permissionDecisionReason).toContain("Step 2 has no dependency");
   });
 
-  it("fails open when the configured CLI is unavailable or the hook is disabled", () => {
-    expect(architectDecision(exitPlan(VALID), () => ({ ok: false, error: "missing" }))).toBeNull();
-    expect(architectDecision(exitPlan(VALID), () => ({ ok: true, skipped: true }))).toBeNull();
+  it("reports a model-call error but leaves normal user approval in place", () => {
+    const decision = architectDecision(
+      exitPlan(VALID),
+      () => ({ ok: false, error: "provider timed out" }),
+      { gate: AVAILABLE },
+    );
+    expect(decision).not.toHaveProperty("permissionDecision");
+    expect(decision.additionalContext).toContain("ARCHITECT CHECK FAILED OPEN");
+    expect(decision.additionalContext).toContain("anthropic/claude-opus-5-5");
+    expect(decision.additionalContext).toContain("provider timed out");
+  });
+
+  it("blocks agent mode with no candidate and names the explicit off command", () => {
+    const decision = architectDecision(exitPlan(VALID), () => { throw new Error("must not run"); }, {
+      gate: {
+        mode: "agent",
+        available: false,
+        candidate: null,
+        candidates: [{ label: "openai/gpt-5.6-terra", binary: { reason: "missing" } }],
+      },
+    });
+    expect(decision.permissionDecision).toBe("deny");
+    expect(decision.permissionDecisionReason).toContain("openai/gpt-5.6-terra (missing)");
+    expect(decision.permissionDecisionReason).toContain("cli agents mode architect off");
+  });
+
+  it("stays silent when the architect gate is explicitly off", () => {
+    expect(architectDecision(exitPlan(VALID), () => { throw new Error("must not run"); }, {
+      gate: { mode: "off", available: false, candidate: null, candidates: [] },
+    })).toBeNull();
     expect(architectDecision(exitPlan(DISCUSSION), () => { throw new Error("must not run"); })).toBeNull();
   });
 
@@ -411,9 +449,32 @@ describe("architectDecision · configured lifecycle hook", () => {
     const seen = architectDecision(
       { tool_name: "Bash", tool_input: { plan: VALID } },
       () => { calls += 1; return { ok: true, text: "VERDICT: issue" }; },
+      { gate: AVAILABLE },
     );
     expect(seen).toBeNull();
     expect(calls).toBe(0);
+  });
+});
+
+describe("architectGateState · candidate availability", () => {
+  const candidate = (label, available) => {
+    const [provider, model] = label.split("/");
+    return {
+      provider: { engine: { id: provider === "openai" ? "codex" : "claude-code" } },
+      check: () => ({ provider, model, binary: { available, reason: available ? null : "missing" } }),
+    };
+  };
+
+  it("selects the first actually available candidate, including a reserve", () => {
+    const state = architectGateState(undefined, {
+      resolve: () => ({
+        mode: "agent",
+        runsAsAgent: true,
+        candidates: [candidate("openai/gpt-5.6-terra", false), candidate("anthropic/claude-opus-5-5", true)],
+      }),
+    });
+    expect(state.available).toBe(true);
+    expect(state.candidate.label).toBe("anthropic/claude-opus-5-5");
   });
 });
 
@@ -421,12 +482,23 @@ describe("architectDecision · configured lifecycle hook", () => {
 // session" is about the PROCESS: exit 0 always, and stdout that is either empty
 // or exactly one JSON object.
 describe("cli.mjs plan-guard · the process", () => {
+  let appData;
+  beforeAll(() => {
+    appData = mkdtempSync(path.join(os.tmpdir(), "plan-guard-process-"));
+    const appDir = path.join(appData, "com.cu.app");
+    mkdirSync(appDir, { recursive: true });
+    const config = emptyAgentConfig();
+    config.duties.architect.mode = "off";
+    writeFileSync(path.join(appDir, "agents.json"), JSON.stringify(config));
+  });
+  afterAll(() => rmSync(appData, { recursive: true, force: true }));
+
   const runGuard = (input) =>
     execFileSync(process.execPath, [CLI, "plan-guard"], {
       encoding: "utf8",
       input,
       windowsHide: true,
-      env: { ...process.env, CODEX_BIN: path.join(path.dirname(CLI), "no-such-codex.exe") },
+      env: { ...process.env, APPDATA: appData, CODEX_BIN: path.join(path.dirname(CLI), "no-such-codex.exe") },
     });
 
   it("emits the deny payload for a broken plan and exits 0", () => {

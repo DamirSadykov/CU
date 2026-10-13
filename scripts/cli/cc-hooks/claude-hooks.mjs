@@ -63,6 +63,32 @@ export function wiredHookAreas(cwd = process.cwd()) {
   return areas;
 }
 
-export function planGuardWired(cwd = process.cwd(), areas = wiredHookAreas(cwd)) {
-  return areas.has("plan-guard");
+function matcherCovers(matcher, tool) {
+  if (matcher === undefined || matcher === null || matcher === "" || matcher === "*") return true;
+  if (typeof matcher !== "string") return false;
+  try {
+    return new RegExp(`^(?:${matcher})$`).test(tool);
+  } catch {
+    return matcher === tool;
+  }
+}
+
+export function planGuardWired(cwd = process.cwd()) {
+  for (const file of claudeSettingsPaths(cwd)) {
+    let root;
+    try {
+      root = JSON.parse(readFileSync(file, "utf8"));
+    } catch {
+      continue;
+    }
+    const groups = root && typeof root === "object" && root.hooks && Array.isArray(root.hooks.PreToolUse)
+      ? root.hooks.PreToolUse
+      : [];
+    for (const group of groups) {
+      if (!group || !matcherCovers(group.matcher, "ExitPlanMode")) continue;
+      const hooks = Array.isArray(group.hooks) ? group.hooks : [];
+      if (hooks.some((hook) => hook && typeof hook.command === "string" && area(hook.command) === "plan-guard")) return true;
+    }
+  }
+  return false;
 }

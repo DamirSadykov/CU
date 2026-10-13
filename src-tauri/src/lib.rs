@@ -2765,6 +2765,41 @@ fn codex_hooks_path(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(home.join(".codex").join("hooks.json"))
 }
 
+const CODEX_GUARD_RULES: &str = include_str!("../../scripts/cli/guard/cu-guard.rules");
+
+fn codex_guard_rules_path(app: &AppHandle) -> Result<PathBuf, String> {
+    let home = app.path().home_dir().map_err(|e| e.to_string())?;
+    Ok(home.join(".codex").join("rules").join("cu-guard.rules"))
+}
+
+/// Install or repair only CU's execpolicy file. An exact file is left alone so
+/// repeated installs do not change its timestamp; sibling rule files are never
+/// enumerated or rewritten.
+fn install_codex_guard_file(path: &Path, rules: &str) -> Result<bool, String> {
+    if std::fs::read_to_string(path).ok().as_deref() == Some(rules) {
+        return Ok(false);
+    }
+    if let Some(dir) = path.parent() {
+        std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    }
+    let tmp = path.with_extension("rules.tmp");
+    std::fs::write(&tmp, rules.as_bytes()).map_err(|e| e.to_string())?;
+    std::fs::rename(&tmp, path).map_err(|e| e.to_string())?;
+    Ok(true)
+}
+
+fn uninstall_codex_guard_file(path: &Path) -> Result<bool, String> {
+    match std::fs::remove_file(path) {
+        Ok(()) => Ok(true),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(false),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+fn codex_guard_is_active(path: &Path) -> bool {
+    std::fs::read_to_string(path).ok().as_deref() == Some(CODEX_GUARD_RULES)
+}
+
 const CODEX_SESSION_START_MATCHER: &str = "startup|resume|clear|compact";
 const CODEX_HOOK_TIMEOUT_SECS: u64 = 30;
 const CODEX_HOOK_CONTEXT_LIMIT: u64 = 12000;
@@ -2847,15 +2882,18 @@ fn heal_codex_hook(app: &AppHandle) -> Option<String> {
 #[derive(Serialize)]
 struct CodexHookStatus {
     installed: bool,
+    guard_active: bool,
     script_path: String,
     wired_path: String,
     wired_path_exists: bool,
     hooks_path: String,
+    rules_path: String,
 }
 
 #[tauri::command]
 fn codex_hook_status(app: AppHandle) -> Result<CodexHookStatus, String> {
     let hooks_path = codex_hooks_path(&app)?;
+    let rules_path = codex_guard_rules_path(&app)?;
     let root = std::fs::read_to_string(&hooks_path)
         .ok()
         .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok());
@@ -2868,10 +2906,12 @@ fn codex_hook_status(app: AppHandle) -> Result<CodexHookStatus, String> {
             .as_ref()
             .map(|v| settings_has_cc_hook(v, "SessionStart"))
             .unwrap_or(false),
+        guard_active: codex_guard_is_active(&rules_path),
         script_path: cc_hook_script_path(&app).unwrap_or_default(),
         wired_path_exists: !wired.is_empty() && Path::new(&wired).exists(),
         wired_path: wired,
         hooks_path: hooks_path.to_string_lossy().replace('\\', "/"),
+        rules_path: rules_path.to_string_lossy().replace('\\', "/"),
     })
 }
 
@@ -2897,7 +2937,15 @@ fn install_codex_hook(app: AppHandle) -> Result<String, String> {
     let tmp = hooks_path.with_extension("json.tmp");
     std::fs::write(&tmp, json.as_bytes()).map_err(|e| e.to_string())?;
     std::fs::rename(&tmp, &hooks_path).map_err(|e| e.to_string())?;
+    install_codex_guard_file(&codex_guard_rules_path(&app)?, CODEX_GUARD_RULES)?;
     Ok(script)
+}
+
+/// Remove only CU's execpolicy file. Other files under ~/.codex/rules are user
+/// policy and deliberately remain untouched.
+#[tauri::command]
+fn uninstall_codex_guard(app: AppHandle) -> Result<bool, String> {
+    uninstall_codex_guard_file(&codex_guard_rules_path(&app)?)
 }
 
 /// Last-seen `id -> status` map, shared between the file watcher and the write
@@ -3434,6 +3482,24 @@ pub fn run() {
             if let Some(healed) = heal_codex_hook(app.handle()) {
                 info!("Re-pointed the Codex hook at {healed} (the wired script was gone)");
             }
+            // An installed CU Codex integration owns exactly one rules file.
+            // Heal a stale one on upgrades; a missing one means the user
+            // uninstalled the guard, so it is not recreated here.
+            if codex_hook_status(app.handle().clone())
+                .map(|status| status.installed)
+                .unwrap_or(false)
+            {
+                if let Ok(path) = codex_guard_rules_path(app.handle()) {
+                    if path.exists()
+                        && install_codex_guard_file(&path, CODEX_GUARD_RULES).unwrap_or(false)
+                    {
+                        info!(
+                            "Installed or repaired Codex guard rules at {}",
+                            path.display()
+                        );
+                    }
+                }
+            }
 
             // Diagnostics: route panics to a marker file in the log dir, and pick
             // up any report left by a crash on the previous run.
@@ -3655,6 +3721,7 @@ pub fn run() {
             cc_hook_status,
             install_codex_hook,
             codex_hook_status,
+            uninstall_codex_guard,
             upsert_todo,
             delete_todo,
             add_todo_comment,
@@ -3864,6 +3931,31 @@ mod hook_install_tests {
             healed["hooks"]["SessionStart"][1]["hooks"][0]["timeout"],
             CODEX_HOOK_TIMEOUT_SECS
         );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn codex_guard_install_heal_uninstall_are_idempotent_and_spare_foreign_rules() {
+        let dir = std::env::temp_dir().join("cu_codex_guard_rules_test");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let ours = dir.join("cu-guard.rules");
+        let foreign = dir.join("personal.rules");
+        let foreign_text = "prefix_rule(pattern=[\"safe\"], decision=\"allow\")\n";
+        std::fs::write(&foreign, foreign_text).unwrap();
+
+        assert_eq!(install_codex_guard_file(&ours, CODEX_GUARD_RULES), Ok(true));
+        assert_eq!(
+            install_codex_guard_file(&ours, CODEX_GUARD_RULES),
+            Ok(false)
+        );
+        assert!(codex_guard_is_active(&ours));
+        std::fs::write(&ours, "stale\n").unwrap();
+        assert!(!codex_guard_is_active(&ours));
+        assert_eq!(install_codex_guard_file(&ours, CODEX_GUARD_RULES), Ok(true));
+        assert_eq!(uninstall_codex_guard_file(&ours), Ok(true));
+        assert_eq!(uninstall_codex_guard_file(&ours), Ok(false));
+        assert_eq!(std::fs::read_to_string(&foreign).unwrap(), foreign_text);
         let _ = std::fs::remove_dir_all(&dir);
     }
 
