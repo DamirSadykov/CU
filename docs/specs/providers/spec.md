@@ -290,7 +290,8 @@ Guard — ремень безопасности поверх прав испол
 Единая политика живёт в `scripts/cli/guard/`. Она запрещает известные
 разрушительные префиксы команд и для file tools запрещает запись за пределы
 рабочего дерева. `cli guard` читает JSON payload `PreToolUse` со stdin,
-нормализует варианты имён полей hosts и на отказе завершает hook кодом 2.
+нормализует варианты имён полей hosts и на отказе завершает hook кодом 2 —
+этот формат понимает Claude Code, но не codex.
 Неизвестный или неразбираемый payload не ломает host CLI.
 
 **Claude Code.** Каждый writable-вызов раннера получает
@@ -300,8 +301,25 @@ Guard — ремень безопасности поверх прав испол
 передал свои runner settings, guard добавляется к их hooks без удаления других
 полей и без дубликата. Read-only вызову guard не навязывается.
 
-**Codex.** `codex exec` не вызывает `PreToolUse` даже у доверенного hook,
-поэтому приложение ставит и лечит только свой файл
+**Codex.** `codex exec` (0.155) вызывает доверенный `PreToolUse` из
+`~/.codex/hooks.json` перед каждым инструментом: `Bash`, `apply_patch` и
+`mcp__<server>__<tool>`. Payload несёт `session_id`, `turn_id`,
+`transcript_path`, `cwd`, `hook_event_name`, `model`, `permission_mode`,
+`tool_name`, `tool_input`, `tool_use_id`; у `Bash` и `apply_patch` в
+`tool_input.command` лежит команда или текст патча, у MCP — аргументы вызова.
+Образцы — `scripts/cli/guard/fixtures/codex-payloads.jsonl`.
+
+Отказ codex понимает только в виде JSON
+`hookSpecificOutput.permissionDecision: "deny"` с причиной: вызов не
+выполняется, агент получает «Command blocked by PreToolUse hook: <причина>».
+Код выхода 2 игнорируется, упавший hook и hook, превысивший таймаут, вызов
+пропускают — codex закрывается открытым. Значит, hook для codex обязан
+отвечать JSON deny и сам укладываться в таймаут. `cli guard` отвечает только
+кодом 2, своего дедлайна не держит и в codex как hook не подключается. Доверие hook
+записывается в `config.toml` (`hooks.state`) только пользователем через
+`/hooks`; хеш доверия приложение не вычисляет и не пишет.
+
+Сейчас приложение для codex ставит и лечит только свой файл
 `~/.codex/rules/cu-guard.rules`. Он генерируется из той же политики как
 `prefix_rule(..., decision="forbidden")`; чужие `.rules` не меняются, при
 снятии удаляется только файл CU. Execpolicy защищает только поддерживаемые
