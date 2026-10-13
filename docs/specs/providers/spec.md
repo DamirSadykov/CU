@@ -301,9 +301,9 @@ Guard — ремень безопасности поверх прав испол
 передал свои runner settings, guard добавляется к их hooks без удаления других
 полей и без дубликата. Read-only вызову guard не навязывается.
 
-**Codex.** `codex exec` (0.155) вызывает доверенный `PreToolUse` из
-`~/.codex/hooks.json` перед каждым инструментом: `Bash`, `apply_patch` и
-`mcp__<server>__<tool>`. Payload несёт `session_id`, `turn_id`,
+**Codex.** `codex exec` и интерактивный TUI (0.155) одинаково вызывают
+доверенный `PreToolUse` из `~/.codex/hooks.json` перед каждым инструментом:
+`Bash`, `apply_patch` и `mcp__<server>__<tool>`. Payload несёт `session_id`, `turn_id`,
 `transcript_path`, `cwd`, `hook_event_name`, `model`, `permission_mode`,
 `tool_name`, `tool_input`, `tool_use_id`; у `Bash` и `apply_patch` в
 `tool_input.command` лежит команда или текст патча, у MCP — аргументы вызова.
@@ -313,7 +313,10 @@ Guard — ремень безопасности поверх прав испол
 `hookSpecificOutput.permissionDecision: "deny"` с причиной: вызов не
 выполняется, агент получает «Command blocked by PreToolUse hook: <причина>».
 Код выхода 2 игнорируется, упавший hook и hook, превысивший таймаут, вызов
-пропускают — codex закрывается открытым. Значит, hook для codex обязан
+пропускают — codex закрывается открытым; TUI при этом показывает «Hook failed»
+и всё равно выполняет команду, deny показывает как «Blocked by hook». Если в
+одном патче есть запрещённое и разрешённое, агент после deny переписывает
+патч без запрещённой части. Значит, hook для codex обязан
 отвечать JSON deny и сам укладываться в таймаут. `cli guard` отвечает только
 кодом 2, своего дедлайна не держит и в codex как hook не подключается. Доверие hook
 записывается в `config.toml` (`hooks.state`) только пользователем через
