@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { VERIFY_LOG_LIMIT, appendRunEvent, createVerifyLog, formatRunEvent, watchRunEvents } from "./run-events.mjs";
-import { beginStep, buildRunContext, emitRunEvent, eventFindings, findingFile, finishStep, runStartEvent, workerSessionAnnouncer } from "./run.mjs";
+import { ATTEMPT_END_DETAIL_LIMIT, ATTEMPT_END_REASONS, applyResult, beginStep, buildRunContext, emitRunEvent, eventFindings, findingFile, finishStep, runChange, runStartEvent, workerSessionAnnouncer } from "./run.mjs";
 import { executeStep } from "./run-step.mjs";
 import { saveAgentConfig } from "../agents/agents.mjs";
 
@@ -75,7 +75,33 @@ const V2_FIELDS = {
   review: { verdict: ["string"], findings: ["array"] },
   attempt_snapshot: { attempt: ["number"], snapshot: ["string"] },
   verify: { log: ["string"] },
+  attempt_end: {
+    task: ["string"],
+    attempt: ["number"],
+    limit: ["number", "null"],
+    outcome: ["string"],
+    reason: ["string"],
+    detail: ["string"],
+    paths: ["array", "undefined"],
+  },
 };
+
+const ATTEMPT_END_OUTCOMES = ["retry", "park"];
+
+const ATTEMPT_END_REASON_SET = [
+  "review",
+  "worker_error",
+  "timeout",
+  "reverted",
+  "red",
+  "flow",
+  "flow_cannot",
+  "verify",
+  "missing_produces",
+  "reconcile",
+  "mechanics",
+  "undecided",
+];
 
 const STEP_FIELDS = { task: ["string"], subject: ["string"], kind: ["string"], needs: ["array"] };
 
@@ -112,6 +138,17 @@ function expectV2Event(event) {
     }
   }
   if (event.kind === "attempt_snapshot") expect(event.snapshot).toMatch(/^[0-9a-f]{40}$/);
+  if (event.kind === "attempt_end") {
+    expect(event.task).toMatch(/^t#\d+$/);
+    expect(Number.isInteger(event.attempt) && event.attempt >= 1).toBe(true);
+    expect(ATTEMPT_END_OUTCOMES).toContain(event.outcome);
+    expect(ATTEMPT_END_REASON_SET).toContain(event.reason);
+    expect(event.detail.length).toBeLessThanOrEqual(2000);
+    if (event.paths !== undefined) {
+      expect(event.paths.length).toBeGreaterThan(0);
+      for (const p of event.paths) expect(p).not.toMatch(/\\|^\.\/|^\/|^[A-Za-z]:|^\.\.\//);
+    }
+  }
 }
 
 const ENGINES = ["claude", "codex"];
@@ -245,6 +282,7 @@ describe("worker_session contract", () => {
     };
     const claudeDone = await finishStep(ctx, claudeStep, { result: claude, review: claudeReview, baton: null, cost: 0.01, ownChanges: null, outsideChanges: null });
     expect(claudeDone.kind).toBe("done");
+    await applyResult(ctx, claudeDone, { dry: false, log: () => {} });
     current = 2;
     saveAgentConfig({ version: 2, duties: { worker: { provider: "openai", model: "gpt-5.6-terra", role: "worker" } } });
     const codexBegun = await beginStep(ctx, codexStep);
@@ -263,12 +301,14 @@ describe("worker_session contract", () => {
     };
     const codexIssue = await finishStep(ctx, codexStep, { result: codex, review: codexReview, baton: null, cost: 0.002, ownChanges: null, outsideChanges: null });
     expect(codexIssue.kind).toBe("issue");
+    await applyResult(ctx, codexIssue, { dry: false, log: () => {} });
     const codexRetry = await beginStep(ctx, codexStep);
     expect(codexRetry.attempt).toBe(2);
     emitRunEvent(ctx, { task: 2, kind: "worker_done", attempt: 2, limit: 2, cost: 0.002 });
     const codexFailed = await finishStep(ctx, codexStep, { result: codex, review: { approved: true, ok: true, findings: [] }, baton: null, cost: 0.002, ownChanges: null, outsideChanges: null });
     expect(codexFailed.verify).toBe("issue");
-    emitRunEvent(ctx, { task: 2, kind: "park", attempt: 2, limit: 2, park_kind: "retry", reason: "verify failed" });
+    await applyResult(ctx, codexFailed, { dry: false, log: () => {} });
+    expect(ctx.stop?.kind).toBe("retry");
     emitRunEvent(ctx, { kind: "run_end", complete: false, stop: "park" });
     return {
       claudeSession: claude.sessionId,
@@ -328,6 +368,29 @@ describe("worker_session contract", () => {
       expect(event.log).toBe(path.join(tmp, "com.cu.app", "run-logs", "contract-run", `${event.task.replace("#", "")}-a${event.attempt}-verify.log`));
       expect(readFileSync(event.log, "utf8")).toBe("verify stdout\nverify stderr\n");
     }
+  });
+
+  it("ends every attempt it does not accept with attempt_end, after its review and verify and before the next start or park", async () => {
+    const { events } = await emitRun();
+    const ends = events.filter((event) => event.kind === "attempt_end");
+    expect(ends.map((event) => [event.task, event.attempt, event.limit, event.outcome, event.reason])).toEqual([
+      ["t#2", 1, 2, "retry", "review"],
+      ["t#2", 2, 2, "park", "verify"],
+    ]);
+    expect(ends[0].detail.startsWith("model review issue: ")).toBe(true);
+    expect(ends[1].detail).toBe("verify:issue");
+    for (const end of ends) expect(end).not.toHaveProperty("paths");
+    const at = (kind, attempt) => events.findIndex((event) => event.kind === kind && event.task === "t#2" && event.attempt === attempt);
+    expect(at("review", 1)).toBeLessThan(events.indexOf(ends[0]));
+    expect(events.indexOf(ends[0])).toBeLessThan(at("step_start", 2));
+    expect(at("verify", 2)).toBeLessThan(events.indexOf(ends[1]));
+    expect(events.indexOf(ends[1]) + 1).toBe(events.findIndex((event) => event.kind === "park"));
+    expect(formatRunEvent(ends[0])).toBe(`c#98 t#2 attempt 1/2: attempt end retry (review) — ${ends[0].detail}`);
+  });
+
+  it("documents exactly the reasons the runner can emit", () => {
+    expect([...ATTEMPT_END_REASONS].sort()).toEqual([...ATTEMPT_END_REASON_SET].sort());
+    expect(ATTEMPT_END_DETAIL_LIMIT).toBe(2000);
   });
 
   it("appends attempt_snapshot when each attempt is recorded", async () => {
@@ -430,7 +493,106 @@ describe("worker_session contract", () => {
     writeFileSync(FIXTURE, `${lines.join("\n")}\n`);
     const fixture = readFileSync(FIXTURE, "utf8");
     expect(fixture).not.toContain(path.basename(tmp));
-    for (const marker of ['"attempt_snapshot"', '"base"', '"findings"', '"steps"', '"parallel"', '"log"']) expect(fixture).toContain(marker);
+    for (const marker of ['"attempt_snapshot"', '"base"', '"findings"', '"steps"', '"parallel"', '"log"', '"attempt_end"']) expect(fixture).toContain(marker);
+  });
+});
+
+describe("attempt_end causes", () => {
+  let tmp;
+  const saved = {};
+  const env = ["APPDATA", "USERPROFILE", "HOME", "CODEX_HOME", "CLAUDE_CODE_SESSION_ID"];
+
+  beforeEach(() => {
+    tmp = mkdtempSync(path.join(os.tmpdir(), "attempt-end-"));
+    for (const key of env) saved[key] = process.env[key];
+    process.env.APPDATA = tmp;
+    process.env.USERPROFILE = tmp;
+    process.env.HOME = tmp;
+    process.env.CODEX_HOME = path.join(tmp, ".codex");
+    delete process.env.CLAUDE_CODE_SESSION_ID;
+  });
+
+  afterEach(() => {
+    for (const key of env) {
+      if (saved[key] === undefined) delete process.env[key];
+      else process.env[key] = saved[key];
+    }
+    rmSync(tmp, { recursive: true, force: true });
+  });
+
+  async function runWith({ retryLimit = 2, attempts }) {
+    const step = { id: "id-7", number: 7, subject: "step", status: "queue", kind: "auto", verify: "npm test", retry_limit: retryLimit, produces: ["docs/x.md"] };
+    const data = { version: 2, todos: [{ id: "id-70", number: 70, subject: "change", status: "queue", change: true, depends_on: ["id-7"] }, step] };
+    let n = 0;
+    const current = () => attempts[Math.min(n, attempts.length) - 1] || {};
+    const report = await runChange({
+      data,
+      change: 70,
+      dry: false,
+      cwd: tmp,
+      history: [],
+      effects: {
+        executeStep: async () => {
+          n += 1;
+          const plan = current();
+          if (plan.throws) throw new Error(plan.throws);
+          return plan.result || { ok: true, sessionId: `s-${n}`, result: "done" };
+        },
+        stepCost: async () => 0.01,
+        recordHandoff: async () => ({ written: true }),
+        setStatus: async () => {},
+        recordIssue: async () => ({ written: true }),
+        recordAttempt: async () => ({ written: true, snapshot: null }),
+        stepBase: async () => ({ ok: true, sha: BASE_SHA }),
+        priorChanges: async () => ({ ok: true, changes: null }),
+        ownChanges: async () => ({ ok: true, own: [], outside: [], damaged: current().damaged || [] }),
+        reviewContext: async () => null,
+        reviewStep: async () => ({ approved: true, ok: true, findings: [] }),
+        runVerify: async () => ({ code: 0, stdout: "ok\n", stderr: "" }),
+        reconcile: async () => current().reconcile || { outcome: "ok", outcome_reason: "ok" },
+      },
+    });
+    const events = readFileSync(path.join(tmp, "com.cu.app", "run-events.jsonl"), "utf8").trim().split("\n").map((line) => JSON.parse(line));
+    events.forEach(expectV2Event);
+    return { report, events, ends: events.filter((event) => event.kind === "attempt_end") };
+  }
+
+  it("names reverted neighbour work with its paths on a retry, and missing produces on a park", async () => {
+    const { report, events, ends } = await runWith({
+      attempts: [
+        { damaged: [{ path: "src/a.ts", state: "reverted" }, { path: "src\\b.ts", state: "deleted" }] },
+        { reconcile: { outcome: "issue", outcome_reason: "missing:docs/x.md", missing: ["docs/x.md"] } },
+      ],
+    });
+    expect(ends.map((event) => [event.attempt, event.outcome, event.reason, event.paths])).toEqual([
+      [1, "retry", "reverted", ["src/a.ts", "src/b.ts"]],
+      [2, "park", "missing_produces", ["docs/x.md"]],
+    ]);
+    expect(ends[0].detail).toBe(report.transitions[0].reason);
+    expect(ends[0].detail).toBe("step reverted or deleted work of earlier steps outside its own produces: src/a.ts, src\\b.ts");
+    expect(ends[1].detail).toBe("missing:docs/x.md");
+    expect(events.indexOf(ends[0])).toBeLessThan(events.findIndex((event) => event.kind === "step_start" && event.attempt === 2));
+    expect(events.indexOf(ends[1])).toBeLessThan(events.findIndex((event) => event.kind === "park"));
+    expect(events.findIndex((event) => event.kind === "verify" && event.attempt === 2)).toBeLessThan(events.indexOf(ends[1]));
+  });
+
+  it("tells a timed-out worker from a failed one and caps the detail at 2000 characters", async () => {
+    const timedOut = await runWith({
+      retryLimit: 1,
+      attempts: [{ result: { ok: false, timedOut: true, error: "timed out after 10ms — process tree killed" } }],
+    });
+    expect(timedOut.ends).toEqual([expect.objectContaining({ task: "t#7", attempt: 1, limit: 1, outcome: "park", reason: "timeout", detail: "step failed: timed out after 10ms — process tree killed" })]);
+    rmSync(path.join(tmp, "com.cu.app", "run-events.jsonl"), { force: true });
+    const crashed = await runWith({ retryLimit: 1, attempts: [{ throws: "x".repeat(5000) }] });
+    expect(crashed.ends).toHaveLength(1);
+    expect(crashed.ends[0]).toMatchObject({ outcome: "park", reason: "worker_error" });
+    expect(crashed.ends[0].detail).toBe(`step failed: ${"x".repeat(5000)}`.slice(0, 2000));
+  });
+
+  it("emits nothing for an accepted attempt", async () => {
+    const { ends, report } = await runWith({ attempts: [{}] });
+    expect(report.complete).toBe(true);
+    expect(ends).toEqual([]);
   });
 });
 

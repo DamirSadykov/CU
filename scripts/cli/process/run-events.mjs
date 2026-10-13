@@ -104,6 +104,7 @@ export function formatRunEvent(event) {
   if (kind === "run_start" || kind === "run_end") return `${changeId(event?.change)}: ${kind.replace("_", " ")}`.trim();
   if (kind === "worker_session") return `${prefix}${attempt}: worker session ${event.engine || "?"} ${event.session || ""}`.trim();
   if (kind === "attempt_snapshot") return `${prefix}${attempt}: snapshot ${String(event.snapshot || "").slice(0, 12)}`.trim();
+  if (kind === "attempt_end") return `${prefix}${attempt}: attempt end ${event.outcome || "?"} (${event.reason || "?"})${event.detail ? ` — ${event.detail}` : ""}`.trim();
   if (kind === "escalate") return `${prefix}${attempt}: escalate${event.route ? ` (${event.route})` : ""}`.trim();
   return `${prefix}${attempt}: ${kind}`.trim();
 }
