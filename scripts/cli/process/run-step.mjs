@@ -182,7 +182,7 @@ function killTree(child) {
 function spawnCaptured(
   file,
   args,
-  { cwd, timeoutMs, input = null, maxChars = MAX_CAPTURE_CHARS, env, spawnOpts, onStdout } = {},
+  { cwd, timeoutMs, input = null, maxChars = MAX_CAPTURE_CHARS, env, spawnOpts, onStdout, onOutput } = {},
 ) {
   return new Promise((resolve) => {
     const target = resolveSpawn(file, args);
@@ -217,8 +217,12 @@ function spawnCaptured(
     child.stdout.on("data", (c) => {
       out.push(c);
       try { onStdout?.(String(c)); } catch {}
+      try { onOutput?.(c); } catch {}
     });
-    child.stderr.on("data", (c) => err.push(c));
+    child.stderr.on("data", (c) => {
+      err.push(c);
+      try { onOutput?.(c); } catch {}
+    });
 
     const timer = setTimeout(() => {
       timedOut = true;
@@ -1126,12 +1130,13 @@ export async function runVerify({
   timeoutMs = DEFAULT_VERIFY_TIMEOUT_MS,
   maxChars = MAX_CAPTURE_CHARS,
   env,
+  onOutput,
 } = {}) {
   if (Array.isArray(cmd)) {
     const [file, ...args] = cmd.filter((x) => x != null).map(String);
     if (!file)
       return { code: null, stdout: "", stderr: "runVerify: empty command", timedOut: false, error: "runVerify: empty command" };
-    return spawnCaptured(file, args, { cwd, timeoutMs, maxChars, env });
+    return spawnCaptured(file, args, { cwd, timeoutMs, maxChars, env, onOutput });
   }
 
   const text = String(cmd ?? "").trim();
@@ -1155,8 +1160,9 @@ export async function runVerify({
       timeoutMs,
       maxChars,
       env,
+      onOutput,
       spawnOpts: { windowsVerbatimArguments: true },
     });
   }
-  return spawnCaptured("/bin/sh", ["-c", text], { cwd, timeoutMs, maxChars, env });
+  return spawnCaptured("/bin/sh", ["-c", text], { cwd, timeoutMs, maxChars, env, onOutput });
 }

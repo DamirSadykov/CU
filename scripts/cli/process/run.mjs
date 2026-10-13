@@ -83,7 +83,7 @@ import {
 import { findChange } from "../board/change.mjs";
 import { resolveDuty } from "../agents/agents.mjs";
 import { withDataDir } from "../kernel/board-lock.mjs";
-import { appDataFile } from "../kernel/appdata.mjs";
+import { appDataDir, appDataFile } from "../kernel/appdata.mjs";
 import {
   gitHead,
   gitBase,
@@ -94,7 +94,7 @@ import {
   recoverMarkers,
 } from "./red-gate.mjs";
 import { bestAttempt, blockingCount, restoreCheckpoint } from "./checkpoint.mjs";
-import { appendRunEvent, runEventsPath, watchRunEvents } from "./run-events.mjs";
+import { appendRunEvent, createVerifyLog, runEventsPath, verifyLogPath, watchRunEvents, writeVerifyLog } from "./run-events.mjs";
 import { runFlowGate } from "./flow-gate.mjs";
 import { flowDeclared } from "./graph-rules.mjs";
 import { readSettings } from "../kernel/settings.mjs";
@@ -111,6 +111,51 @@ export const RETRY_COST_FACTOR = 2;
 const brief = (t) => (t ? { id: t.id, number: t.number, subject: t.subject } : null);
 
 const reviewPath = (value) => String(value || "").replace(/\\/g, "/");
+
+export function findingFile(file, root) {
+  const raw = String(file ?? "").trim();
+  if (!raw) return null;
+  let rel;
+  if (path.isAbsolute(raw) || /^[A-Za-z]:[\\/]/.test(raw)) {
+    const base = typeof root === "function" ? root() : root;
+    if (!base) return null;
+    rel = path.relative(base, raw);
+    if (path.isAbsolute(rel)) return null;
+  } else {
+    rel = raw;
+  }
+  rel = path.posix.normalize(reviewPath(rel));
+  if (!rel || rel === "." || rel === ".." || rel.startsWith("../") || rel.startsWith("/")) return null;
+  return rel;
+}
+
+export function eventFindings(findings, root) {
+  return (Array.isArray(findings) ? findings : []).map((f) => {
+    const file = findingFile(f?.file, root);
+    const line = Number(f?.line);
+    const located = file !== null && Number.isInteger(line) && line >= 1;
+    return {
+      level: f?.level ?? null,
+      file: located ? file : null,
+      line: located ? line : null,
+      text: f?.text ?? null,
+      evidence: f?.evidence ?? null,
+    };
+  });
+}
+
+function repoRoot(ctx) {
+  if (ctx.repoRoot === undefined) {
+    try {
+      ctx.repoRoot = execFileSync("git", ["rev-parse", "--show-toplevel"], {
+        cwd: ctx.cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"],
+      }).trim() || ctx.cwd;
+    } catch {
+      ctx.repoRoot = ctx.cwd;
+    }
+  }
+  return ctx.repoRoot;
+}
 
 function retryChangedLocations(cwd, from, to) {
   let output;
@@ -531,6 +576,32 @@ export function emitRunEvent(ctx, event) {
   appendRunEvent({ run: ctx.runId, change: `c#${ctx.root.number}`, ...event, task });
 }
 
+export function runStartEvent(ctx, parallel) {
+  const members = Array.isArray(ctx.members) ? ctx.members : [];
+  const byId = new Map(members.map((t) => [t.id, t]));
+  return {
+    kind: "run_start",
+    parallel,
+    steps: members.filter((t) => !isDone(t)).map((t) => ({
+      task: `t#${t.number}`,
+      subject: t.subject ?? "",
+      kind: t.kind === "auto" ? "auto" : "manual",
+      needs: (Array.isArray(t.depends_on) ? t.depends_on : [])
+        .map((id) => byId.get(id))
+        .filter((d) => d && d.number != null)
+        .map((d) => `t#${d.number}`),
+    })),
+  };
+}
+
+function saveVerifyLog(ctx, task, attempt, log, verdictRun) {
+  if (!log) return null;
+  if (!log.size) log.push([verdictRun?.stdout, verdictRun?.stderr, verdictRun?.error].filter((s) => s && String(s).length).join("\n"));
+  let file;
+  try { file = verifyLogPath(appDataDir(), ctx.runId, task.number, attempt); } catch { return null; }
+  return writeVerifyLog(file, log) ? file : null;
+}
+
 export function workerSessionAnnouncer(ctx, task, attempt) {
   return ({ engine, session, cwd, transcript }) =>
     emitRunEvent(ctx, { task: task.number, kind: "worker_session", attempt, engine, session, cwd, transcript });
@@ -902,6 +973,7 @@ export async function beginStep(ctx, task, wave = []) {
     limit,
     route: task._runner_high_route_used ? "high" : null,
     flow: task.flow ?? "n/a",
+    ...(task.step_base ? { base: task.step_base } : {}),
   });
   return {
     task,
@@ -1083,6 +1155,7 @@ async function recordAttempt(ctx, task, base) {
   }
   entry.snapshot = written?.snapshot || null;
   (task.attempts ??= []).push(entry);
+  if (entry.snapshot) emitRunEvent(ctx, { task: task.number, kind: "attempt_snapshot", attempt: entry.attempt, snapshot: entry.snapshot });
   return entry;
 }
 
@@ -1118,15 +1191,24 @@ export async function finishStep(ctx, task, { result, review, baton, cost, ownCh
   const { attempt, limit } = base;
 
   const findings = Array.isArray(review?.findings) ? review.findings : [];
-  if (review) emitRunEvent(ctx, { task: task.number, kind: "review", attempt, limit, counts: findingCounts(findings) });
   const blocking = blockingFindings(findings);
   const architectFindings = findings.filter((f) => f?.level === "medium" || f?.level === "low");
   const onlyArchitectural = review && review.skipped !== true && blocking.length === 0 && architectFindings.length;
+  const reviewIssue = !!review && review.skipped !== true && !!(blocking.length || (!onlyArchitectural && (review.ok === false || review.approved !== true)));
+  if (review) emitRunEvent(ctx, {
+    task: task.number,
+    kind: "review",
+    attempt,
+    limit,
+    counts: findingCounts(findings),
+    ...(review.skipped === true ? {} : { verdict: reviewIssue ? "issue" : "approve" }),
+    findings: eventFindings(findings, () => repoRoot(ctx)),
+  });
   if (onlyArchitectural) {
     await recordArchitectComment(ctx, task, { attempt, findings: architectFindings });
     base.architectFindings = architectFindings;
   }
-  if (review && review.skipped !== true && (blocking.length || (!onlyArchitectural && (review.ok === false || review.approved !== true)))) {
+  if (reviewIssue) {
     await recordIssueComment(ctx, task, {
       attempt,
       limit,
@@ -1215,13 +1297,16 @@ export async function finishStep(ctx, task, { result, review, baton, cost, ownCh
     }
   }
 
+  const verifyLog = !ctx.dry && ctx.events ? createVerifyLog() : null;
   const verdictRun = await ctx.effects.runVerify({
     cmd: declaredVerify(task),
     cwd: ctx.cwd,
     timeoutMs: ctx.timeoutMs,
+    ...(verifyLog ? { onOutput: (chunk) => verifyLog.push(chunk) } : {}),
   });
   const verify = Number(verdictRun?.code) === 0 ? "ok" : "issue";
-  emitRunEvent(ctx, { task: task.number, kind: "verify", attempt, limit, ok: verify === "ok" });
+  const logFile = saveVerifyLog(ctx, task, attempt, verifyLog, verdictRun);
+  emitRunEvent(ctx, { task: task.number, kind: "verify", attempt, limit, ok: verify === "ok", ...(logFile ? { log: logFile } : {}) });
   if (verify === "issue") {
     const combined = [verdictRun?.stdout, verdictRun?.stderr].filter((s) => s && String(s).trim()).join("\n");
     const tail = tailLines(combined, 60);
@@ -1692,7 +1777,7 @@ export async function runChange({
   const groupBudget = typeof root.budget_usd === "number" ? root.budget_usd : null;
 
   const bound = maxSteps ?? members.length * 8 + 8;
-  emitRunEvent(ctx, { kind: "run_start" });
+  emitRunEvent(ctx, runStartEvent(ctx, limit));
 
   while (!ctx.stop) {
     // The live loop asks the STRUCTURAL frontier, not the parked-filtered one:

@@ -5,7 +5,7 @@
 // exercise the real semantics without starting a model or a shell. Each
 // invariant of the DSL gets its own test, named after it.
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from "vitest";
 import {
   mkdtempSync,
   mkdirSync,
@@ -47,6 +47,21 @@ import {
 import { isReadyNode, loadBoard } from "../board/todos.mjs";
 import { buildStepPrompt } from "./run-step.mjs";
 import { snapshotTree } from "./red-gate.mjs";
+
+let sandboxAppData;
+let savedAppData;
+
+beforeAll(() => {
+  savedAppData = process.env.APPDATA;
+  sandboxAppData = mkdtempSync(path.join(os.tmpdir(), "run-appdata-"));
+  process.env.APPDATA = sandboxAppData;
+});
+
+afterAll(() => {
+  if (savedAppData === undefined) delete process.env.APPDATA;
+  else process.env.APPDATA = savedAppData;
+  rmSync(sandboxAppData, { recursive: true, force: true });
+});
 
 // ── fixtures ─────────────────────────────────────────────────────────────────
 const task = (number, extra = {}) => ({
