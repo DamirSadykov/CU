@@ -45,9 +45,8 @@ fn spec_root_setting() -> String {
     let appdata = std::env::var("APPDATA")
         .or_else(|_| std::env::var("USERPROFILE").map(|h| format!("{h}\\AppData\\Roaming")))
         .unwrap_or_default();
-    let path =
-        crate::kernel::data_dir::selected_data_dir(&PathBuf::from(appdata), "com.cu.app")
-            .join("settings.json");
+    let path = crate::kernel::data_dir::selected_data_dir(&PathBuf::from(appdata), "com.cu.app")
+        .join("settings.json");
     std::fs::read_to_string(path)
         .ok()
         .and_then(|raw| serde_json::from_str::<Value>(&raw).ok())

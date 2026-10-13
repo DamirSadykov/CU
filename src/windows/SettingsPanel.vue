@@ -554,6 +554,16 @@ const ccHookStatus = ref<CcHookStatus | null>(null);
 const installCcBusy = ref(false);
 const installCcMsg = ref("");
 
+function hookInstallError(error: unknown): string {
+  const detail = String(error);
+  if (detail.includes("HOOK_CONFIG_INVALID_JSON")) return t("installHookInvalidJson");
+  if (detail.includes("HOOK_CONFIG_ROOT_NOT_OBJECT")) return t("installHookRootNotObject");
+  if (detail.includes("HOOK_CONFIG_SHAPE_INVALID")) return t("installHookShapeInvalid");
+  if (detail.includes("HOOK_CONFIG_CHANGED")) return t("installHookChanged");
+  if (detail.includes("HOOK_CONFIG_READ_FAILED")) return t("installHookReadFailed");
+  return detail;
+}
+
 async function loadCcHookStatus() {
   try {
     ccHookStatus.value = await invoke<CcHookStatus>("cc_hook_status");
@@ -569,7 +579,7 @@ async function doInstallCcHook() {
     installCcMsg.value = t("installCcHookDone", { path: p });
     await loadCcHookStatus();
   } catch (e) {
-    installCcMsg.value = String(e);
+    installCcMsg.value = hookInstallError(e);
   } finally {
     installCcBusy.value = false;
   }
@@ -603,7 +613,7 @@ async function doInstallCodexHook() {
     installCodexMsg.value = t("installCodexHookDone", { path: p });
     await loadCodexHookStatus();
   } catch (e) {
-    installCodexMsg.value = String(e);
+    installCodexMsg.value = hookInstallError(e);
   } finally {
     installCodexBusy.value = false;
   }

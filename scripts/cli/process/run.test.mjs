@@ -43,7 +43,9 @@ import {
   runRecordOf,
   summarizeRuns,
   formatRunHistory,
+  isEmptyHumanGate,
 } from "./run.mjs";
+import { formatRunEvent } from "./run-events.mjs";
 import { isReadyNode, loadBoard } from "../board/todos.mjs";
 import { buildStepPrompt } from "./run-step.mjs";
 import { snapshotTree } from "./red-gate.mjs";
@@ -414,24 +416,39 @@ describe("runChange — lifecycle review", () => {
 });
 
 describe("runChange — gates", () => {
-  it("does the gate's work, parks it in review and leaves its dependents untouched", async () => {
+  it("closes an empty manual gate without an attempt and continues into its dependent", async () => {
     const data = board(
       changeRoot(1, [2, 3, 4]),
       auto(2),
-      task(3, { depends_on: deps(2) }), // kind manual — the gate
+      task(3, { depends_on: deps(2) }),
       auto(4, { depends_on: deps(3) }),
     );
-    const h = harness();
+    const comments = [];
+    const h = harness({
+      recordIssue: async ({ comment }) => { comments.push(comment); return { written: true }; },
+    });
     const r = await go(data, "1", h.effects);
 
-    expect(h.calls.steps).toEqual([2]);
-    expect(h.calls.reviews).toEqual([2]);
-    expect(statusOf(r, 3)).toBe("review");
-    expect(statusOf(r, 4)).toBe("queue");
-    expect(r.stop.kind).toBe("gate");
-    expect(r.stop.task.number).toBe(3);
-    expect(r.stop.status).toBe("review");
-    expect(r.stop.reason).toMatch(/kind manual/);
+    expect(isEmptyHumanGate(data.todos[2])).toBe(true);
+    expect(h.calls.steps).toEqual([2, 4]);
+    expect(h.calls.reviews).toEqual([2, 4]);
+    expect(statusOf(r, 3)).toBe("done");
+    expect(statusOf(r, 4)).toBe("done");
+    expect(r.steps.map((step) => step.result)).toEqual(["done", "gate-skipped", "done"]);
+    expect(r.steps[1]).toMatchObject({ attempt: null, cost_usd: null, outcome: "ok" });
+    expect(r.board.todos.find((t) => t.number === 3).attempts).toBeUndefined();
+    expect(comments).toEqual([expect.objectContaining({ author: "runner", body: expect.stringMatching(/^GATE_SKIPPED\n.*no produces or verify/) })]);
+    expect(r.stop).toBeNull();
+    expect(r.complete).toBe(true);
+
+    const eventsFile = path.join(sandboxAppData, "com.cu.app", "run-events.jsonl");
+    const events = readFileSync(eventsFile, "utf8").trim().split("\n").map(JSON.parse);
+    const skipped = events
+      .filter((event) => event.change === "c#1" && event.task === "t#3" && event.kind === "gate_skipped");
+    expect(skipped).toEqual([expect.objectContaining({ reason: expect.stringMatching(/nothing for a human to approve/) })]);
+    expect(events.filter((event) => event.run === skipped[0].run && event.task === "t#3")
+      .map((event) => event.kind)).toEqual(["gate_skipped"]);
+    expect(formatRunEvent(skipped[0])).toMatch(/^c#1 t#3: gate skipped/);
   });
 
   it("a manual node with produces still goes to the executor and the reviewer", async () => {
@@ -439,10 +456,40 @@ describe("runChange — gates", () => {
     const h = harness();
     const r = await go(data, "1", h.effects);
 
+    expect(isEmptyHumanGate(data.todos[1])).toBe(false);
     expect(h.calls.steps).toEqual([2]);
     expect(h.calls.reviews).toEqual([2]);
     expect(statusOf(r, 2)).toBe("review");
     expect(r.stop.kind).toBe("gate");
+  });
+
+  it("keeps a manual node with verify as a meaningful gate", async () => {
+    const data = board(changeRoot(1, [2]), task(2, { verify: "human checklist" }));
+    const h = harness();
+    const r = await go(data, "1", h.effects);
+
+    expect(isEmptyHumanGate(data.todos[1])).toBe(false);
+    expect(statusOf(r, 2)).toBe("review");
+    expect(r.stop).toMatchObject({ kind: "gate", task: { number: 2 } });
+  });
+
+  it("keeps an otherwise empty sensitive manual node for an interactive decision", async () => {
+    const data = board(
+      changeRoot(1, [2, 3]),
+      task(2, { risk: "sensitive" }),
+      auto(3, { depends_on: deps(2) }),
+    );
+    const h = harness();
+    const r = await go(data, "1", h.effects);
+
+    expect(isEmptyHumanGate(data.todos[1])).toBe(false);
+    expect(h.calls.steps).toEqual([]);
+    expect(h.calls.reviews).toEqual([]);
+    expect(statusOf(r, 2)).toBe("review");
+    expect(statusOf(r, 3)).toBe("queue");
+    expect(r.steps.map((step) => step.result)).toEqual(["gate"]);
+    expect(r.stop).toMatchObject({ kind: "gate", task: { number: 2 }, status: "review" });
+    expect(r.stop.reason).toMatch(/risk sensitive.*interactive session/);
   });
 
   it("holds a sensitive node with produces without dispatching worker or reviewer", async () => {
@@ -489,8 +536,20 @@ describe("runChange — gates", () => {
     expect(r.stop.reason).toMatch(/already in review/);
   });
 
+  it("skips an empty manual gate left in review by an earlier run and releases its dependent", async () => {
+    const data = board(changeRoot(1, [2, 3]), task(2, { status: "review" }), auto(3, { depends_on: deps(2) }));
+    const h = harness();
+    const r = await go(data, "1", h.effects);
+
+    expect(h.calls.steps).toEqual([3]);
+    expect(statusOf(r, 2)).toBe("done");
+    expect(statusOf(r, 3)).toBe("done");
+    expect(r.steps.map((step) => step.result)).toEqual(["gate-skipped", "done"]);
+    expect(r.stop).toBeNull();
+  });
+
   it("keeps running an independent branch past a node waiting in review", async () => {
-    const data = board(changeRoot(1, [2, 3]), task(2, { status: "review" }), auto(3));
+    const data = board(changeRoot(1, [2, 3]), task(2, { status: "review", produces: ["docs/gate.md"] }), auto(3));
     const h = harness();
     const r = await go(data, "1", h.effects);
 
@@ -501,7 +560,7 @@ describe("runChange — gates", () => {
   });
 
   it("keeps running an independent branch past a gate reached in the same run", async () => {
-    const data = board(changeRoot(1, [2, 3, 4]), task(2), auto(3), auto(4, { depends_on: deps(3) }));
+    const data = board(changeRoot(1, [2, 3, 4]), task(2, { produces: ["docs/gate.md"] }), auto(3), auto(4, { depends_on: deps(3) }));
     const h = harness();
     const r = await go(data, "1", h.effects);
 
@@ -1329,7 +1388,7 @@ describe("runChange — dry run", () => {
       changeRoot(1, [2, 3, 4], { budget_usd: 10, parallel_limit: 2 }),
       auto(2, { budget_usd: 2 }),
       auto(3, { budget_usd: 3 }),
-      task(4, { depends_on: deps(2, 3) }), // the gate the plan stops at
+      task(4, { depends_on: deps(2, 3) }), // empty manual gate: the plan skips it
     );
     const r = await runChange({ data, change: "1", effects: h.effects, dry: true, history: [] });
 
@@ -1338,10 +1397,11 @@ describe("runChange — dry run", () => {
     expect(r.dry).toBe(true);
     expect(r.waves).toEqual([[2, 3], [4]]);
     expect(r.steps.map((s) => s.task.number)).toEqual([2, 3, 4]);
-    expect(r.steps.map((s) => s.gate)).toEqual([false, false, true]);
+    expect(r.steps.map((s) => s.gate)).toEqual([false, false, false]);
+    expect(r.steps.map((s) => s.result)).toEqual(["done", "done", "gate-skipped"]);
     expect(r.spend.usd).toBe(5); // 2 + 3 by the DECLARED budgets; the gate declares none
-    expect(r.stop.kind).toBe("gate");
-    expect(r.stop.task.number).toBe(4);
+    expect(r.stop).toBeNull();
+    expect(r.complete).toBe(true);
     // The caller's board is untouched: statuses on the original object stand.
     expect(data.todos.map((t) => t.status)).toEqual(["queue", "queue", "queue", "queue"]);
   });
@@ -1554,6 +1614,37 @@ describe("finishStep", () => {
     expect(out.kind).toBe("issue");
     expect(out.reason).toMatch(/step failed: boom/);
     expect(t.status).toBe("queue");
+  });
+
+  it.each([
+    ["runVerify", { runVerify: async () => { throw new Error("verify exploded"); } }, /runVerify crashed: verify exploded/],
+    ["reconcile", { reconcile: async () => { throw new Error("reconcile exploded"); } }, /reconcile crashed: reconcile exploded/],
+  ])("turns a %s exception into a recorded mechanical stop result", async (_phase, effects, reason) => {
+    const t = auto(40);
+    const ctx = finishCtx(t, effects);
+    const out = await finishStep(ctx, t, { result: { ok: true }, review: { approved: true, ok: true }, cost: 0.25 });
+
+    expect(out).toMatchObject({ kind: "mechanics", endReason: "mechanics", cost: 0.25 });
+    expect(out.reason).toMatch(reason);
+    expect(t.attempts[0]).toMatchObject({ attempt: 1, cost_usd: 0.25, reason: "mechanics" });
+    expect(t.attempts[0].ended_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  });
+
+  it("warns and retries a failed attempt-journal write", async () => {
+    const t = auto(41);
+    let writes = 0;
+    const ctx = finishCtx(t, {
+      recordAttempt: async () => {
+        writes += 1;
+        if (writes === 1) throw new Error("board busy");
+        return { written: true, snapshot: "saved-on-retry" };
+      },
+    });
+    const out = await finishStep(ctx, t, { result: { ok: true }, review: { approved: true, ok: true }, cost: 0.1 });
+
+    expect(out.kind).toBe("done");
+    expect(writes).toBe(2);
+    expect(t.attempts[0]).toMatchObject({ snapshot: "saved-on-retry", reason: "accepted", verify: "ok" });
   });
 
   it.each([

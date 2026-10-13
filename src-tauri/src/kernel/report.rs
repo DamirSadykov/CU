@@ -16,8 +16,7 @@ use std::time::{Duration, SystemTime};
 use serde::{Deserialize, Serialize};
 
 /// Репозиторий, на который нацелена кнопка «Сообщить о проблеме».
-pub const ISSUE_NEW_URL: &str =
-    "https://github.com/DamirSadykov/CU/issues/new";
+pub const ISSUE_NEW_URL: &str = "https://github.com/DamirSadykov/CU/issues/new";
 
 /// Имя файла, в который пишет плагин логирования (внутри app log dir).
 pub const LOG_FILE_NAME: &str = "cu.log";

@@ -173,9 +173,22 @@ describe("buildWorkflowContext", () => {
     expect(context).not.toContain("flowchart LR");
   });
 
+  it("lets the architect skip a plan only after sizing a known, branch-free change", () => {
+    const context = buildWorkflowContext({ ...base, critic: "session", planGuard: true });
+    expect(context).toContain("locate the files and mark every step S/M/L");
+    expect(context).toContain("all steps S or M, files known, no open branch → no plan");
+    expect(context).toContain("implement in this session or with agents");
+    expect(context).toContain("graph via `<cli> todos apply` only when the auto runner is needed");
+    expect(context).toContain("Any L step or open branch → plan mode → ExitPlanMode");
+  });
+
   it("renders a Codex workflow without promising Claude plan hooks", () => {
     const context = buildWorkflowContext({ ...base, critic: "session", planGuard: false }, "codex");
     expect(context).toContain("WORKFLOW · this Codex session");
+    expect(context).toContain("locate the files and mark every step S/M/L");
+    expect(context).toContain("all steps S or M, files known, no open branch → no plan");
+    expect(context).toContain("graph via `<cli> todos apply` only when the auto runner is needed");
+    expect(context).toContain("Any L step or open branch → plan");
     expect(context).toContain("No tracker ExitPlanMode gate is wired for Codex");
     expect(context).not.toContain("revise and call ExitPlanMode again");
   });
@@ -384,7 +397,8 @@ describe("cli.mjs hook (stdin payload)", () => {
     setup({ workflowContextEnabled: true });
     const out = runHook();
     expect(out).toContain("──────── WORKFLOW · this session");
-    expect(out).toContain("0 triage");
+    expect(out).toContain("0 scout");
+    expect(out).toContain("all steps S or M, files known, no open branch → no plan");
     expect(out).toContain("Auto runner — `cli run`, its own process, NOT this session");
   });
 
@@ -392,6 +406,8 @@ describe("cli.mjs hook (stdin payload)", () => {
     setup({ workflowContextEnabled: true });
     const out = runHook("codex");
     expect(out).toContain("WORKFLOW · this Codex session");
+    expect(out).toContain("all steps S or M, files known, no open branch → no plan");
+    expect(out).toContain("Any L step or open branch → plan");
     expect(out).toContain("No tracker ExitPlanMode gate is wired for Codex");
     expect(out).not.toContain("plan mode → ExitPlanMode");
   });

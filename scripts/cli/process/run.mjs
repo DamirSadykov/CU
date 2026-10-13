@@ -238,6 +238,13 @@ export function hasNoMachineWork(t) {
   return !(Array.isArray(t.produces) && t.produces.some(Boolean));
 }
 
+export function isEmptyHumanGate(t) {
+  if (!t || t.kind === "auto") return false;
+  if (isSensitive(t)) return false;
+  const produces = Array.isArray(t.produces) && t.produces.some(Boolean);
+  return !produces && !declaredVerify(t);
+}
+
 export function gateReason(t) {
   if (isSensitive(t))
     return "risk sensitive — the runner never dispatches this node; an interactive session moves it to in_progress, does the work, and closes it with verify";
@@ -462,7 +469,9 @@ export function liveEffects({ cwd } = {}) {
         const todo = data.todos.find((t) => t && t.id === task.id);
         if (!todo) return { written: false, error: `task ${task.id} not found on the board` };
         if (!Array.isArray(todo.attempts)) todo.attempts = [];
-        todo.attempts.push(saved);
+        const existing = todo.attempts.findIndex((attempt) => attempt?.attempt === saved.attempt);
+        if (existing >= 0) todo.attempts[existing] = saved;
+        else todo.attempts.push(saved);
         todo.updated_at = new Date().toISOString();
         saveBoard(file, data);
         return { written: true, snapshot: saved.snapshot };
@@ -742,7 +751,7 @@ export function runRecordOf(report, { inherit = false } = {}) {
 
 export const ATTEMPT_END_REASONS = Object.freeze([
   "review", "worker_error", "timeout", "reverted", "red", "flow", "flow_cannot",
-  "verify", "missing_produces", "reconcile", "mechanics", "undecided",
+  "verify", "missing_produces", "reconcile", "mechanics", "undecided", "interrupted",
 ]);
 
 const ATTEMPT_END_KINDS = new Set(["issue", "convergence", "mechanics", "undecided", "flow-cannot"]);
@@ -777,8 +786,7 @@ function endAttempt(ctx, task, outcome) {
 
 function park(ctx, kind, task, reason, extra = {}) {
   endAttempt(ctx, task, "park");
-  if (ctx.stop) return;
-  ctx.stop = {
+  const stop = {
     kind,
     task: brief(task),
     status: task ? task.status : null,
@@ -786,12 +794,20 @@ function park(ctx, kind, task, reason, extra = {}) {
     parked: true,
     ...extra,
   };
+  if (!ctx.stop) ctx.stop = stop;
   emitRunEvent(ctx, {
     task: task?.number,
     kind: "park",
     ...(task ? { attempt: Math.max(1, ctx.attempts.get(task.id) || 1), limit: retryLimitOf(task) } : {}),
     park_kind: kind,
     reason,
+    attempts: task ? (task.attempts || []).map((entry, index) => ({
+      attempt: entry.attempt ?? index + 1,
+      reason: entry.reason ?? null,
+      cost_usd: typeof entry.cost_usd === "number" ? entry.cost_usd : null,
+      verify: entry.verify ?? null,
+      ended_at: entry.ended_at ?? null,
+    })) : [],
   });
 }
 
@@ -1105,6 +1121,20 @@ async function recordArchitectComment(ctx, task, { attempt, findings }) {
   return comment;
 }
 
+async function recordGateSkippedComment(ctx, task, reason) {
+  const comment = {
+    id: randomUUID(),
+    author: "runner",
+    body: `GATE_SKIPPED\n${reason}`,
+    created_at: new Date().toISOString(),
+  };
+  (task.comments ??= []).push(comment);
+  if (typeof ctx.effects.recordIssue === "function") {
+    try { await ctx.effects.recordIssue({ task, comment }); } catch {}
+  }
+  return comment;
+}
+
 function resultBase(ctx, task, result, review, baton, cost, ownChanges, outsideChanges) {
   const attempt = ctx.attempts.get(task.id);
   const limit = retryLimitOf(task);
@@ -1187,12 +1217,24 @@ async function recordAttempt(ctx, task, base) {
     reviewed: !!base.review && base.review.skipped !== true && base.review.ok !== false,
     mechanics: base.kind === "mechanics",
     verify_tail: base.verifyTail ?? null,
+    reason: base.endReason || (base.kind === "done" ? "accepted" : base.kind || "undecided"),
+    verify: base.verify ?? null,
+    ended_at: new Date().toISOString(),
     snapshot: null,
   };
   let written;
   if (typeof ctx.effects.recordAttempt === "function") {
-    try { written = await ctx.effects.recordAttempt({ task, cwd: ctx.cwd, entry: { ...entry } }); }
-    catch (err) { written = { written: false, error: String(err?.message || err) }; }
+    for (let write = 1; write <= 2; write += 1) {
+      try { written = await ctx.effects.recordAttempt({ task, cwd: ctx.cwd, entry: { ...entry } }); }
+      catch (err) { written = { written: false, error: String(err?.message || err) }; }
+      if (written?.written !== false) break;
+      const error = written?.error || "writer returned written=false";
+      process.stderr.write(`run: attempt ${entry.attempt} for #${task.number} was not saved (write ${write} of 2) — ${error}${write === 1 ? "; retrying" : ""}\n`);
+      emitRunEvent(ctx, {
+        task: task.number, kind: "warning", warning: "attempt_record",
+        attempt: entry.attempt, write, retrying: write === 1, error,
+      });
+    }
   }
   entry.snapshot = written?.snapshot || null;
   (task.attempts ??= []).push(entry);
@@ -1345,11 +1387,25 @@ export async function finishStep(ctx, task, { result, review, baton, cost, ownCh
   }
 
   const verifyLog = !ctx.dry && ctx.events ? createVerifyLog() : null;
-  const verdictRun = await ctx.effects.runVerify({
-    cmd: declaredVerify(task),
-    cwd: ctx.cwd,
-    timeoutMs: ctx.timeoutMs,
-    ...(verifyLog ? { onOutput: (chunk) => verifyLog.push(chunk) } : {}),
+  if (ctx.interrupted) return finishAttempt(ctx, task, {
+    ...base, kind: "mechanics", endReason: "interrupted", reason: `interrupted by ${ctx.interrupted}`,
+  });
+  let verdictRun;
+  try {
+    verdictRun = await ctx.effects.runVerify({
+      cmd: declaredVerify(task),
+      cwd: ctx.cwd,
+      timeoutMs: ctx.timeoutMs,
+      ...(verifyLog ? { onOutput: (chunk) => verifyLog.push(chunk) } : {}),
+    });
+  } catch (err) {
+    return finishAttempt(ctx, task, {
+      ...base, kind: "mechanics", endReason: "mechanics",
+      reason: `runVerify crashed: ${String(err?.message || err)}`,
+    });
+  }
+  if (ctx.interrupted) return finishAttempt(ctx, task, {
+    ...base, kind: "mechanics", endReason: "interrupted", reason: `interrupted by ${ctx.interrupted}`,
   });
   const verify = Number(verdictRun?.code) === 0 ? "ok" : "issue";
   const logFile = saveVerifyLog(ctx, task, attempt, verifyLog, verdictRun);
@@ -1365,7 +1421,18 @@ export async function finishStep(ctx, task, { result, review, baton, cost, ownCh
       return finishAttempt(ctx, task, { ...base, kind: "mechanics", endReason: "mechanics", verify, reason: "механика: verify упал с тем же выводом две попытки подряд при одобренном ревью без critical/high" });
     }
   }
-  const report = (await ctx.effects.reconcile({ task, verify })) || {};
+  let report;
+  try {
+    report = (await ctx.effects.reconcile({ task, verify })) || {};
+  } catch (err) {
+    return finishAttempt(ctx, task, {
+      ...base, kind: "mechanics", endReason: "mechanics", verify,
+      reason: `reconcile crashed: ${String(err?.message || err)}`,
+    });
+  }
+  if (ctx.interrupted) return finishAttempt(ctx, task, {
+    ...base, kind: "mechanics", endReason: "interrupted", verify, reason: `interrupted by ${ctx.interrupted}`,
+  });
   const outcome = report.outcome ?? null;
   const reason = report.outcome_reason || `verify:${verify}`;
 
@@ -1479,6 +1546,24 @@ function downgradeUntouchedRetryFindings(review, context) {
 // worker produced on the board, then the reviewer runs and finishStep reads
 // its verdict and branches.
 async function runOne(ctx, task, wave = []) {
+  if (isEmptyHumanGate(task)) {
+    const reason = "empty manual gate — no produces or verify were declared, so there is nothing for a human to approve";
+    const moved = await moveTo(ctx, task, "done");
+    if (!moved.ok) {
+      return {
+        task, kind: "undecided", attempt: null, limit: retryLimitOf(task), cost: 0,
+        session: null, review: null,
+        reason: `empty manual gate could not be closed: ${moved.error}`,
+      };
+    }
+    await recordGateSkippedComment(ctx, task, reason);
+    emitRunEvent(ctx, { task: task.number, kind: "gate_skipped", reason });
+    return {
+      task, kind: "gate-skipped", attempt: null, limit: retryLimitOf(task), cost: null,
+      session: null, review: null, reason,
+    };
+  }
+
   const begun = await beginStep(ctx, task, wave);
   if (begun.kind === "retry-exhausted" || begun.kind === "red-base-failed") return begun;
 
@@ -1499,6 +1584,10 @@ async function runOne(ctx, task, wave = []) {
   }
   const { baton, cost } = await recordWork(ctx, task, result);
   if (result.sessionId) ctx.sessions.set(task.id, result.sessionId);
+  if (ctx.interrupted) return finishAttempt(ctx, task, {
+    ...resultBase(ctx, task, result, null, baton, cost, null, null),
+    kind: "mechanics", endReason: "interrupted", reason: `interrupted by ${ctx.interrupted}`,
+  });
 
   const damage = await checkNeighbourDamage(ctx, task, result, baton, cost);
   if (damage && damage.issue) return damage.issue;
@@ -1609,7 +1698,7 @@ function blockedDiagnosis(ctx) {
 // here and by whatever drives a run from outside this loop.
 function isNodeParked(t) {
   const limit = retryLimitOf(t);
-  return (limit !== null && attemptsSoFar(t) >= limit) || t.status === "review";
+  return (limit !== null && attemptsSoFar(t) >= limit) || (t.status === "review" && !isEmptyHumanGate(t));
 }
 
 // The one way to build a run's state from a board — used by `runChange` below,
@@ -1668,6 +1757,7 @@ export function buildRunContext({ data, change, effects = {}, dry = true, cwd = 
     runId: randomUUID(),
     events: !!events,
     persistDecisionCard: !!persistDecisionCard,
+    interrupted: null,
   };
 }
 
@@ -1715,7 +1805,7 @@ export async function applyResult(ctx, r, { dry, log }) {
     ctx.spent += r.cost;
     ctx.nodeSpent.set(r.task.id, (ctx.nodeSpent.get(r.task.id) || 0) + r.cost);
     ctx.attemptCosts?.set(r.task.id, [...(ctx.attemptCosts.get(r.task.id) || []), r.cost]);
-  } else if (r.kind !== "retry-exhausted") {
+  } else if (r.kind !== "retry-exhausted" && r.kind !== "gate-skipped") {
     ctx.unknownCost += 1;
   }
   const record = {
@@ -1741,7 +1831,7 @@ export async function applyResult(ctx, r, { dry, log }) {
     verify: r.verify ?? null,
     red: r.red ?? null,
     flow: r.flow ?? null,
-    outcome: r.kind === "done" ? "ok" : r.kind === "issue" ? "issue" : null,
+    outcome: r.kind === "done" || r.kind === "gate-skipped" ? "ok" : r.kind === "issue" ? "issue" : null,
     result: r.kind,
     reason: r.reason || null,
     status: r.task.status,
@@ -1847,7 +1937,19 @@ export async function runChange({
   const bound = maxSteps ?? members.length * 8 + 8;
   emitRunEvent(ctx, runStartEvent(ctx, limit));
 
-  while (!ctx.stop) {
+  const onSigint = () => { ctx.interrupted ||= "SIGINT"; };
+  const onSigterm = () => { ctx.interrupted ||= "SIGTERM"; };
+  if (!dry) {
+    process.on("SIGINT", onSigint);
+    process.on("SIGTERM", onSigterm);
+  }
+
+  try {
+    while (!ctx.stop) {
+      if (ctx.interrupted) {
+        park(ctx, "mechanics", null, `interrupted by ${ctx.interrupted}`);
+        break;
+      }
     // The live loop asks the STRUCTURAL frontier, not the parked-filtered one:
     // a node already parked from a fresh board — status `review`, or the retry
     // limit spent — still needs the specific diagnosis below (gate reason,
@@ -1855,7 +1957,8 @@ export async function runChange({
     // missing edge. `ctx.parked` stays the board-derived set a run started
     // from OUTSIDE this loop would read instead (buildRunContext).
     const ready = frontierOf({ members, byId });
-    for (const t of ready) if (t.status === "review" && !ctx.gated.has(t.id)) deferGate(ctx, t, REVIEW_GATE_REASON);
+    for (const t of ready)
+      if (t.status === "review" && !ctx.gated.has(t.id) && !isEmptyHumanGate(t)) deferGate(ctx, t, REVIEW_GATE_REASON);
     const runnable = ready.filter((t) => !ctx.gated.has(t.id));
     if (!runnable.length && ctx.pendingGate) {
       ctx.parked.add(ctx.pendingGate.task.id);
@@ -1890,15 +1993,30 @@ export async function runChange({
         live_ += 1;
         ctx.maxParallel = Math.max(ctx.maxParallel, live_);
         try {
-          return await runOne(ctx, t, wave);
+          try {
+            return await runOne(ctx, t, wave);
+          } catch (err) {
+            const attempt = ctx.attempts.get(t.id) || attemptsSoFar(t) || 1;
+            return finishAttempt(ctx, t, {
+              task: t, kind: "mechanics", attempt, limit: retryLimitOf(t), cost: null,
+              session: null, review: null, endReason: ctx.interrupted ? "interrupted" : "mechanics",
+              reason: ctx.interrupted ? `interrupted by ${ctx.interrupted}` : `runner step crashed: ${String(err?.message || err)}`,
+            });
+          }
         } finally {
           live_ -= 1;
         }
       }),
     );
 
-    for (const r of results.sort((a, b) => (a.task.number || 0) - (b.task.number || 0))) {
-      await applyResult(ctx, r, { dry, log });
+      for (const r of results.sort((a, b) => (a.task.number || 0) - (b.task.number || 0))) {
+        await applyResult(ctx, r, { dry, log });
+      }
+    }
+  } finally {
+    if (!dry) {
+      process.off("SIGINT", onSigint);
+      process.off("SIGTERM", onSigterm);
     }
   }
 
@@ -1942,6 +2060,7 @@ const round = (n) => Math.round(n * 10000) / 10000;
 // ── output ───────────────────────────────────────────────────────────────────
 
 function formatStepLine(s, dry) {
+  if (s.result === "gate-skipped") return `#${s.task.number} gate-skipped — ${s.reason}`;
   const verb = dry ? (s.gate ? "would run, then park (gate)" : "would run") : s.result;
   const cost = typeof s.cost_usd === "number" ? ` $${round(s.cost_usd)}` : "";
   const attempt = s.retry_limit !== null ? ` ${s.attempt}/<=${s.retry_limit}` : ` attempt ${s.attempt}`;

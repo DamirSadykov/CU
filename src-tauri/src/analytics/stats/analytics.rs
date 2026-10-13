@@ -1845,7 +1845,12 @@ mod vendor_tests {
         assert_eq!(pick(&all, "claude-code"), Some((7.0, 2, 300)));
         assert_eq!(pick(&all, "codex"), Some((1.0, 2, 40)));
         let scoped = db
-            .analytics_ext("2026-01-01T00:00:00Z", "2026-01-02T00:00:00Z", Some("p"), 10)
+            .analytics_ext(
+                "2026-01-01T00:00:00Z",
+                "2026-01-02T00:00:00Z",
+                Some("p"),
+                10,
+            )
             .unwrap();
         assert_eq!(scoped.by_vendor[0].vendor, "claude-code");
         assert_eq!(pick(&scoped, "claude-code"), Some((2.0, 1, 150)));

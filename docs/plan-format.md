@@ -3,6 +3,17 @@
 Write recordable YAML: one step is one task and one work session. Omitted
 runner-owned fields are inferred; explicit values win.
 
+## 0. When to write a plan
+
+Scout first: locate the files and mark every prospective step S, M, or L. If
+every step is S or M, the files are known, and there is no open branch, a plan
+is optional: implement in the main session or with agents. Record a graph with
+`<cli> todos apply` only when that work needs the auto runner.
+
+If any step is L or the approach still has an open branch, enter plan mode and
+keep the graph current as evidence changes. The architect makes this choice
+after reconnaissance; number of edits alone does not make a plan mandatory.
+
 ## 1. Field legend
 
 Document fields:

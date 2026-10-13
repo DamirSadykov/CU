@@ -17,5 +17,5 @@
 {"ts":"2026-10-12T10:00:16.000Z","run":"contract-run","change":"c#98","task":"t#2","kind":"verify","attempt":2,"limit":2,"ok":false,"log":"C:\\Users\\contract\\com.cu.app\\run-logs\\contract-run\\t2-a2-verify.log"}
 {"ts":"2026-10-12T10:00:17.000Z","run":"contract-run","change":"c#98","task":"t#2","kind":"attempt_snapshot","attempt":2,"snapshot":"5a02200000000000000000000000000000000000"}
 {"ts":"2026-10-12T10:00:18.000Z","run":"contract-run","change":"c#98","task":"t#2","kind":"attempt_end","attempt":2,"limit":2,"outcome":"park","reason":"verify","detail":"verify:issue"}
-{"ts":"2026-10-12T10:00:19.000Z","run":"contract-run","change":"c#98","task":"t#2","kind":"park","attempt":2,"limit":2,"park_kind":"retry","reason":"retry limit exhausted — 2/<=2, predicate issue (verify:issue)"}
+{"ts":"2026-10-12T10:00:19.000Z","run":"contract-run","change":"c#98","task":"t#2","kind":"park","attempt":2,"limit":2,"park_kind":"retry","reason":"retry limit exhausted — 2/<=2, predicate issue (verify:issue)","attempts":[{"attempt":1,"reason":"review","cost_usd":0.002,"verify":null,"ended_at":"2026-10-12T09:59:00.000Z"},{"attempt":2,"reason":"verify","cost_usd":0.002,"verify":"issue","ended_at":"2026-10-12T09:59:01.000Z"}]}
 {"ts":"2026-10-12T10:00:20.000Z","run":"contract-run","change":"c#98","kind":"run_end","complete":false,"stop":"park","task":null}
