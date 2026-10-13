@@ -8,6 +8,7 @@ import {
   agentsBackupPath,
   agentsPath,
   checkAgentDuties,
+  assertAgentDutiesAvailable,
   DUTY_MODES,
   emptyAgentConfig,
   readAgentConfig,
@@ -265,11 +266,17 @@ describe("lifecycle duty map", () => {
     expect(report.duties[0].candidates).toHaveLength(2);
   });
 
-  it("fails a duty whose primary is unavailable even if the reserve is", () => {
+  it("accepts a duty whose primary is unavailable when the reserve is available", () => {
     let calls = 0;
     const run = () => ({ status: calls++ === 0 ? 1 : 0, stderr: "" });
     const report = checkAgentDuties(undefined, { duties: ["worker"], run });
     expect(report.duties[0].candidates[0].ok).toBe(false);
-    expect(report.ok).toBe(false);
+    expect(report.ok).toBe(true);
+  });
+
+  it("preflight refuses an enabled duty before a run when every candidate is unavailable", () => {
+    const run = () => ({ status: 1, stderr: "missing" });
+    expect(() => assertAgentDutiesAvailable(undefined, { duties: ["worker"], run }))
+      .toThrow(/no available candidate.*worker.*anthropic.*openai/i);
   });
 });

@@ -47,6 +47,7 @@ import {
 } from "../agents/providers.mjs";
 import { openAiCost } from "../models/providers.mjs";
 import { createCandidate } from "../models/candidate.mjs";
+import { snapshotTree } from "./red-gate.mjs";
 
 // Re-exported: the parsers moved to the provider seam, their callers and
 // tests did not.
@@ -850,7 +851,7 @@ export { openAiCost };
 // binary ever disagrees (an ignored flag, a fork) the REPORTED id is trusted and
 // the binding is rewritten to it — a binding pointing at a session that does not
 // exist is worse than a late one.
-export async function executeStep({
+async function executeStepCandidate({
   task,
   board,
   cwd,
@@ -870,13 +871,14 @@ export async function executeStep({
   limit,
   priorChanges,
   onSession,
+  executionOverride,
 } = {}) {
   if (!task) return { sessionId: "", ok: false, error: "executeStep: task is required" };
   const announce = sessionAnnouncer(onSession, cwd);
 
-  let execution;
+  let execution = executionOverride;
   try {
-    execution = resolveDuty("worker", undefined, { risk: task.risk });
+    execution ||= resolveDuty("worker", undefined, { risk: task.risk });
   } catch (e) {
     return { sessionId: "", ok: false, error: `routing: ${e && e.message ? e.message : e}` };
   }
@@ -1031,10 +1033,82 @@ export async function executeStep({
   };
 }
 
+const FALLBACK_REASONS = new Set(["missing", "auth", "limit"]);
+
+function candidateExecution(execution, candidate) {
+  return { ...execution, ...candidate.profile, candidates: execution.candidates };
+}
+
+function candidateBin(candidate, claudeBin, codexBin) {
+  return candidate.provider.engine.id === "codex" ? codexBin : claudeBin;
+}
+
+function candidateAvailable(candidate, bin, options) {
+  // An argv tuple is an injected executable seam used by tests and embedders;
+  // its first item is the already-resolved runtime, so probing the fixture with
+  // `--version` would execute a model call before the real call.
+  return Array.isArray(bin) ? { ok: true } : candidate.check({ ...options, bin });
+}
+
+function exhaustedResult(last, fallback, extra = {}) {
+  const detail = fallback.map((item) => `${item.provider}/${item.model} (${item.reason})`).join(", ");
+  return {
+    ...(last || {}), ...extra, ok: false,
+    error: `candidates_exhausted: ${detail || "no configured candidates"}`,
+    failureReason: "candidates_exhausted", fallback,
+  };
+}
+
+// One duty invocation walks its ordered candidates. A provider failure may be
+// retried elsewhere only when this attempt demonstrably left the work tree
+// untouched; Codex also has to report no FileChange items in its rollout.
+export async function executeStep(options = {}) {
+  if (!options.task) return { sessionId: "", ok: false, error: "executeStep: task is required" };
+  let execution;
+  try { execution = resolveDuty("worker", options.appData, { risk: options.task.risk }); }
+  catch (e) { return { sessionId: "", ok: false, error: `routing: ${e?.message || e}` }; }
+  const candidates = execution.candidates || [];
+  const fallback = [];
+  let last = null;
+  let inherit = options.inherit || "";
+  let priorEngine = null;
+  let inheritDropped = false;
+  let spent = 0;
+
+  for (const candidate of candidates) {
+    const bin = candidateBin(candidate, options.claudeBin || process.env.CLAUDE_BIN || "claude", options.codexBin || process.env.CODEX_BIN || "codex");
+    const check = candidateAvailable(candidate, bin, { sandbox: "workspace-write", allowedTools: options.allowedTools || DEFAULT_ALLOWED_TOOLS });
+    if (!check.ok) {
+      fallback.push({ provider: candidate.provider.id, model: candidate.model, reason: "missing" });
+      priorEngine = candidate.provider.engine.id;
+      continue;
+    }
+    if (inherit && priorEngine && priorEngine !== candidate.provider.engine.id) {
+      inherit = "";
+      inheritDropped = true;
+    }
+    const before = snapshotTree(options.cwd || process.cwd(), { requireComplete: true });
+    const current = candidateExecution(execution, candidate);
+    last = await executeStepCandidate({ ...options, inherit, executionOverride: current });
+    if (typeof last.costUsd === "number") spent += last.costUsd;
+    if (last.ok) return { ...last, costUsd: spent || last.costUsd, fallback, inherit_dropped: inheritDropped };
+    const reason = last.failureReason;
+    if (!FALLBACK_REASONS.has(reason)) return { ...last, costUsd: spent || last.costUsd, fallback, inherit_dropped: inheritDropped };
+    const after = snapshotTree(options.cwd || process.cwd(), { requireComplete: true });
+    const treeUntouched = before.ok && after.ok && before.sha === after.sha;
+    const codexUntouched = candidate.provider.engine.id !== "codex" || (Array.isArray(last.editedPaths) && last.editedPaths.length === 0);
+    if (!treeUntouched || !codexUntouched)
+      return { ...last, costUsd: spent || last.costUsd, fallback, inherit_dropped: inheritDropped };
+    fallback.push({ provider: candidate.provider.id, model: candidate.model, reason });
+    priorEngine = candidate.provider.engine.id;
+  }
+  return exhaustedResult(last, fallback, { costUsd: spent || last?.costUsd, inherit_dropped: inheritDropped });
+}
+
 // Model review is a lifecycle obligation, not a task setting. When the review
 // hook is enabled, this runs the globally mapped reviewer in a read-only session
 // after the worker and before the deterministic verify command.
-export async function executeReview({
+async function executeReviewCandidate({
   task,
   workerResult = "",
   cwd,
@@ -1047,10 +1121,11 @@ export async function executeReview({
   ownChanges,
   outsideChanges,
   retryContext,
+  executionOverride,
 } = {}) {
   if (!task) return { approved: false, ok: false, error: "executeReview: task is required" };
-  let execution;
-  try { execution = resolveDuty("review", appData, { risk: task.risk }); }
+  let execution = executionOverride;
+  try { execution ||= resolveDuty("review", appData, { risk: task.risk }); }
   catch (e) { return { approved: false, ok: false, error: `routing: ${e?.message || e}` }; }
   if (!execution.enabled || !execution.model)
     return { approved: true, ok: true, skipped: true, duty: "review", costUsd: 0, route: execution.route || null };
@@ -1090,7 +1165,8 @@ export async function executeReview({
     const error = run.code !== 0 && !run.timedOut ? `codex review exited ${run.code}` : run.error;
     return { ...decision, ok: !error, error, result: answer, sessionId: session,
       duty: "review", provider: "openai", model: execution.model, route: execution.route || null,
-      costUsd: run.costUsd, failureReason: run.reason, guard: run.guard };
+      costUsd: run.costUsd, failureReason: run.reason, guard: run.guard,
+      editedPaths: session ? editedPathsOf(session, cwd) : null };
   }
 
   const session = randomUUID();
@@ -1119,7 +1195,38 @@ export async function executeReview({
   const error = run.error || (run.code !== 0 ? `claude review exited ${run.code}` : "") || (parsed?.is_error ? "review model reported an error" : "");
   return { ...decision, ok: !error, error, result: answer, sessionId: actual,
     duty: "review", provider: "anthropic", model: execution.model, route: execution.route || null,
-    costUsd: run.costUsd, failureReason: run.reason, guard: run.guard };
+    costUsd: run.costUsd, failureReason: run.reason, guard: run.guard, editedPaths: null };
+}
+
+export async function executeReview(options = {}) {
+  if (!options.task) return { approved: false, ok: false, error: "executeReview: task is required" };
+  let execution;
+  try { execution = resolveDuty("review", options.appData, { risk: options.task.risk }); }
+  catch (e) { return { approved: false, ok: false, error: `routing: ${e?.message || e}` }; }
+  if (!execution.enabled || !execution.model)
+    return { approved: true, ok: true, skipped: true, duty: "review", costUsd: 0, route: execution.route || null };
+  const fallback = [];
+  let last = null;
+  let spent = 0;
+  for (const candidate of execution.candidates || []) {
+    const bin = candidateBin(candidate, options.claudeBin || process.env.CLAUDE_BIN || "claude", options.codexBin || process.env.CODEX_BIN || "codex");
+    const check = candidateAvailable(candidate, bin, { sandbox: "read-only", allowedTools: READ_ONLY_TOOLS });
+    if (!check.ok) {
+      fallback.push({ provider: candidate.provider.id, model: candidate.model, reason: "missing" });
+      continue;
+    }
+    const before = snapshotTree(options.cwd || process.cwd(), { requireComplete: true });
+    last = await executeReviewCandidate({ ...options, executionOverride: candidateExecution(execution, candidate) });
+    if (typeof last.costUsd === "number") spent += last.costUsd;
+    if (last.ok) return { ...last, costUsd: spent || last.costUsd, fallback };
+    if (!FALLBACK_REASONS.has(last.failureReason)) return { ...last, costUsd: spent || last.costUsd, fallback };
+    const after = snapshotTree(options.cwd || process.cwd(), { requireComplete: true });
+    const treeUntouched = before.ok && after.ok && before.sha === after.sha;
+    const codexUntouched = candidate.provider.engine.id !== "codex" || (Array.isArray(last.editedPaths) && last.editedPaths.length === 0);
+    if (!treeUntouched || !codexUntouched) return { ...last, costUsd: spent || last.costUsd, fallback };
+    fallback.push({ provider: candidate.provider.id, model: candidate.model, reason: last.failureReason });
+  }
+  return exhaustedResult(last, fallback, { approved: false, duty: "review", costUsd: spent || last?.costUsd });
 }
 
 // ── the check ───────────────────────────────────────────────────────────────

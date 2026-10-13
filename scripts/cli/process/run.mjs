@@ -81,7 +81,7 @@ import {
   saveBoard,
 } from "../board/todos.mjs";
 import { findChange } from "../board/change.mjs";
-import { resolveDuty } from "../agents/agents.mjs";
+import { assertAgentDutiesAvailable, resolveDuty } from "../agents/agents.mjs";
 import { withDataDir } from "../kernel/board-lock.mjs";
 import { appDataDir, appDataFile } from "../kernel/appdata.mjs";
 import {
@@ -1046,7 +1046,12 @@ async function recordWork(ctx, task, result) {
   } catch {
     cost = null;
   }
-  emitRunEvent(ctx, { task: task.number, kind: "worker_done", attempt: ctx.attempts.get(task.id), limit: retryLimitOf(task), cost });
+  emitRunEvent(ctx, {
+    task: task.number, kind: "worker_done", attempt: ctx.attempts.get(task.id), limit: retryLimitOf(task), cost,
+    fallback: Array.isArray(result.fallback) ? result.fallback : [],
+    inherit_dropped: !!result.inherit_dropped,
+    guard: result.guard || "absent",
+  });
   return { baton, cost };
 }
 
@@ -1239,6 +1244,8 @@ export async function finishStep(ctx, task, { result, review, baton, cost, ownCh
     counts: findingCounts(findings),
     ...(review.skipped === true ? {} : { verdict: reviewIssue ? "issue" : "approve" }),
     findings: eventFindings(findings, () => repoRoot(ctx)),
+    fallback: Array.isArray(review.fallback) ? review.fallback : [],
+    guard: review.guard || "absent",
   });
   if (onlyArchitectural) {
     await recordArchitectComment(ctx, task, { attempt, findings: architectFindings });
@@ -2241,6 +2248,10 @@ export async function run(args) {
           : `  todos set budget ${root.number} <usd>`),
     );
   }
+  if (!dry) assertAgentDutiesAvailable(undefined, {
+    claudeBin: process.env.CLAUDE_BIN || "claude",
+    codexBin: process.env.CODEX_BIN || "codex",
+  });
   if (!dry) {
     const address = root.address ?? `#${root.number}`;
     process.stderr.write(

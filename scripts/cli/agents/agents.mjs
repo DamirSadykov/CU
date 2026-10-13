@@ -10,7 +10,7 @@ import {
 } from "node:fs";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
-import { READ_ONLY_TOOLS, parseProviderResult, providerArgv, resolveSpawn } from "./providers.mjs";
+import { READ_ONLY_TOOLS, resolveSpawn } from "./providers.mjs";
 import { dutyModeReader } from "./duty-mode.mjs";
 import { appDataFile, writeJsonAtomic } from "../kernel/appdata.mjs";
 import { withDataDir } from "../kernel/board-lock.mjs";
@@ -149,7 +149,7 @@ export function resolveDuty(duty, appData, { risk } = {}) {
   };
   if (!RISKS.includes(riskKey)) return resolved;
   if (!Array.isArray(routeCandidates) || !routeCandidates.length) {
-    return { ...resolved, route: { applied: false, risk: riskKey, note: `risk ${riskKey}, no route configured for ${duty}` } };
+    return { ...resolved, route: { applied: false, risk: riskKey, note: `risk ${riskKey}, invalid or no route configured for ${duty}` } };
   }
   return { ...resolved, route: { applied: true, risk: riskKey, note: `risk ${riskKey} routed ${duty} to ${primary.provider}/${primary.model}` } };
 }
@@ -173,8 +173,6 @@ export function checkAgentDuties(appData, {
   rulesFile,
 } = {}) {
   const results = [];
-  // The runner executes only the primary candidate until fallback lands (c#108
-  // runner step), so an available reserve must not make the duty pass.
   for (const duty of duties) {
     const resolved = resolveDuty(duty, appData);
     if (!resolved.runsAsAgent) continue;
@@ -182,7 +180,7 @@ export function checkAgentDuties(appData, {
       bin: candidate.provider.engine.id === "codex" ? codexBin : claudeBin,
       run, settingsPath, rulesFile,
     }));
-    results.push({ duty, ok: !!attempts[0]?.ok, candidates: attempts });
+    results.push({ duty, ok: attempts.some((candidate) => candidate.ok), candidates: attempts });
   }
   return { ok: results.every((result) => result.ok), duties: results };
 }
@@ -214,32 +212,34 @@ export function invokeDutySync(duty, prompt, {
 } = {}) {
   const p = resolveDuty(duty, appData);
   if (!p.runsAsAgent || !p.model) return { skipped: true, ok: true, text: "", profile: p };
-  const { file, args } = providerArgv(p, {
-    bin: p.provider === "openai" ? codexBin : claudeBin,
-    sandbox: "read-only",
-    allowedTools: READ_ONLY_TOOLS,
-    addDirs,
-  });
-  const fullPrompt = buildDutyPrompt(p, prompt);
-  const target = resolveSpawn(file, args);
-  const run = spawnSync(target.file, target.args, {
-    ...target.opts,
-    cwd, input: String(fullPrompt), encoding: "utf8", windowsHide: true,
-    timeout: timeoutMs, maxBuffer: 4 * 1024 * 1024,
-    // A child CLI can use the same global lifecycle hook as an interactive
-    // session. Tell that hook the assigned duty explicitly: model inference is
-    // only a fallback and must not turn an Opus reviewer into an architect.
-    env: {
-      ...process.env,
-      TRACKER_DUTY: p.role || duty,
-      TRACKER_SESSION_KIND: "runner",
-    },
-  });
-  if (run.error || run.status !== 0)
-    return { ok: false, error: run.error?.message || String(run.stderr || `exit ${run.status}`), text: "", profile: p };
-  const parsed = parseProviderResult(p.provider, run.stdout);
-  const text = String(parsed?.answer || "");
-  return { ok: !!text && !parsed?.error, error: parsed?.error || "", text, profile: p };
+  const fallback = [];
+  for (const candidate of p.candidates) {
+    const bin = candidate.provider.id === "openai" ? codexBin : claudeBin;
+    const options = { bin, sandbox: "read-only", allowedTools: READ_ONLY_TOOLS, addDirs };
+    const available = candidate.check(options);
+    if (!available.ok) {
+      fallback.push({ provider: candidate.provider.id, model: candidate.model, reason: "missing" });
+      continue;
+    }
+    const { file, args } = candidate.argv(options);
+    const fullPrompt = buildDutyPrompt({ ...p, ...candidate.profile }, prompt);
+    const target = resolveSpawn(file, args);
+    const run = spawnSync(target.file, target.args, {
+      ...target.opts,
+      cwd, input: String(fullPrompt), encoding: "utf8", windowsHide: true,
+      timeout: timeoutMs, maxBuffer: 4 * 1024 * 1024,
+      env: { ...process.env, TRACKER_DUTY: p.role || duty, TRACKER_SESSION_KIND: "runner" },
+    });
+    const parsed = candidate.provider.engine.parse(run.stdout);
+    const text = String(parsed?.answer || "");
+    const error = run.error?.message || parsed?.error || (run.status !== 0 ? String(run.stderr || `exit ${run.status}`) : "") || (!text ? `${candidate.provider.engine.id} returned no answer` : "");
+    if (!error) return { ok: true, error: "", text, profile: { ...p, ...candidate.profile }, fallback };
+    const reason = candidate.provider.engine.classifyFailure({ error: run.error || error, stderr: run.stderr, stdout: run.stdout, code: run.status, timedOut: run.error?.code === "ETIMEDOUT" });
+    if (!["missing", "auth", "limit"].includes(reason))
+      return { ok: false, error, text: "", profile: { ...p, ...candidate.profile }, fallback, failureReason: reason };
+    fallback.push({ provider: candidate.provider.id, model: candidate.model, reason });
+  }
+  return { ok: false, error: `candidates_exhausted: ${fallback.map((item) => `${item.provider}/${item.model} (${item.reason})`).join(", ")}`, text: "", profile: p, fallback, failureReason: "candidates_exhausted" };
 }
 
 function parseFlags(args) {

@@ -72,7 +72,8 @@ const WORKER_SESSION_FIELDS = {
 const V2_FIELDS = {
   run_start: { parallel: ["number"], steps: ["array"] },
   step_start: { base: ["string"] },
-  review: { verdict: ["string"], findings: ["array"] },
+  worker_done: { fallback: ["array"], inherit_dropped: ["boolean"], guard: ["string"] },
+  review: { verdict: ["string"], findings: ["array"], fallback: ["array"], guard: ["string"] },
   attempt_snapshot: { attempt: ["number"], snapshot: ["string"] },
   verify: { log: ["string"] },
   attempt_end: {
@@ -270,7 +271,7 @@ describe("worker_session contract", () => {
       onSession: workerSessionAnnouncer(ctx, claudeStep, claudeBegun.attempt),
     });
     expect(claude.ok).toBe(true);
-    emitRunEvent(ctx, { task: 1, kind: "worker_done", attempt: 1, limit: 2, cost: 0.01 });
+    emitRunEvent(ctx, { task: 1, kind: "worker_done", attempt: 1, limit: 2, cost: 0.01, fallback: claude.fallback, inherit_dropped: claude.inherit_dropped, guard: claude.guard });
     const claudeReview = {
       approved: true,
       ok: true,
@@ -293,7 +294,7 @@ describe("worker_session contract", () => {
       onSession: workerSessionAnnouncer(ctx, codexStep, codexBegun.attempt),
     });
     expect(codex.ok).toBe(true);
-    emitRunEvent(ctx, { task: 2, kind: "worker_done", attempt: 1, limit: 2, cost: 0.002 });
+    emitRunEvent(ctx, { task: 2, kind: "worker_done", attempt: 1, limit: 2, cost: 0.002, fallback: codex.fallback, inherit_dropped: codex.inherit_dropped, guard: codex.guard });
     const codexReview = {
       approved: false,
       ok: true,
@@ -304,7 +305,7 @@ describe("worker_session contract", () => {
     await applyResult(ctx, codexIssue, { dry: false, log: () => {} });
     const codexRetry = await beginStep(ctx, codexStep);
     expect(codexRetry.attempt).toBe(2);
-    emitRunEvent(ctx, { task: 2, kind: "worker_done", attempt: 2, limit: 2, cost: 0.002 });
+    emitRunEvent(ctx, { task: 2, kind: "worker_done", attempt: 2, limit: 2, cost: 0.002, fallback: codex.fallback, inherit_dropped: codex.inherit_dropped, guard: codex.guard });
     const codexFailed = await finishStep(ctx, codexStep, { result: codex, review: { approved: true, ok: true, findings: [] }, baton: null, cost: 0.002, ownChanges: null, outsideChanges: null });
     expect(codexFailed.verify).toBe("issue");
     await applyResult(ctx, codexFailed, { dry: false, log: () => {} });

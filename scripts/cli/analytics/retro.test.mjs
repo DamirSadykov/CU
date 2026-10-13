@@ -49,14 +49,15 @@ function envelope(overrides = {}) {
 }
 
 describe("retro agent output", () => {
-  it("declares the Sol retro duty with medium reasoning", () => {
+  it("declares Anthropic first and Sol as the retro reserve", () => {
     expect(DUTIES).toContain("retro");
     expect(STARTER_DUTIES.retro).toMatchObject({
       mode: "agent",
-      provider: "openai",
-      model: "gpt-5.6-sol",
       role: "retro",
-      reasoning_effort: "medium",
+      candidates: [
+        { provider: "anthropic", model: "claude-sonnet-5-5" },
+        { provider: "openai", model: "gpt-5.6-sol", reasoning_effort: "medium" },
+      ],
     });
   });
 
