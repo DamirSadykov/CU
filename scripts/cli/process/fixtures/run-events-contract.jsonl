@@ -10,10 +10,12 @@
 {"ts":"2026-10-12T10:00:09.000Z","run":"contract-run","change":"c#98","task":"t#2","kind":"worker_done","attempt":1,"limit":2,"cost":0.002}
 {"ts":"2026-10-12T10:00:10.000Z","run":"contract-run","change":"c#98","task":"t#2","kind":"review","attempt":1,"limit":2,"counts":{"critical":0,"high":1,"medium":0,"low":0},"verdict":"issue","findings":[{"level":"high","file":"src/b.ts","line":7,"text":"the obligation is unmet","evidence":"saving twice keeps the stale row"}]}
 {"ts":"2026-10-12T10:00:11.000Z","run":"contract-run","change":"c#98","task":"t#2","kind":"attempt_snapshot","attempt":1,"snapshot":"5a02100000000000000000000000000000000000"}
-{"ts":"2026-10-12T10:00:12.000Z","run":"contract-run","change":"c#98","task":"t#2","kind":"step_start","attempt":2,"limit":2,"route":null,"flow":"n/a","base":"ba5e000000000000000000000000000000000001"}
-{"ts":"2026-10-12T10:00:13.000Z","run":"contract-run","change":"c#98","task":"t#2","kind":"worker_done","attempt":2,"limit":2,"cost":0.002}
-{"ts":"2026-10-12T10:00:14.000Z","run":"contract-run","change":"c#98","task":"t#2","kind":"review","attempt":2,"limit":2,"counts":{"critical":0,"high":0,"medium":0,"low":0},"verdict":"approve","findings":[]}
-{"ts":"2026-10-12T10:00:15.000Z","run":"contract-run","change":"c#98","task":"t#2","kind":"verify","attempt":2,"limit":2,"ok":false,"log":"C:\\Users\\contract\\com.cu.app\\run-logs\\contract-run\\t2-a2-verify.log"}
-{"ts":"2026-10-12T10:00:16.000Z","run":"contract-run","change":"c#98","task":"t#2","kind":"attempt_snapshot","attempt":2,"snapshot":"5a02200000000000000000000000000000000000"}
-{"ts":"2026-10-12T10:00:17.000Z","run":"contract-run","change":"c#98","task":"t#2","kind":"park","attempt":2,"limit":2,"park_kind":"retry","reason":"verify failed"}
-{"ts":"2026-10-12T10:00:18.000Z","run":"contract-run","change":"c#98","kind":"run_end","complete":false,"stop":"park","task":null}
+{"ts":"2026-10-12T10:00:12.000Z","run":"contract-run","change":"c#98","task":"t#2","kind":"attempt_end","attempt":1,"limit":2,"outcome":"retry","reason":"review","detail":"model review issue: reviewer did not approve the obligations"}
+{"ts":"2026-10-12T10:00:13.000Z","run":"contract-run","change":"c#98","task":"t#2","kind":"step_start","attempt":2,"limit":2,"route":null,"flow":"n/a","base":"ba5e000000000000000000000000000000000001"}
+{"ts":"2026-10-12T10:00:14.000Z","run":"contract-run","change":"c#98","task":"t#2","kind":"worker_done","attempt":2,"limit":2,"cost":0.002}
+{"ts":"2026-10-12T10:00:15.000Z","run":"contract-run","change":"c#98","task":"t#2","kind":"review","attempt":2,"limit":2,"counts":{"critical":0,"high":0,"medium":0,"low":0},"verdict":"approve","findings":[]}
+{"ts":"2026-10-12T10:00:16.000Z","run":"contract-run","change":"c#98","task":"t#2","kind":"verify","attempt":2,"limit":2,"ok":false,"log":"C:\\Users\\contract\\com.cu.app\\run-logs\\contract-run\\t2-a2-verify.log"}
+{"ts":"2026-10-12T10:00:17.000Z","run":"contract-run","change":"c#98","task":"t#2","kind":"attempt_snapshot","attempt":2,"snapshot":"5a02200000000000000000000000000000000000"}
+{"ts":"2026-10-12T10:00:18.000Z","run":"contract-run","change":"c#98","task":"t#2","kind":"attempt_end","attempt":2,"limit":2,"outcome":"park","reason":"verify","detail":"verify:issue"}
+{"ts":"2026-10-12T10:00:19.000Z","run":"contract-run","change":"c#98","task":"t#2","kind":"park","attempt":2,"limit":2,"park_kind":"retry","reason":"retry limit exhausted — 2/<=2, predicate issue (verify:issue)"}
+{"ts":"2026-10-12T10:00:20.000Z","run":"contract-run","change":"c#98","kind":"run_end","complete":false,"stop":"park","task":null}

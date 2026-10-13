@@ -740,7 +740,43 @@ export function runRecordOf(report, { inherit = false } = {}) {
 
 // ── the run ──────────────────────────────────────────────────────────────────
 
+export const ATTEMPT_END_REASONS = Object.freeze([
+  "review", "worker_error", "timeout", "reverted", "red", "flow", "flow_cannot",
+  "verify", "missing_produces", "reconcile", "mechanics", "undecided",
+]);
+
+const ATTEMPT_END_KINDS = new Set(["issue", "convergence", "mechanics", "undecided", "flow-cannot"]);
+
+export const ATTEMPT_END_DETAIL_LIMIT = 2000;
+
+function attemptEndPaths(ctx, paths) {
+  const out = [];
+  for (const p of Array.isArray(paths) ? paths : []) {
+    const rel = findingFile(p, () => repoRoot(ctx));
+    if (rel && !out.includes(rel)) out.push(rel);
+  }
+  return out;
+}
+
+function endAttempt(ctx, task, outcome) {
+  const r = ctx.endingAttempt;
+  if (!r || !task || r.task?.id !== task.id) return;
+  ctx.endingAttempt = null;
+  const paths = attemptEndPaths(ctx, r.endPaths);
+  emitRunEvent(ctx, {
+    task: task.number,
+    kind: "attempt_end",
+    attempt: r.attempt,
+    limit: r.limit,
+    outcome,
+    reason: r.endReason || "undecided",
+    detail: String(r.reason ?? "").trim().slice(0, ATTEMPT_END_DETAIL_LIMIT),
+    ...(paths.length ? { paths } : {}),
+  });
+}
+
 function park(ctx, kind, task, reason, extra = {}) {
+  endAttempt(ctx, task, "park");
   if (ctx.stop) return;
   ctx.stop = {
     kind,
@@ -1221,6 +1257,7 @@ export async function finishStep(ctx, task, { result, review, baton, cost, ownCh
       kind: stopped ? "convergence" : "issue",
       parkReason: stopped,
       routeEscalated: task._runner_high_route_attempt === attempt,
+      endReason: "review",
       reason: `model review issue: ${review.error || review.result || "reviewer did not approve the obligations"}`,
     });
   }
@@ -1238,6 +1275,7 @@ export async function finishStep(ctx, task, { result, review, baton, cost, ownCh
       ...base,
       kind: "issue",
       routeEscalated: task._runner_high_route_attempt === attempt,
+      endReason: result.timedOut ? "timeout" : "worker_error",
       reason: `step failed: ${error}`,
     });
   }
@@ -1261,6 +1299,7 @@ export async function finishStep(ctx, task, { result, review, baton, cost, ownCh
         kind: "issue",
         routeEscalated: task._runner_high_route_attempt === attempt,
         red: gate.field ?? null,
+        endReason: "red",
         reason: gate.reason || "red gate issue",
       });
     }
@@ -1286,12 +1325,13 @@ export async function finishStep(ctx, task, { result, review, baton, cost, ownCh
       reason: flow.reason || null, coverage: flow.coverage || [], unchecked: flow.unchecked || [], duration_ms: flow.duration_ms ?? null,
     });
     if (flow.status === "cannot") {
-      return finishAttempt(ctx, task, { ...base, kind: "flow-cannot", reason: flow.reason || "flowcheck cannot inspect this change" });
+      return finishAttempt(ctx, task, { ...base, kind: "flow-cannot", endReason: "flow_cannot", reason: flow.reason || "flowcheck cannot inspect this change" });
     }
     if (flow.status !== "pass") {
       await recordIssueComment(ctx, task, { attempt, limit, source: "flow", text: clampChars(flow.reason || "flowcheck found a flow issue", 6000) });
       return finishAttempt(ctx, task, {
         ...base, kind: "issue", routeEscalated: task._runner_high_route_attempt === attempt,
+        endReason: "flow",
         reason: flow.reason || "flowcheck found a flow issue",
       });
     }
@@ -1315,7 +1355,7 @@ export async function finishStep(ctx, task, { result, review, baton, cost, ownCh
     const repeated = priorAttempts(task).at(-1)?.verify_tail === tail;
     if (repeated && tail.trim() && review && review.skipped !== true && (review.approved === true || onlyArchitectural) && blocking.length === 0) {
       ctx.attempts.set(task.id, Math.max(0, attempt - 1));
-      return finishAttempt(ctx, task, { ...base, kind: "mechanics", verify, reason: "механика: verify упал с тем же выводом две попытки подряд при одобренном ревью без critical/high" });
+      return finishAttempt(ctx, task, { ...base, kind: "mechanics", endReason: "mechanics", verify, reason: "механика: verify упал с тем же выводом две попытки подряд при одобренном ревью без critical/high" });
     }
   }
   const report = (await ctx.effects.reconcile({ task, verify })) || {};
@@ -1328,6 +1368,7 @@ export async function finishStep(ctx, task, { result, review, baton, cost, ownCh
       return finishAttempt(ctx, task, {
         ...base,
         kind: "undecided",
+        endReason: "undecided",
         verify,
         reason: `the work finished and reconciled, but the board refused to close the node: ${moved.error}`,
       });
@@ -1336,9 +1377,25 @@ export async function finishStep(ctx, task, { result, review, baton, cost, ownCh
   if (outcome === "issue") {
     if (verify === "ok") await recordIssueComment(ctx, task, { attempt, limit, source: "reconcile", text: clampChars(reason, 6000) });
     const stopped = convergenceStop(ctx, task, base);
-    return finishAttempt(ctx, task, { ...base, kind: stopped ? "convergence" : "issue", parkReason: stopped, routeEscalated: task._runner_high_route_attempt === attempt, verify, reason });
+    const missing = verify === "issue" ? [] : missingProduces(report, reason);
+    return finishAttempt(ctx, task, {
+      ...base,
+      kind: stopped ? "convergence" : "issue",
+      parkReason: stopped,
+      routeEscalated: task._runner_high_route_attempt === attempt,
+      endReason: verify === "issue" ? "verify" : missing.length ? "missing_produces" : "reconcile",
+      ...(missing.length ? { endPaths: missing } : {}),
+      verify,
+      reason,
+    });
   }
-  return finishAttempt(ctx, task, { ...base, kind: "undecided", verify, reason });
+  return finishAttempt(ctx, task, { ...base, kind: "undecided", endReason: "undecided", verify, reason });
+}
+
+function missingProduces(report, reason) {
+  if (Array.isArray(report?.missing) && report.missing.length) return report.missing.map(String);
+  const match = /^missing:(.+)$/.exec(String(reason ?? "").trim());
+  return match ? [match[1]] : [];
 }
 
 function formatNeighbourDamage(damaged) {
@@ -1376,6 +1433,8 @@ async function checkNeighbourDamage(ctx, task, result, baton, cost) {
       ...base,
       kind: "issue",
       routeEscalated: task._runner_high_route_attempt === base.attempt,
+      endReason: "reverted",
+      endPaths: damage.damaged.map((d) => d.path),
       reason: `step reverted or deleted work of earlier steps outside its own produces: ${damage.damaged.map((d) => d.path).join(", ")}`,
     }),
   };
@@ -1644,6 +1703,7 @@ export function resolveParallelLimit(root, override) {
 }
 
 export async function applyResult(ctx, r, { dry, log }) {
+  ctx.endingAttempt = ATTEMPT_END_KINDS.has(r.kind) ? r : null;
   if (typeof r.cost === "number") {
     ctx.spent += r.cost;
     ctx.nodeSpent.set(r.task.id, (ctx.nodeSpent.get(r.task.id) || 0) + r.cost);
@@ -1737,6 +1797,7 @@ export async function applyResult(ctx, r, { dry, log }) {
     }
     const before = ctx.stop;
     await applyIssue(ctx, r);
+    endAttempt(ctx, r.task, "retry");
     if (ctx.stop && ctx.stop !== before) ctx.parked.add(r.task.id);
     record.status = r.task.status;
     return record;
