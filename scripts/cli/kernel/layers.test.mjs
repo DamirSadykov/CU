@@ -7,7 +7,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const IMPORT = /(?:(?:^|\n)\s*(?:import|export)\s[^;'"]*?from\s*|import\(\s*)["'](\.{1,2}\/[^"']+\.mjs)["']/g;
 const ALLOWED = {
   kernel: ["kernel"],
-  models: ["models"],
+  guard: ["guard"],
+  models: ["models", "guard"],
   board: ["kernel"],
   agents: ["kernel", "models"],
   spec: ["kernel"],

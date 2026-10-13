@@ -99,7 +99,7 @@
       "../scripts/cli/models/candidate.mjs": "scripts/cli/models/candidate.mjs",
       "../scripts/cli/guard/policy.mjs": "scripts/cli/guard/policy.mjs",
       "../scripts/cli/guard/guard.mjs": "scripts/cli/guard/guard.mjs",
-      "../scripts/cli/cc-hooks/claude-hooks.mjs": "scripts/cli/cc-hooks/claude-hooks.mjs",
+      "../scripts/cli/kernel/claude-hooks.mjs": "scripts/cli/kernel/claude-hooks.mjs",
       "../scripts/cli/agents/agent-providers.json": "scripts/cli/agents/agent-providers.json",
       "../docs/plan-format.md": "docs/plan-format.md",
       "../docs/plan-format-issues.md": "docs/plan-format-issues.md",

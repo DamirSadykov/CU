@@ -38,7 +38,7 @@ import { taskContextMinRank, hookContextEnabled, workflowContextEnabled } from "
 import { appDataDir, appDataFile } from "../kernel/appdata.mjs";
 import { resolveRoot } from "../spec/spec.mjs";
 import { readAgentConfig } from "../agents/agents.mjs";
-import { planGuardWired } from "./claude-hooks.mjs";
+import { planGuardWired } from "../kernel/claude-hooks.mjs";
 import { architectGateState, ARCHITECT_OFF_COMMAND } from "../process/plan-guard.mjs";
 
 // The unified CLI is this module's grandparent-relative entry (scripts/cli.mjs);

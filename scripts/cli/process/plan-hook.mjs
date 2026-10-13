@@ -54,7 +54,7 @@ import {
   ARCHITECT_OFF_COMMAND,
 } from "./plan-guard.mjs";
 import { criticRunsAsAgent, invokeDutySync } from "../agents/agents.mjs";
-import { planGuardWired } from "../cc-hooks/claude-hooks.mjs";
+import { planGuardWired } from "../kernel/claude-hooks.mjs";
 
 const CLI = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "cli.mjs");
 
