@@ -6,6 +6,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import contract from "./settings-contract.json" with { type: "json" };
 import {
   SETTINGS_KEYS,
+  flowcheckExe,
   hookContextEnabled,
   matchPlanCli,
   parkedStepExpiryHours,
@@ -38,14 +39,15 @@ describe("CLI settings contract", () => {
       expect(hookContextEnabled(appData)).toBe(defaults.get("hookContextEnabled"));
       expect(workflowContextEnabled(appData)).toBe(defaults.get("workflowContextEnabled"));
       expect(taskHandoffGuard(appData)).toBe(defaults.get("taskHandoffGuard"));
-      expect(specDeltaGuard(appData)).toBe(defaults.get("specDeltaGuard"));
-      expect(specsEnabled(appData)).toBe(defaults.get("specsEnabled"));
+      expect(specDeltaGuard(appData)).toBe(defaults.get("specs").deltaGuard);
+      expect(specsEnabled(appData)).toBe(defaults.get("specs").enabled);
       expect(matchPlanCli(appData)).toBe(defaults.get("matchPlanCli"));
       expect(specRoot(appData)).toBe(defaults.get("specRoot"));
       expect(specRepos(appData)).toEqual(defaults.get("specRepos"));
       expect(specRepoPath("unlisted", appData)).toBe("");
       expect(uiLocale(appData)).toBe(defaults.get("locale"));
       expect(parkedStepExpiryHours(appData)).toBe(defaults.get("parkedStepExpiryHours"));
+      expect(flowcheckExe(appData)).toBe(defaults.get("flowcheckExe"));
 
       const dir = path.join(appData, "com.cu.app");
       mkdirSync(dir, { recursive: true });
@@ -53,6 +55,13 @@ describe("CLI settings contract", () => {
       expect(parkedStepExpiryHours(appData)).toBe(0);
       writeFileSync(path.join(dir, "settings.json"), JSON.stringify({ parkedStepExpiryHours: -1 }));
       expect(parkedStepExpiryHours(appData)).toBe(24);
+
+      writeFileSync(path.join(dir, "settings.json"), JSON.stringify({ specs: { enabled: true, deltaGuard: "off" } }));
+      expect(specsEnabled(appData)).toBe(true);
+      expect(specDeltaGuard(appData)).toBe("off");
+      writeFileSync(path.join(dir, "settings.json"), JSON.stringify({ specsEnabled: true, specDeltaGuard: "off" }));
+      expect(specsEnabled(appData)).toBe(true);
+      expect(specDeltaGuard(appData)).toBe("off");
     } finally {
       rmSync(appData, { recursive: true, force: true });
     }

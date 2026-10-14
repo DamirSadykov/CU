@@ -64,7 +64,7 @@ import { createChange, findChangeByTitle, changeAddress, CHANGE_REF, findChange 
 import { parseYamlSubset } from "../kernel/yaml-subset.mjs";
 import { withBoardLock, withDataDir } from "../kernel/board-lock.mjs";
 import path from "node:path";
-import { flowLanguages, readSettings } from "../kernel/settings.mjs";
+import { flowLanguages, flowcheckExe as configuredFlowcheckExe } from "../kernel/settings.mjs";
 
 const USAGE =
   "usage: cli todos apply <file> [--go] [--force] [--json]\n" +
@@ -794,7 +794,7 @@ export function applyDocument(doc, { go = false, force = false, project, board, 
           if (typeof s.flow !== "string") {
             const rendered = renderPlanDiagram({
               flow: s.flow,
-              exe: flowcheckExe ?? readSettings().flowcheckExe ?? "",
+              exe: flowcheckExe ?? configuredFlowcheckExe(),
               cwd,
               runCmd: runFlowcheck,
             });

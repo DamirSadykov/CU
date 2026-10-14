@@ -22,6 +22,19 @@ use std::process::Command;
 use serde::Serialize;
 use serde_json::Value;
 
+const SETTINGS_CONTRACT: &str = include_str!("../../../scripts/cli/kernel/settings-contract.json");
+
+fn settings_contract_default(key: &str) -> Option<Value> {
+    serde_json::from_str::<Value>(SETTINGS_CONTRACT)
+        .ok()?
+        .get("keys")?
+        .as_array()?
+        .iter()
+        .find(|entry| entry.get("key").and_then(Value::as_str) == Some(key))?
+        .get("default")
+        .cloned()
+}
+
 /// A project the tracker can point the registry at: its board name, the
 /// directory the transcripts say it is worked in, and whether a spec registry
 /// is actually there.
@@ -42,6 +55,9 @@ pub struct ProjectDir {
 /// the same default, so the app and the hooks never disagree about where a
 /// project's specs live.
 fn spec_root_setting() -> String {
+    let default = settings_contract_default("specRoot")
+        .and_then(|value| value.as_str().map(str::to_string))
+        .expect("specRoot and its string default must be declared in settings-contract.json");
     let appdata = std::env::var("APPDATA")
         .or_else(|_| std::env::var("USERPROFILE").map(|h| format!("{h}\\AppData\\Roaming")))
         .unwrap_or_default();
@@ -57,7 +73,7 @@ fn spec_root_setting() -> String {
                 .filter(|s| !s.is_empty())
                 .map(str::to_string)
         })
-        .unwrap_or_else(|| "docs/specs".to_string())
+        .unwrap_or(default)
 }
 
 /// Does `dir` hold a registry — at least one `<domain>/spec.md` under the
@@ -249,6 +265,14 @@ mod tests {
         ));
         std::fs::create_dir_all(&d).unwrap();
         d
+    }
+
+    #[test]
+    fn settings_reader_uses_the_shared_contract_default() {
+        assert_eq!(
+            settings_contract_default("specRoot").and_then(|v| v.as_str().map(str::to_string)),
+            Some("docs/specs".to_string())
+        );
     }
 
     #[test]

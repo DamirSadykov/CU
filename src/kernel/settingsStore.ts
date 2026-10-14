@@ -6,9 +6,14 @@ import {
     normalizeAlertTypes,
 } from "./thresholds";
 import type { AlertTiers, AlertTypes } from "./thresholds";
+import settingsContract from "../../scripts/cli/kernel/settings-contract.json";
 
 export type FlowLanguage = "cs" | "rs" | "ts" | "js";
 export const DEFAULT_FLOW_LANGUAGES: readonly FlowLanguage[] = ["cs"];
+
+export type QuietHoursSetting = { enabled: boolean; start: string; end: string };
+export type RuntimeInsightsSetting = { enabled: boolean; kinds: string[] };
+export type SpecsSetting = { enabled: boolean; deltaGuard: "on" | "off" };
 
 // Single read-only access layer for settings.json (issue: unify settings reads).
 //
@@ -40,12 +45,9 @@ export interface SettingsSnapshot {
     forecastWindowMinutes: number;
     alertTiers: AlertTiers;
     alertTypes: AlertTypes;
-    quietHoursEnabled: boolean;
-    quietHoursStart: string;
-    quietHoursEnd: string;
+    quietHours: QuietHoursSetting;
     ccAnalyticsEnabled: boolean;
-    dailyBudgetEnabled: boolean;
-    dailyBudget: number;
+    dailyBudget: number | null;
     goalCostPerHourMax: number | null;
     goalErrorRateMax: number | null;
     notificationsMutedUntil: string | null;
@@ -54,12 +56,11 @@ export interface SettingsSnapshot {
     serviceStatusNotify: boolean;
     memoryBloatEnabled: boolean;
     todoNotificationsEnabled: boolean;
-    runtimeInsightsEnabled: boolean;
-    runtimeInsightKinds: string[];
+    runtimeInsights: RuntimeInsightsSetting;
     keepAwakeEnabled: boolean;
     systemInfoEnabled: boolean;
     correctionsEnabled: boolean;
-    specsEnabled: boolean;
+    specs: SpecsSetting;
     // Raw persisted locale — null when unset. Callers decide whether to apply it
     // (validating "en"/"ru"); an unset value must NOT clobber the running locale.
     locale: string | null;
@@ -67,55 +68,10 @@ export interface SettingsSnapshot {
     uiSkin: string;
 }
 
-export const SNAPSHOT_KEYS = [
-    "sessionKey",
-    "orgId",
-    "refreshInterval",
-    "autoStartSession",
-    "projectId",
-    "thresholdsSession",
-    "thresholdsWeekly",
-    "notificationsEnabled",
-    "notifyForecastMinutes",
-    "forecastWindowMinutes",
-    "alertTiers",
-    "alertTypes",
-    "quietHoursEnabled",
-    "quietHoursStart",
-    "quietHoursEnd",
-    "ccAnalyticsEnabled",
-    "dailyBudgetEnabled",
-    "dailyBudget",
-    "goalCostPerHourMax",
-    "goalErrorRateMax",
-    "notificationsMutedUntil",
-    "serviceStatusEnabled",
-    "serviceStatusInterval",
-    "serviceStatusNotify",
-    "memoryBloatEnabled",
-    "todoNotificationsEnabled",
-    "runtimeInsightsEnabled",
-    "runtimeInsightKinds",
-    "keepAwakeEnabled",
-    "systemInfoEnabled",
-    "correctionsEnabled",
-    "specsEnabled",
-    "locale",
-    "uiTheme",
-    "uiSkin",
-] as const;
-
-export const DIRECT_KEYS = [
-    "ignoredInsights",
-    "resolverUrl",
-    "updateCheckHours",
-    "releasesCache",
-    "externalStatusMap",
-    "taskContextPriority",
-    "hookContextEnabled",
-    "workflowContextEnabled",
-    "taskHandoffGuard",
-] as const;
+const UI_CONTRACT_KEYS = settingsContract.keys.filter(({ readers }) => readers.includes("ui"));
+export const SNAPSHOT_KEYS = UI_CONTRACT_KEYS.filter((entry) => !("direct" in entry && entry.direct)).map(({ key }) => key);
+export const DIRECT_KEYS = UI_CONTRACT_KEYS.filter((entry) => "direct" in entry && entry.direct).map(({ key }) => key);
+export const RUNTIME_KEYS = ["projectId", "notificationsMutedUntil"] as const;
 
 // The values a settings.json that has never been written yields. Kept in one place
 // so App (writer) and every consumer window agree on defaults byte-for-byte.
@@ -133,12 +89,9 @@ export function defaultSettings(): SettingsSnapshot {
         forecastWindowMinutes: 60,
         alertTiers: normalizeAlertTiers(undefined),
         alertTypes: normalizeAlertTypes(undefined),
-        quietHoursEnabled: false,
-        quietHoursStart: "23:00",
-        quietHoursEnd: "08:00",
+        quietHours: { enabled: false, start: "23:00", end: "08:00" },
         ccAnalyticsEnabled: false,
-        dailyBudgetEnabled: false,
-        dailyBudget: 0,
+        dailyBudget: null,
         goalCostPerHourMax: null,
         goalErrorRateMax: null,
         notificationsMutedUntil: null,
@@ -147,12 +100,11 @@ export function defaultSettings(): SettingsSnapshot {
         serviceStatusNotify: true,
         memoryBloatEnabled: true,
         todoNotificationsEnabled: true,
-        runtimeInsightsEnabled: false,
-        runtimeInsightKinds: ["long_session", "cold_rewrites"],
+        runtimeInsights: { enabled: false, kinds: ["long_session", "cold_rewrites"] },
         keepAwakeEnabled: false,
         systemInfoEnabled: true,
         correctionsEnabled: false,
-        specsEnabled: false,
+        specs: { enabled: false, deltaGuard: "on" },
         locale: null,
         uiTheme: "system",
         uiSkin: "standard",
@@ -166,6 +118,24 @@ export async function loadSettingsStoreForWrite() {
     return store;
 }
 
+export async function loadRuntimeStoreForWrite() {
+    const { load } = await import("@tauri-apps/plugin-store");
+    const store = await load("runtime-state.json");
+    await store.reload();
+    return store;
+}
+
+export async function loadCacheStoreForWrite() {
+    const { load } = await import("@tauri-apps/plugin-store");
+    const store = await load("cache.json");
+    await store.reload();
+    return store;
+}
+
+function asObject<T extends object>(value: T | null | undefined): T | undefined {
+    return value && typeof value === "object" ? value : undefined;
+}
+
 // One-shot read of settings.json → a fully-defaulted, normalized snapshot. This is
 // the single definition of "how a setting is read": consumers that only need a
 // value now (e.g. the writer seeding its editable refs) call this directly.
@@ -174,22 +144,105 @@ export async function readSettingsSnapshot(): Promise<SettingsSnapshot> {
     try {
         const { load } = await import("@tauri-apps/plugin-store");
         const store = await load("settings.json");
+        const runtimeStore = await load("runtime-state.json");
         const get = <T>(key: string) => store.get<T>(key);
+        let settingsChanged = false;
+        let runtimeChanged = false;
 
         // The pre-release Organization Usage integration stored a privileged
         // Admin API key here. Codex subscription limits now come only from local
         // rollout events, so remove that obsolete secret and its companion keys.
-        let removedOpenAiAdminSetting = false;
         for (const key of ["openAiAdminEnabled", "openAiAdminKey", "openAiUsageDays"]) {
-            removedOpenAiAdminSetting = (await store.delete(key)) || removedOpenAiAdminSetting;
+            settingsChanged = (await store.delete(key)) || settingsChanged;
         }
-        if (removedOpenAiAdminSetting) await store.save();
+
+        let quietHours = asObject(await get<Partial<QuietHoursSetting>>("quietHours"));
+        {
+            const enabled = await get<boolean>("quietHoursEnabled");
+            const start = await get<string>("quietHoursStart");
+            const end = await get<string>("quietHoursEnd");
+            if (enabled !== undefined || start !== undefined || end !== undefined) {
+                quietHours = {
+                    enabled: quietHours?.enabled ?? enabled ?? false,
+                    start: quietHours?.start ?? start ?? "23:00",
+                    end: quietHours?.end ?? end ?? "08:00",
+                };
+                await store.set("quietHours", quietHours);
+                settingsChanged = true;
+            }
+        }
+
+        let dailyBudget = await get<number | null>("dailyBudget");
+        const legacyBudgetEnabled = await get<boolean>("dailyBudgetEnabled");
+        if (legacyBudgetEnabled !== undefined) {
+            dailyBudget = legacyBudgetEnabled ? (dailyBudget ?? 0) : null;
+            await store.set("dailyBudget", dailyBudget);
+            settingsChanged = true;
+        }
+
+        let runtimeInsights = asObject(await get<Partial<RuntimeInsightsSetting>>("runtimeInsights"));
+        {
+            const enabled = await get<boolean>("runtimeInsightsEnabled");
+            const kinds = await get<string[]>("runtimeInsightKinds");
+            if (enabled !== undefined || kinds !== undefined) {
+                runtimeInsights = {
+                    enabled: runtimeInsights?.enabled ?? enabled ?? false,
+                    kinds: Array.isArray(runtimeInsights?.kinds)
+                        ? runtimeInsights.kinds
+                        : Array.isArray(kinds) ? kinds : ["long_session", "cold_rewrites"],
+                };
+                await store.set("runtimeInsights", runtimeInsights);
+                settingsChanged = true;
+            }
+        }
+        if (Array.isArray(runtimeInsights?.kinds) && runtimeInsights.kinds.includes("idle_cache_gap")) {
+            runtimeInsights = {
+                enabled: runtimeInsights.enabled ?? false,
+                kinds: runtimeInsights.kinds.map((kind) => kind === "idle_cache_gap" ? "cold_rewrites" : kind),
+            };
+            await store.set("runtimeInsights", runtimeInsights);
+            settingsChanged = true;
+        }
+
+        let specs = asObject(await get<Partial<SpecsSetting>>("specs"));
+        {
+            const enabled = await get<boolean>("specsEnabled");
+            const deltaGuard = await get<"on" | "off">("specDeltaGuard");
+            if (enabled !== undefined || deltaGuard !== undefined) {
+                specs = {
+                    enabled: specs?.enabled ?? enabled ?? false,
+                    deltaGuard: (specs?.deltaGuard ?? deltaGuard) === "off" ? "off" : "on",
+                };
+                await store.set("specs", specs);
+                settingsChanged = true;
+            }
+        }
+
+        for (const key of [
+            "quietHoursEnabled", "quietHoursStart", "quietHoursEnd",
+            "dailyBudgetEnabled", "runtimeInsightsEnabled", "runtimeInsightKinds",
+            "specsEnabled", "specDeltaGuard",
+        ]) {
+            settingsChanged = (await store.delete(key)) || settingsChanged;
+        }
+
+        for (const key of RUNTIME_KEYS) {
+            const current = await runtimeStore.get<unknown>(key);
+            const legacy = await get<unknown>(key);
+            if (current === undefined && legacy !== undefined) {
+                await runtimeStore.set(key, legacy);
+                runtimeChanged = true;
+            }
+            settingsChanged = (await store.delete(key)) || settingsChanged;
+        }
+        if (settingsChanged) await store.save();
+        if (runtimeChanged) await runtimeStore.save();
 
         s.sessionKey = (await get<string>("sessionKey")) ?? s.sessionKey;
         s.orgId = (await get<string>("orgId")) ?? s.orgId;
         s.refreshInterval = (await get<number>("refreshInterval")) ?? s.refreshInterval;
         s.autoStartSession = (await get<boolean>("autoStartSession")) ?? s.autoStartSession;
-        s.projectId = (await get<string>("projectId")) ?? s.projectId;
+        s.projectId = (await runtimeStore.get<string>("projectId")) ?? s.projectId;
 
         // `thresholds` is the pre-split legacy key; each of session/weekly falls
         // back to it, then normalize() fills any remaining gap with defaults.
@@ -202,33 +255,36 @@ export async function readSettingsSnapshot(): Promise<SettingsSnapshot> {
         s.forecastWindowMinutes = (await get<number>("forecastWindowMinutes")) ?? s.forecastWindowMinutes;
         s.alertTiers = normalizeAlertTiers(await get<Partial<AlertTiers>>("alertTiers"));
         s.alertTypes = normalizeAlertTypes(await get<Partial<AlertTypes>>("alertTypes"));
-        s.quietHoursEnabled = (await get<boolean>("quietHoursEnabled")) ?? s.quietHoursEnabled;
-        s.quietHoursStart = (await get<string>("quietHoursStart")) ?? s.quietHoursStart;
-        s.quietHoursEnd = (await get<string>("quietHoursEnd")) ?? s.quietHoursEnd;
+        s.quietHours = {
+            enabled: quietHours?.enabled ?? s.quietHours.enabled,
+            start: quietHours?.start ?? s.quietHours.start,
+            end: quietHours?.end ?? s.quietHours.end,
+        };
         s.ccAnalyticsEnabled = (await get<boolean>("ccAnalyticsEnabled")) ?? s.ccAnalyticsEnabled;
-        s.dailyBudgetEnabled = (await get<boolean>("dailyBudgetEnabled")) ?? s.dailyBudgetEnabled;
-        s.dailyBudget = (await get<number>("dailyBudget")) ?? s.dailyBudget;
+        s.dailyBudget = typeof dailyBudget === "number" ? dailyBudget : null;
         s.goalCostPerHourMax = (await get<number | null>("goalCostPerHourMax")) ?? null;
         s.goalErrorRateMax = (await get<number | null>("goalErrorRateMax")) ?? null;
-        s.notificationsMutedUntil = (await get<string>("notificationsMutedUntil")) ?? null;
+        s.notificationsMutedUntil = (await runtimeStore.get<string>("notificationsMutedUntil")) ?? null;
         s.serviceStatusEnabled = (await get<boolean>("serviceStatusEnabled")) ?? s.serviceStatusEnabled;
         s.serviceStatusInterval = (await get<number>("serviceStatusInterval")) ?? s.serviceStatusInterval;
         s.serviceStatusNotify = (await get<boolean>("serviceStatusNotify")) ?? s.serviceStatusNotify;
         s.memoryBloatEnabled = (await get<boolean>("memoryBloatEnabled")) ?? s.memoryBloatEnabled;
         s.todoNotificationsEnabled = (await get<boolean>("todoNotificationsEnabled")) ?? s.todoNotificationsEnabled;
-        s.runtimeInsightsEnabled = (await get<boolean>("runtimeInsightsEnabled")) ?? s.runtimeInsightsEnabled;
-
-        const rk = await get<string[]>("runtimeInsightKinds");
+        const rk = runtimeInsights?.kinds;
         // Migrate the pre-release kind name idle_cache_gap → cold_rewrites so a
         // settings.json written before the rename keeps its runtime toggle.
         if (Array.isArray(rk)) {
-            s.runtimeInsightKinds = rk.map((k) => (k === "idle_cache_gap" ? "cold_rewrites" : k));
+            s.runtimeInsights.kinds = rk.map((k) => (k === "idle_cache_gap" ? "cold_rewrites" : k));
         }
+        s.runtimeInsights.enabled = runtimeInsights?.enabled ?? s.runtimeInsights.enabled;
 
         s.keepAwakeEnabled = (await get<boolean>("keepAwakeEnabled")) ?? s.keepAwakeEnabled;
         s.systemInfoEnabled = (await get<boolean>("systemInfoEnabled")) ?? s.systemInfoEnabled;
         s.correctionsEnabled = (await get<boolean>("correctionsEnabled")) ?? s.correctionsEnabled;
-        s.specsEnabled = (await get<boolean>("specsEnabled")) ?? s.specsEnabled;
+        s.specs = {
+            enabled: specs?.enabled ?? s.specs.enabled,
+            deltaGuard: specs?.deltaGuard === "off" ? "off" : "on",
+        };
         s.locale = (await get<string>("locale")) ?? null;
         s.uiTheme = (await get<string>("uiTheme")) ?? s.uiTheme;
         s.uiSkin = (await get<string>("uiSkin")) ?? s.uiSkin;

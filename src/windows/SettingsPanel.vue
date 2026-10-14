@@ -30,6 +30,7 @@ import WorkflowGraph from "../process/WorkflowGraph.vue";
 import agentProviderManifest from "../../scripts/cli/agents/agent-providers.json";
 import { dutyModeReader } from "../../scripts/cli/agents/duty-mode.mjs";
 import { loadSettingsStoreForWrite } from "../kernel/settingsStore";
+import type { QuietHoursSetting, RuntimeInsightsSetting, SpecsSetting } from "../kernel/settingsStore";
 
 const TIER_LABELS: Record<AlertTierKey, string> = {
   five_hour: "session5h",
@@ -88,14 +89,11 @@ const props = defineProps<{
   notificationsEnabled: boolean;
   notifyForecastMinutes: number;
   forecastWindowMinutes: number;
-  quietHoursEnabled: boolean;
-  quietHoursStart: string;
-  quietHoursEnd: string;
+  quietHours: QuietHoursSetting;
   alertTiers: AlertTiers;
   alertTypes: AlertTypes;
   ccAnalyticsEnabled: boolean;
-  dailyBudgetEnabled: boolean;
-  dailyBudget: number;
+  dailyBudget: number | null;
   suggestedBudget: number | null;
   // Efficiency goals. cost/hour is USD/hour; errorRateMax is a FRACTION 0..1
   // (matching AppConfig). The error-rate input below shows/edits a percent.
@@ -108,9 +106,9 @@ const props = defineProps<{
   todoNotificationsEnabled: boolean;
   systemInfoEnabled: boolean;
   correctionsEnabled: boolean;
-  runtimeInsightsEnabled: boolean;
-  runtimeInsightKinds: string[];
+  runtimeInsights: RuntimeInsightsSetting;
   keepAwakeEnabled: boolean;
+  specs: SpecsSetting;
   locale: string;
   uiTheme: string;
   uiSkin: string;
@@ -130,14 +128,11 @@ const emit = defineEmits<{
     notificationsEnabled: boolean;
     notifyForecastMinutes: number;
     forecastWindowMinutes: number;
-    quietHoursEnabled: boolean;
-    quietHoursStart: string;
-    quietHoursEnd: string;
+    quietHours: QuietHoursSetting;
     alertTiers: AlertTiers;
     alertTypes: AlertTypes;
     ccAnalyticsEnabled: boolean;
-    dailyBudgetEnabled: boolean;
-    dailyBudget: number;
+    dailyBudget: number | null;
     goalCostPerHourMax: number | null;
     goalErrorRateMax: number | null;
     serviceStatusEnabled: boolean;
@@ -169,14 +164,14 @@ const localW3 = ref(props.weeklyThresholds[2] ?? 75);
 const localNotify = ref(props.notificationsEnabled);
 const localForecast = ref(props.notifyForecastMinutes);
 const localForecastWindow = ref(props.forecastWindowMinutes);
-const localQuiet = ref(props.quietHoursEnabled);
-const localQuietStart = ref(props.quietHoursStart);
-const localQuietEnd = ref(props.quietHoursEnd);
+const localQuiet = ref(props.quietHours.enabled);
+const localQuietStart = ref(props.quietHours.start);
+const localQuietEnd = ref(props.quietHours.end);
 const localTiers = ref<AlertTiers>(normalizeAlertTiers(props.alertTiers));
 const localTypes = ref<AlertTypes>(normalizeAlertTypes(props.alertTypes));
 const localCc = ref(props.ccAnalyticsEnabled);
-const localBudgetEnabled = ref(props.dailyBudgetEnabled);
-const localBudget = ref(props.dailyBudget);
+const localBudgetEnabled = ref(props.dailyBudget !== null);
+const localBudget = ref(props.dailyBudget ?? 0);
 // Goals are optional: empty string = unset (null). cost/hour is edited in USD
 // as stored; error-rate is stored as a fraction 0..1 but edited as a percent
 // (×100 on load, ÷100 on save) so the user types "10" for 10%.
@@ -247,14 +242,18 @@ watch(() => props.weeklyThresholds, (v) => {
 watch(() => props.notificationsEnabled, (v) => (localNotify.value = v));
 watch(() => props.notifyForecastMinutes, (v) => (localForecast.value = v));
 watch(() => props.forecastWindowMinutes, (v) => (localForecastWindow.value = v));
-watch(() => props.quietHoursEnabled, (v) => (localQuiet.value = v));
-watch(() => props.quietHoursStart, (v) => (localQuietStart.value = v));
-watch(() => props.quietHoursEnd, (v) => (localQuietEnd.value = v));
+watch(() => props.quietHours, (v) => {
+  localQuiet.value = v.enabled;
+  localQuietStart.value = v.start;
+  localQuietEnd.value = v.end;
+});
 watch(() => props.alertTiers, (v) => (localTiers.value = normalizeAlertTiers(v)));
 watch(() => props.alertTypes, (v) => (localTypes.value = normalizeAlertTypes(v)));
 watch(() => props.ccAnalyticsEnabled, (v) => (localCc.value = v));
-watch(() => props.dailyBudgetEnabled, (v) => (localBudgetEnabled.value = v));
-watch(() => props.dailyBudget, (v) => (localBudget.value = v));
+watch(() => props.dailyBudget, (v) => {
+  localBudgetEnabled.value = v !== null;
+  localBudget.value = v ?? 0;
+});
 watch(() => props.goalCostPerHourMax, (v) => (localGoalCostPerHour.value = v ?? ""));
 watch(() => props.goalErrorRateMax, (v) => (localGoalErrorRatePct.value = v === null ? "" : v * 100));
 watch(() => props.serviceStatusEnabled, (v) => (localSvcEnabled.value = v));
@@ -315,11 +314,13 @@ const allInsightKinds = INSIGHT_KINDS;
 // --- Runtime insights (issue #46) ---
 // Master opt-in + per-kind set. Both save immediately via the `runtimeChange`
 // emit (the backend reconfigures on the spot), unlike the Save-button settings.
-const localRuntimeEnabled = ref(props.runtimeInsightsEnabled);
-const localRuntimeKinds = ref<string[]>([...props.runtimeInsightKinds]);
+const localRuntimeEnabled = ref(props.runtimeInsights.enabled);
+const localRuntimeKinds = ref<string[]>([...props.runtimeInsights.kinds]);
 const localKeepAwakeEnabled = ref(props.keepAwakeEnabled);
-watch(() => props.runtimeInsightsEnabled, (v) => (localRuntimeEnabled.value = v));
-watch(() => props.runtimeInsightKinds, (v) => (localRuntimeKinds.value = [...v]));
+watch(() => props.runtimeInsights, (v) => {
+  localRuntimeEnabled.value = v.enabled;
+  localRuntimeKinds.value = [...v.kinds];
+});
 watch(() => props.keepAwakeEnabled, (v) => (localKeepAwakeEnabled.value = v));
 
 function isRuntimeOn(kind: string): boolean {
@@ -702,29 +703,23 @@ onMounted(loadHookContext);
 // asks about spec sections on its own. Manual `cli spec …` commands stay fully
 // callable either way. Emits `settings-changed` on top of the shared store
 // write so a window already open (TodoWindow's Specs tab) hides live.
-const specsEnabled = ref(false);
-
-async function loadSpecsEnabled() {
-  try {
-    const { load: loadStore } = await import("@tauri-apps/plugin-store");
-    const store = await loadStore("settings.json");
-    const v = await store.get<boolean>("specsEnabled");
-    if (typeof v === "boolean") specsEnabled.value = v;
-  } catch {}
-}
+const specsEnabled = ref(props.specs.enabled);
+const specDeltaGuard = ref<"on" | "off">(props.specs.deltaGuard);
+watch(() => props.specs, (value) => {
+  specsEnabled.value = value.enabled;
+  specDeltaGuard.value = value.deltaGuard;
+});
 
 async function toggleSpecsEnabled() {
   specsEnabled.value = !specsEnabled.value;
   try {
     const store = await loadSettingsStoreForWrite();
-    await store.set("specsEnabled", specsEnabled.value);
+    await store.set("specs", { enabled: specsEnabled.value, deltaGuard: specDeltaGuard.value });
     await store.save();
     const { emit } = await import("@tauri-apps/api/event");
     await emit("settings-changed");
   } catch {}
 }
-
-onMounted(loadSpecsEnabled);
 
 // --- HANDOFF guard (issue #59) ---
 // Which TASKS must leave a handoff before a session ends (read by the Stop
@@ -936,14 +931,11 @@ function handleSave() {
     notificationsEnabled: localNotify.value,
     notifyForecastMinutes: localForecast.value,
     forecastWindowMinutes: localForecastWindow.value,
-    quietHoursEnabled: localQuiet.value,
-    quietHoursStart: localQuietStart.value,
-    quietHoursEnd: localQuietEnd.value,
+    quietHours: { enabled: localQuiet.value, start: localQuietStart.value, end: localQuietEnd.value },
     alertTiers: { ...localTiers.value },
     alertTypes: { ...localTypes.value },
     ccAnalyticsEnabled: localCc.value,
-    dailyBudgetEnabled: localBudgetEnabled.value,
-    dailyBudget: Math.round(localBudget.value) || 0,
+    dailyBudget: localBudgetEnabled.value ? Math.round(localBudget.value) || 0 : null,
     goalCostPerHourMax: goalOrNull(localGoalCostPerHour.value),
     // UI edits a percent; AppConfig stores a fraction 0..1.
     goalErrorRateMax: errPct === null ? null : errPct / 100,

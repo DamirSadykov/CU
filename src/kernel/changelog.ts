@@ -4,7 +4,7 @@
 // in the settings store so the About panel works offline between fetches.
 import { ref } from "vue";
 import { logError } from "./logging";
-import { loadSettingsStoreForWrite } from "./settingsStore";
+import { loadCacheStoreForWrite, loadSettingsStoreForWrite } from "./settingsStore";
 
 export interface Release {
     version: string; // "0.4.7" — tag without the leading "v"
@@ -140,13 +140,24 @@ export function renderNotes(md: string): string {
 
 async function loadStore() {
     const { load } = await import("@tauri-apps/plugin-store");
-    return load("settings.json");
+    return load("cache.json");
 }
 
 async function readCache(): Promise<CacheEntry | null> {
     try {
         const store = await loadStore();
-        return (await store.get<CacheEntry>(CACHE_KEY)) ?? null;
+        const current = await store.get<CacheEntry>(CACHE_KEY);
+        if (current) return current;
+
+        const settings = await loadSettingsStoreForWrite();
+        const legacy = await settings.get<CacheEntry>(CACHE_KEY);
+        if (!legacy) return null;
+        const cache = await loadCacheStoreForWrite();
+        await cache.set(CACHE_KEY, legacy);
+        await cache.save();
+        await settings.delete(CACHE_KEY);
+        await settings.save();
+        return legacy;
     } catch {
         return null;
     }
@@ -154,7 +165,7 @@ async function readCache(): Promise<CacheEntry | null> {
 
 async function writeCache(releases: Release[]): Promise<void> {
     try {
-        const store = await loadSettingsStoreForWrite();
+        const store = await loadCacheStoreForWrite();
         await store.set(CACHE_KEY, { fetchedAt: Date.now(), releases });
         await store.save();
     } catch {

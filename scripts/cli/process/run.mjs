@@ -100,7 +100,7 @@ import { appendRunEvent, createVerifyLog, runEventsPath, verifyLogPath, watchRun
 import { pathMatches } from "./outcome.mjs";
 import { runFlowGate } from "./flow-gate.mjs";
 import { flowDeclared } from "./graph-rules.mjs";
-import { parkedStepExpiryHours, readSettings } from "../kernel/settings.mjs";
+import { flowcheckExe, parkedStepExpiryHours } from "../kernel/settings.mjs";
 
 const PLAN_ISSUES_DOC = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "docs", "plan-format-issues.md");
 const PLAN_CUTTING_DOC = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "docs", "plan-format-cutting.md");
@@ -593,8 +593,7 @@ export function liveEffects({ cwd } = {}) {
       });
     },
     flowGate: async ({ task, cwd, timeoutMs }) => {
-      const settings = readSettings();
-      const exe = settings.flowcheckExe || "";
+      const exe = flowcheckExe();
       return runFlowGate({ task, cwd, timeoutMs, exe });
     },
     // What a step really cost lives in the tracker's blocks (SQLite, Rust side),

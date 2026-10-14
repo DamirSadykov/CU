@@ -3,10 +3,10 @@
 Снимок на 2026-10-14. Источник состава и scope —
 [`scripts/cli/kernel/settings-contract.json`](../scripts/cli/kernel/settings-contract.json),
 место и подпись — текущий `SettingsPanel.vue`, читатели — поиск по `src`,
-`src-tauri`, `resolver` и `scripts/cli`. В таблице ровно 49 ключей контракта.
+`src-tauri`, `resolver` и `scripts/cli`. Таблица фиксирует исходные 49 ключей;
+добавленный соседним изменением `parkedStepExpiryHours` в этот снимок не входил.
 
-Вердикты ниже **приняты пользователем 2026-10-14**; это решение, а не описание уже сделанной
-миграции:
+Вердикты ниже **приняты пользователем 2026-10-14** и исполнены в t#1250.
 
 - **keep** — оставить отдельным ключом;
 - **drop** — удалить настройку и возможность её задавать;
@@ -75,12 +75,10 @@
 
 ## Дрейф контракта
 
-- `flowcheckExe` читается напрямую из `settings.json` в
-  `scripts/cli/process/run.mjs` и `scripts/cli/process/apply.mjs`, но отсутствует
-  и в списке ключей контракта, и в `SETTINGS_KEYS` CLI-слоя. Фактическое
-  умолчание — `""` (flowcheck не запускается), UI-поля нет. Решение:
-  **keep и добавить в контракт как `scope: hook`, `writer: manual`** до 1.0,
-  поскольку это реальная внешняя точка конфигурации раннера.
+- `flowcheckExe` обнаружен как прямое чтение из `settings.json` в
+  `scripts/cli/process/run.mjs` и `scripts/cli/process/apply.mjs`. В t#1250 он
+  добавлен в контракт как `scope: hook`, `writer: manual`; оба читателя теперь
+  используют типизированный getter с default `""` (flowcheck не запускается).
 - Legacy-ключ `thresholds` не является 50-м актуальным ключом: он читается только
   как migration fallback для `thresholdsSession`/`thresholdsWeekly`.
 - `openAiAdminEnabled`, `openAiAdminKey`, `openAiUsageDays` при чтении удаляются;
@@ -94,3 +92,17 @@
 актуальность; без пользовательского решения безопаснее сначала сократить
 структурный шум и отделить state/cache, а удаление возможностей обсуждать
 адресно на следующем шаге.
+
+## Реализованный контракт
+
+После миграции контракт содержит 43 ключа: 31 `ui`, 7 `shared` и 5 `hook`.
+`quietHours`, nullable `dailyBudget`, `runtimeInsights` и `specs` заменяют восемь
+плоских ключей; `flowcheckExe` теперь объявлен как ручной hook-ключ. UI и CLI
+получают перечни ключей непосредственно из `settings-contract.json`, а Rust
+берёт оттуда объявление и default `specRoot`.
+
+При первом чтении прежние merge-ключи записываются в новую структуру и удаляются.
+`projectId` и `notificationsMutedUntil` переносятся без перезаписи уже имеющегося
+значения в `runtime-state.json`, `releasesCache` — в `cache.json`. Эти три ключа
+остались в `legacy` только как разрешённые источники одноразовой миграции и больше
+не входят в preferences-контракт.
