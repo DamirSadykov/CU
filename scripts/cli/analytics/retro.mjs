@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { mkdirSync, renameSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
@@ -157,6 +157,10 @@ export function retroReportPath(changeNumber, appData) {
   return path.join(appDataDir(appData), "retro", `c${changeNumber}-report.md`);
 }
 
+export function retroStatusPath(changeNumber, appData) {
+  return path.join(appDataDir(appData), "retro", `c${changeNumber}-status.json`);
+}
+
 export function retroSessionReportPath(session, appData) {
   return path.join(appDataDir(appData), "retro", `session-${session}-report.md`);
 }
@@ -166,6 +170,16 @@ function writeTextAtomic(file, text) {
   const tmp = `${file}.${process.pid}.tmp`;
   writeFileSync(tmp, text.endsWith("\n") ? text : `${text}\n`, "utf8");
   renameSync(tmp, file);
+}
+
+function removeOwnMarker(file) {
+  try {
+    const marker = JSON.parse(readFileSync(file, "utf8"));
+    if (marker?.pid !== process.pid) return;
+    unlinkSync(file);
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
 }
 
 function writeDataReport({ appData, relative, text, writeReport }) {
@@ -221,11 +235,16 @@ export function runRetro(ref, {
   save = saveBoard,
   lock = withBoardLock,
   writeReport = writeTextAtomic,
+  writeStatus = writeTextAtomic,
+  removeStatus = removeOwnMarker,
+  now = () => new Date(),
 } = {}) {
   const board = readBoard(file);
   const change = resolveChange(board, ref);
   const collected = collectFacts({ board, change, appData, repo });
   const prompt = buildRetroPrompt({ factsFile: collected.file, facts: collected.facts, change, language: retroLanguage(appData) });
+  const statusFile = retroStatusPath(change.number, appData);
+  writeStatus(statusFile, JSON.stringify({ status: "started", pid: process.pid, at: now().toISOString() }, null, 2));
   const invoked = invoke("retro", prompt, {
     cwd: repo,
     appData,
@@ -240,6 +259,7 @@ export function runRetro(ref, {
     text: parsed?.report || raw,
     writeReport,
   });
+  removeStatus(statusFile);
 
   if (!invoked?.ok) {
     const error = new Error(`retro agent failed; diagnostic report saved to ${reportFile}: ${invoked?.error || "no output"}`);

@@ -511,6 +511,13 @@ export function buildRecordedContext({ doc, result, file }, warnings) {
   if (result.warnings.length) lines.push("", "warnings:", ...result.warnings.map((w) => "  - " + w));
   if (file) lines.push("", `plan file: ${file}`);
   lines.push("", "Do not record it again — re-applying is for a CHANGED plan.");
+  if (result.change?.number != null) {
+    lines.push(
+      "",
+      `Start the autonomous run with background execution (\`run_in_background: true\`): node "${CLI}" todos run c#${result.change.number} --go`,
+      "Do not observe or narrate its progress from this session. When it needs a decision, the process exits with the decision card and restart command as its final stdout lines.",
+    );
+  }
   lines.push(...kbLines(warnings));
   return lines.join("\n");
 }

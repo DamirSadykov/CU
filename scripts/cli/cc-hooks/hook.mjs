@@ -148,24 +148,28 @@ export function buildWorkflowContext(state = workflowState(), host = "claude") {
         : "1 critic — goal, assumptions, risks, alternatives. YOU do this pass.";
     return [
       "──────── WORKFLOW · this Codex session ────────",
-      "0 triage — one reversible step? do it, skip the rest. This map is for work that is neither.",
+      "0 scout — locate the files and mark every step S/M/L before choosing the workflow.",
       critic,
       "   question still open → ask the user, then back to 1.",
-      "2 plan — frame and decompose non-trivial work before implementation; keep the plan current as evidence changes.",
+      "2 choose — all steps S or M, files known, no open branch → no plan: implement in this session or with agents; use a graph via `<cli> todos apply` only when the auto runner is needed.",
+      "   Any L step or open branch → plan; keep it current as evidence changes.",
       "   No tracker ExitPlanMode gate is wired for Codex; this session owns plan quality and review.",
       "3 implement → verify. Check fails → fix and re-verify. The PLAN was wrong → back to 2. Out of moves → ask the user.",
-      `Auto runner — \`cli run\`, its own process, NOT this session: ${runner}`,
+      `Auto runner — \`<cli> todos run <c#N> --go\`, its own background process, NOT this session: ${runner}`,
+      "   Start it with background execution (`run_in_background: true` in Claude Code) and do not observe it from this session. On a stop the process exits; its final stdout lines are the decision card and restart command.",
     ].join("\n");
   }
   return [
     "──────── WORKFLOW · this session ────────",
-    "0 triage — one reversible step? do it, skip the rest. This map is for work that is neither.",
+    "0 scout — locate the files and mark every step S/M/L before choosing the workflow.",
     criticLine(state),
     "   question still open → ask the user, then back to 1.",
-    "2 plan mode → ExitPlanMode.",
+    "2 choose — all steps S or M, files known, no open branch → no plan: implement in this session or with agents; use a graph via `<cli> todos apply` only when the auto runner is needed.",
+    "   Any L step or open branch → plan mode → ExitPlanMode.",
     architectLine(state),
     "3 implement → verify. Check fails → fix and re-verify. The PLAN was wrong → back to 2. Out of moves → ask the user.",
-    `Auto runner — \`cli run\`, its own process, NOT this session: ${runner}`,
+    `Auto runner — \`<cli> todos run <c#N> --go\`, its own background process, NOT this session: ${runner}`,
+    "   Start it with background execution (`run_in_background: true` in Claude Code) and do not observe it from this session. On a stop the process exits; its final stdout lines are the decision card and restart command.",
   ].join("\n");
 }
 

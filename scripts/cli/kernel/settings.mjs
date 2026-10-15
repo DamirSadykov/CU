@@ -16,19 +16,11 @@ import { appDataFile, roamingBase } from "./appdata.mjs";
 
 export { roamingBase };
 
-export const SETTINGS_KEYS = [
-  "taskContextPriority",
-  "hookContextEnabled",
-  "workflowContextEnabled",
-  "taskHandoffGuard",
-  "specDeltaGuard",
-  "specsEnabled",
-  "matchPlanCli",
-  "specRoot",
-  "specRepos",
-  "flowLanguages",
-  "locale",
-];
+const contract = JSON.parse(readFileSync(new URL("./settings-contract.json", import.meta.url), "utf8"));
+
+export const SETTINGS_KEYS = contract.keys
+  .filter(({ scope }) => scope === "shared" || scope === "hook")
+  .map(({ key }) => key);
 
 // The Roaming base that holds the app's data dir. Windows: %APPDATA%, with a
 // USERPROFILE fallback for the rare case APPDATA is unset.
@@ -98,7 +90,8 @@ export function taskHandoffGuard(appData) {
 // while `specsEnabled` is true — the master switch below turns the whole spec
 // channel off before this mode is ever consulted.
 export function specDeltaGuard(appData) {
-  const v = readSettings(appData).specDeltaGuard;
+  const settings = readSettings(appData);
+  const v = settings.specs?.deltaGuard ?? settings.specDeltaGuard;
   return v === "off" || v === false ? "off" : "on";
 }
 
@@ -111,7 +104,8 @@ export function specDeltaGuard(appData) {
 // fully callable either way, so a link already on a task can still be read or
 // answered by hand; this only gates what happens without being asked.
 export function specsEnabled(appData) {
-  return readSettings(appData).specsEnabled === true;
+  const settings = readSettings(appData);
+  return (settings.specs?.enabled ?? settings.specsEnabled) === true;
 }
 
 // `matchPlanCli`: absolute path to a kb-style CLI that turns task/plan text into
@@ -163,4 +157,14 @@ export function flowLanguages(project, appData) {
   if (!Array.isArray(configured)) return ["cs"];
   const selected = [...new Set(configured.filter((value) => typeof value === "string" && FLOW_LANGUAGES.has(value)))];
   return selected.length ? selected : ["cs"];
+}
+
+export function flowcheckExe(appData) {
+  const v = readSettings(appData).flowcheckExe;
+  return typeof v === "string" && v.trim() ? v.trim() : "";
+}
+
+export function parkedStepExpiryHours(appData) {
+  const v = readSettings(appData).parkedStepExpiryHours;
+  return typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : 24;
 }

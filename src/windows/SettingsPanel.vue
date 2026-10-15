@@ -30,6 +30,7 @@ import WorkflowGraph from "../process/WorkflowGraph.vue";
 import agentProviderManifest from "../../scripts/cli/agents/agent-providers.json";
 import { dutyModeReader } from "../../scripts/cli/agents/duty-mode.mjs";
 import { loadSettingsStoreForWrite } from "../kernel/settingsStore";
+import type { QuietHoursSetting, RuntimeInsightsSetting, SpecsSetting } from "../kernel/settingsStore";
 
 const TIER_LABELS: Record<AlertTierKey, string> = {
   five_hour: "session5h",
@@ -50,7 +51,7 @@ const { t } = useI18n();
 // Settings are grouped into topic tabs. The panel now lives in a dedicated
 // settings window (issue #45); each screen's gear opens it on a matching tab via
 // the `openTab` prop (the window forwards the backend's `settings-open` event).
-type SettingsTab = "account" | "limits" | "notifications" | "budget" | "insights" | "tasks" | "integrations" | "updates";
+type SettingsTab = "account" | "providers" | "limits" | "notifications" | "budget" | "insights" | "tasks" | "integrations" | "updates";
 const tab = ref<SettingsTab>("account");
 
 const {
@@ -88,14 +89,11 @@ const props = defineProps<{
   notificationsEnabled: boolean;
   notifyForecastMinutes: number;
   forecastWindowMinutes: number;
-  quietHoursEnabled: boolean;
-  quietHoursStart: string;
-  quietHoursEnd: string;
+  quietHours: QuietHoursSetting;
   alertTiers: AlertTiers;
   alertTypes: AlertTypes;
   ccAnalyticsEnabled: boolean;
-  dailyBudgetEnabled: boolean;
-  dailyBudget: number;
+  dailyBudget: number | null;
   suggestedBudget: number | null;
   // Efficiency goals. cost/hour is USD/hour; errorRateMax is a FRACTION 0..1
   // (matching AppConfig). The error-rate input below shows/edits a percent.
@@ -108,9 +106,9 @@ const props = defineProps<{
   todoNotificationsEnabled: boolean;
   systemInfoEnabled: boolean;
   correctionsEnabled: boolean;
-  runtimeInsightsEnabled: boolean;
-  runtimeInsightKinds: string[];
+  runtimeInsights: RuntimeInsightsSetting;
   keepAwakeEnabled: boolean;
+  specs: SpecsSetting;
   locale: string;
   uiTheme: string;
   uiSkin: string;
@@ -130,14 +128,11 @@ const emit = defineEmits<{
     notificationsEnabled: boolean;
     notifyForecastMinutes: number;
     forecastWindowMinutes: number;
-    quietHoursEnabled: boolean;
-    quietHoursStart: string;
-    quietHoursEnd: string;
+    quietHours: QuietHoursSetting;
     alertTiers: AlertTiers;
     alertTypes: AlertTypes;
     ccAnalyticsEnabled: boolean;
-    dailyBudgetEnabled: boolean;
-    dailyBudget: number;
+    dailyBudget: number | null;
     goalCostPerHourMax: number | null;
     goalErrorRateMax: number | null;
     serviceStatusEnabled: boolean;
@@ -169,14 +164,14 @@ const localW3 = ref(props.weeklyThresholds[2] ?? 75);
 const localNotify = ref(props.notificationsEnabled);
 const localForecast = ref(props.notifyForecastMinutes);
 const localForecastWindow = ref(props.forecastWindowMinutes);
-const localQuiet = ref(props.quietHoursEnabled);
-const localQuietStart = ref(props.quietHoursStart);
-const localQuietEnd = ref(props.quietHoursEnd);
+const localQuiet = ref(props.quietHours.enabled);
+const localQuietStart = ref(props.quietHours.start);
+const localQuietEnd = ref(props.quietHours.end);
 const localTiers = ref<AlertTiers>(normalizeAlertTiers(props.alertTiers));
 const localTypes = ref<AlertTypes>(normalizeAlertTypes(props.alertTypes));
 const localCc = ref(props.ccAnalyticsEnabled);
-const localBudgetEnabled = ref(props.dailyBudgetEnabled);
-const localBudget = ref(props.dailyBudget);
+const localBudgetEnabled = ref(props.dailyBudget !== null);
+const localBudget = ref(props.dailyBudget ?? 0);
 // Goals are optional: empty string = unset (null). cost/hour is edited in USD
 // as stored; error-rate is stored as a fraction 0..1 but edited as a percent
 // (×100 on load, ÷100 on save) so the user types "10" for 10%.
@@ -247,14 +242,18 @@ watch(() => props.weeklyThresholds, (v) => {
 watch(() => props.notificationsEnabled, (v) => (localNotify.value = v));
 watch(() => props.notifyForecastMinutes, (v) => (localForecast.value = v));
 watch(() => props.forecastWindowMinutes, (v) => (localForecastWindow.value = v));
-watch(() => props.quietHoursEnabled, (v) => (localQuiet.value = v));
-watch(() => props.quietHoursStart, (v) => (localQuietStart.value = v));
-watch(() => props.quietHoursEnd, (v) => (localQuietEnd.value = v));
+watch(() => props.quietHours, (v) => {
+  localQuiet.value = v.enabled;
+  localQuietStart.value = v.start;
+  localQuietEnd.value = v.end;
+});
 watch(() => props.alertTiers, (v) => (localTiers.value = normalizeAlertTiers(v)));
 watch(() => props.alertTypes, (v) => (localTypes.value = normalizeAlertTypes(v)));
 watch(() => props.ccAnalyticsEnabled, (v) => (localCc.value = v));
-watch(() => props.dailyBudgetEnabled, (v) => (localBudgetEnabled.value = v));
-watch(() => props.dailyBudget, (v) => (localBudget.value = v));
+watch(() => props.dailyBudget, (v) => {
+  localBudgetEnabled.value = v !== null;
+  localBudget.value = v ?? 0;
+});
 watch(() => props.goalCostPerHourMax, (v) => (localGoalCostPerHour.value = v ?? ""));
 watch(() => props.goalErrorRateMax, (v) => (localGoalErrorRatePct.value = v === null ? "" : v * 100));
 watch(() => props.serviceStatusEnabled, (v) => (localSvcEnabled.value = v));
@@ -315,11 +314,13 @@ const allInsightKinds = INSIGHT_KINDS;
 // --- Runtime insights (issue #46) ---
 // Master opt-in + per-kind set. Both save immediately via the `runtimeChange`
 // emit (the backend reconfigures on the spot), unlike the Save-button settings.
-const localRuntimeEnabled = ref(props.runtimeInsightsEnabled);
-const localRuntimeKinds = ref<string[]>([...props.runtimeInsightKinds]);
+const localRuntimeEnabled = ref(props.runtimeInsights.enabled);
+const localRuntimeKinds = ref<string[]>([...props.runtimeInsights.kinds]);
 const localKeepAwakeEnabled = ref(props.keepAwakeEnabled);
-watch(() => props.runtimeInsightsEnabled, (v) => (localRuntimeEnabled.value = v));
-watch(() => props.runtimeInsightKinds, (v) => (localRuntimeKinds.value = [...v]));
+watch(() => props.runtimeInsights, (v) => {
+  localRuntimeEnabled.value = v.enabled;
+  localRuntimeKinds.value = [...v.kinds];
+});
 watch(() => props.keepAwakeEnabled, (v) => (localKeepAwakeEnabled.value = v));
 
 function isRuntimeOn(kind: string): boolean {
@@ -554,6 +555,16 @@ const ccHookStatus = ref<CcHookStatus | null>(null);
 const installCcBusy = ref(false);
 const installCcMsg = ref("");
 
+function hookInstallError(error: unknown): string {
+  const detail = String(error);
+  if (detail.includes("HOOK_CONFIG_INVALID_JSON")) return t("installHookInvalidJson");
+  if (detail.includes("HOOK_CONFIG_ROOT_NOT_OBJECT")) return t("installHookRootNotObject");
+  if (detail.includes("HOOK_CONFIG_SHAPE_INVALID")) return t("installHookShapeInvalid");
+  if (detail.includes("HOOK_CONFIG_CHANGED")) return t("installHookChanged");
+  if (detail.includes("HOOK_CONFIG_READ_FAILED")) return t("installHookReadFailed");
+  return detail;
+}
+
 async function loadCcHookStatus() {
   try {
     ccHookStatus.value = await invoke<CcHookStatus>("cc_hook_status");
@@ -569,7 +580,7 @@ async function doInstallCcHook() {
     installCcMsg.value = t("installCcHookDone", { path: p });
     await loadCcHookStatus();
   } catch (e) {
-    installCcMsg.value = String(e);
+    installCcMsg.value = hookInstallError(e);
   } finally {
     installCcBusy.value = false;
   }
@@ -603,7 +614,7 @@ async function doInstallCodexHook() {
     installCodexMsg.value = t("installCodexHookDone", { path: p });
     await loadCodexHookStatus();
   } catch (e) {
-    installCodexMsg.value = String(e);
+    installCodexMsg.value = hookInstallError(e);
   } finally {
     installCodexBusy.value = false;
   }
@@ -692,29 +703,23 @@ onMounted(loadHookContext);
 // asks about spec sections on its own. Manual `cli spec …` commands stay fully
 // callable either way. Emits `settings-changed` on top of the shared store
 // write so a window already open (TodoWindow's Specs tab) hides live.
-const specsEnabled = ref(false);
-
-async function loadSpecsEnabled() {
-  try {
-    const { load: loadStore } = await import("@tauri-apps/plugin-store");
-    const store = await loadStore("settings.json");
-    const v = await store.get<boolean>("specsEnabled");
-    if (typeof v === "boolean") specsEnabled.value = v;
-  } catch {}
-}
+const specsEnabled = ref(props.specs.enabled);
+const specDeltaGuard = ref<"on" | "off">(props.specs.deltaGuard);
+watch(() => props.specs, (value) => {
+  specsEnabled.value = value.enabled;
+  specDeltaGuard.value = value.deltaGuard;
+});
 
 async function toggleSpecsEnabled() {
   specsEnabled.value = !specsEnabled.value;
   try {
     const store = await loadSettingsStoreForWrite();
-    await store.set("specsEnabled", specsEnabled.value);
+    await store.set("specs", { enabled: specsEnabled.value, deltaGuard: specDeltaGuard.value });
     await store.save();
     const { emit } = await import("@tauri-apps/api/event");
     await emit("settings-changed");
   } catch {}
 }
-
-onMounted(loadSpecsEnabled);
 
 // --- HANDOFF guard (issue #59) ---
 // Which TASKS must leave a handoff before a session ends (read by the Stop
@@ -926,14 +931,11 @@ function handleSave() {
     notificationsEnabled: localNotify.value,
     notifyForecastMinutes: localForecast.value,
     forecastWindowMinutes: localForecastWindow.value,
-    quietHoursEnabled: localQuiet.value,
-    quietHoursStart: localQuietStart.value,
-    quietHoursEnd: localQuietEnd.value,
+    quietHours: { enabled: localQuiet.value, start: localQuietStart.value, end: localQuietEnd.value },
     alertTiers: { ...localTiers.value },
     alertTypes: { ...localTypes.value },
     ccAnalyticsEnabled: localCc.value,
-    dailyBudgetEnabled: localBudgetEnabled.value,
-    dailyBudget: Math.round(localBudget.value) || 0,
+    dailyBudget: localBudgetEnabled.value ? Math.round(localBudget.value) || 0 : null,
     goalCostPerHourMax: goalOrNull(localGoalCostPerHour.value),
     // UI edits a percent; AppConfig stores a fraction 0..1.
     goalErrorRateMax: errPct === null ? null : errPct / 100,
@@ -966,6 +968,19 @@ function handleSave() {
           <path d="M3 13.5c0-2.5 2.2-4 5-4s5 1.5 5 4" stroke-linecap="round" />
         </svg>
         <span>{{ t('tabAccount') }}</span>
+      </button>
+      <button
+        type="button"
+        class="settings-tab"
+        :class="{ active: tab === 'providers' }"
+        @click="tab = 'providers'"
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+          <path d="M6 2.5v3M10 2.5v3" stroke-linecap="round" />
+          <path d="M4 5.5h8v2.5a4 4 0 0 1-8 0z" stroke-linejoin="round" />
+          <path d="M8 12v1.5" stroke-linecap="round" />
+        </svg>
+        <span>{{ t('tabProviders') }}</span>
       </button>
       <button
         type="button"
@@ -1064,48 +1079,6 @@ function handleSave() {
     <div class="cards">
       <!-- ===== Account ===== -->
       <template v-if="tab === 'account'">
-      <!-- Session Key -->
-      <div class="card">
-        <div class="field-label">{{ t('sessionKey') }}</div>
-        <input
-          v-model="localSessionKey"
-          type="password"
-          class="field-input"
-          :placeholder="t('sessionKeyPlaceholder')"
-          autocomplete="off"
-        />
-        <div class="field-hint">{{ t('sessionKeyHint') }}</div>
-      </div>
-
-      <!-- Org ID -->
-      <div class="card">
-        <div class="field-label">{{ t('orgId') }}</div>
-        <input
-          v-model="localOrgId"
-          type="text"
-          class="field-input"
-          :placeholder="t('orgIdPlaceholder')"
-          autocomplete="off"
-        />
-        <div class="field-hint">{{ t('orgIdHint') }}</div>
-      </div>
-
-      <!-- Refresh interval -->
-      <div class="card">
-        <div class="card-row" style="align-items: center">
-          <div class="field-label" style="margin-bottom: 0">{{ t('refreshInterval') }}</div>
-          <span class="pct muted" style="font-size: 14px">{{ localInterval }}s</span>
-        </div>
-        <input
-          v-model.number="localInterval"
-          type="range"
-          class="field-range"
-          min="60"
-          max="300"
-          step="5"
-        />
-      </div>
-
       <!-- Language -->
       <div class="card">
         <div class="card-row" style="align-items: center">
@@ -1172,6 +1145,101 @@ function handleSave() {
           <div class="toggle-knob"></div>
         </div>
       </div>
+      </template>
+
+      <template v-if="tab === 'providers'">
+      <div class="provider-title">Claude</div>
+      <!-- Session Key -->
+      <div class="card">
+        <div class="field-label">{{ t('sessionKey') }}</div>
+        <input
+          v-model="localSessionKey"
+          type="password"
+          class="field-input"
+          :placeholder="t('sessionKeyPlaceholder')"
+          autocomplete="off"
+        />
+        <div class="field-hint">{{ t('sessionKeyHint') }}</div>
+      </div>
+
+      <!-- Org ID -->
+      <div class="card">
+        <div class="field-label">{{ t('orgId') }}</div>
+        <input
+          v-model="localOrgId"
+          type="text"
+          class="field-input"
+          :placeholder="t('orgIdPlaceholder')"
+          autocomplete="off"
+        />
+        <div class="field-hint">{{ t('orgIdHint') }}</div>
+      </div>
+
+      <!-- Install the cc-todos CLI + the SessionStart/Stop hooks into ~/.claude/settings.json -->
+      <div class="card" style="display: flex; align-items: center; gap: 12px">
+        <div style="flex: 1; min-width: 0">
+          <div class="card-title" style="font-size: 13px">{{ t('installCcHook') }}</div>
+          <div class="card-sub">{{ t('installCcHookDesc') }}</div>
+          <div v-if="ccHookStatus" class="card-sub" style="margin-top: 6px">
+            {{ ccHookStatus.installed ? t('installCcHookOn') : t('installCcHookOff') }}
+            <span v-if="ccHookStatus.installed && ccHookStatus.wired_path" class="muted">
+              — {{ ccHookStatus.wired_path }}
+            </span>
+          </div>
+          <div class="field-hint guard-state guard-state-active">{{ t('agentGuardActiveClaude') }}</div>
+          <!-- Wired, but the script is gone: Claude Code has been running
+               `node "<gone>"` and getting nothing. -->
+          <div
+            v-if="ccHookStatus && ccHookStatus.installed && !ccHookStatus.wired_path_exists"
+            class="field-hint"
+            style="margin-top: 4px; color: var(--crit)"
+          >
+            {{ t('installCcHookBroken') }}
+          </div>
+          <!-- Installed before the Stop guard existed: the SessionStart hook runs,
+               but nothing checks the handoff at session end until a re-install. -->
+          <div
+            v-if="ccHookStatus && ccHookStatus.installed && !ccHookStatus.stop_installed"
+            class="field-hint"
+            style="margin-top: 4px; color: var(--warn)"
+          >
+            {{ t('installCcHookStopMissing') }}
+          </div>
+          <div v-if="installCcMsg" class="field-hint" style="margin-top: 4px">{{ installCcMsg }}</div>
+        </div>
+        <button type="button" class="suggest-btn" :disabled="installCcBusy" @click="doInstallCcHook">
+          {{ ccHookStatus && ccHookStatus.installed ? t('installCcHookReinstall') : t('installCcHookBtn') }}
+        </button>
+      </div>
+
+      <div class="provider-title">Codex</div>
+      <div class="card" style="display: flex; align-items: center; gap: 12px">
+        <div style="flex: 1; min-width: 0">
+          <div class="card-title" style="font-size: 13px">{{ t('installCodexHook') }}</div>
+          <div class="card-sub">{{ t('installCodexHookDesc') }}</div>
+          <div v-if="codexHookStatus" class="card-sub" style="margin-top: 6px">
+            {{ codexHookStatus.installed ? t('installCcHookOn') : t('installCcHookOff') }}
+            <span v-if="codexHookStatus.installed && codexHookStatus.wired_path" class="muted">
+              — {{ codexHookStatus.wired_path }}
+            </span>
+          </div>
+          <div v-if="codexHookStatus" class="field-hint guard-state" :class="codexHookStatus.guard_active ? 'guard-state-active' : 'guard-state-absent'">
+            {{ codexHookStatus.guard_active ? t('agentGuardActive') : t('agentGuardAbsent') }}
+          </div>
+          <div
+            v-if="codexHookStatus && codexHookStatus.installed && !codexHookStatus.wired_path_exists"
+            class="field-hint"
+            style="margin-top: 4px; color: var(--crit)"
+          >
+            {{ t('installCodexHookBroken') }}
+          </div>
+          <div v-if="installCodexMsg" class="field-hint" style="margin-top: 4px">{{ installCodexMsg }}</div>
+        </div>
+        <button type="button" class="suggest-btn" :disabled="installCodexBusy" @click="doInstallCodexHook">
+          {{ codexHookStatus && codexHookStatus.installed ? t('installCcHookReinstall') : t('installCcHookBtn') }}
+        </button>
+      </div>
+
       </template>
 
       <!-- ===== Limits / thresholds ===== -->
@@ -1558,6 +1626,22 @@ function handleSave() {
 
       <!-- ===== Updates ===== -->
       <template v-if="tab === 'updates'">
+      <!-- Refresh interval -->
+      <div class="card">
+        <div class="card-row" style="align-items: center">
+          <div class="field-label" style="margin-bottom: 0">{{ t('refreshInterval') }}</div>
+          <span class="pct muted" style="font-size: 14px">{{ localInterval }}s</span>
+        </div>
+        <input
+          v-model.number="localInterval"
+          type="range"
+          class="field-range"
+          min="60"
+          max="300"
+          step="5"
+        />
+      </div>
+
       <!-- Updates -->
       <div class="card">
         <div class="card-row" style="align-items: center">
@@ -1694,70 +1778,6 @@ function handleSave() {
         :review="dutyState('review')"
         :plan-installed="!!ccHookStatus?.plan_installed"
       />
-
-      <!-- Install the cc-todos CLI + the SessionStart/Stop hooks into ~/.claude/settings.json -->
-      <div class="card" style="display: flex; align-items: center; gap: 12px">
-        <div style="flex: 1; min-width: 0">
-          <div class="card-title" style="font-size: 13px">{{ t('installCcHook') }}</div>
-          <div class="card-sub">{{ t('installCcHookDesc') }}</div>
-          <div v-if="ccHookStatus" class="card-sub" style="margin-top: 6px">
-            {{ ccHookStatus.installed ? t('installCcHookOn') : t('installCcHookOff') }}
-            <span v-if="ccHookStatus.installed && ccHookStatus.wired_path" class="muted">
-              — {{ ccHookStatus.wired_path }}
-            </span>
-          </div>
-          <div class="field-hint guard-state guard-state-active">{{ t('agentGuardActiveClaude') }}</div>
-          <!-- Wired, but the script is gone: Claude Code has been running
-               `node "<gone>"` and getting nothing. -->
-          <div
-            v-if="ccHookStatus && ccHookStatus.installed && !ccHookStatus.wired_path_exists"
-            class="field-hint"
-            style="margin-top: 4px; color: var(--crit)"
-          >
-            {{ t('installCcHookBroken') }}
-          </div>
-          <!-- Installed before the Stop guard existed: the SessionStart hook runs,
-               but nothing checks the handoff at session end until a re-install. -->
-          <div
-            v-if="ccHookStatus && ccHookStatus.installed && !ccHookStatus.stop_installed"
-            class="field-hint"
-            style="margin-top: 4px; color: var(--warn)"
-          >
-            {{ t('installCcHookStopMissing') }}
-          </div>
-          <div v-if="installCcMsg" class="field-hint" style="margin-top: 4px">{{ installCcMsg }}</div>
-        </div>
-        <button type="button" class="suggest-btn" :disabled="installCcBusy" @click="doInstallCcHook">
-          {{ ccHookStatus && ccHookStatus.installed ? t('installCcHookReinstall') : t('installCcHookBtn') }}
-        </button>
-      </div>
-
-      <div class="card" style="display: flex; align-items: center; gap: 12px">
-        <div style="flex: 1; min-width: 0">
-          <div class="card-title" style="font-size: 13px">{{ t('installCodexHook') }}</div>
-          <div class="card-sub">{{ t('installCodexHookDesc') }}</div>
-          <div v-if="codexHookStatus" class="card-sub" style="margin-top: 6px">
-            {{ codexHookStatus.installed ? t('installCcHookOn') : t('installCcHookOff') }}
-            <span v-if="codexHookStatus.installed && codexHookStatus.wired_path" class="muted">
-              — {{ codexHookStatus.wired_path }}
-            </span>
-          </div>
-          <div v-if="codexHookStatus" class="field-hint guard-state" :class="codexHookStatus.guard_active ? 'guard-state-active' : 'guard-state-absent'">
-            {{ codexHookStatus.guard_active ? t('agentGuardActive') : t('agentGuardAbsent') }}
-          </div>
-          <div
-            v-if="codexHookStatus && codexHookStatus.installed && !codexHookStatus.wired_path_exists"
-            class="field-hint"
-            style="margin-top: 4px; color: var(--crit)"
-          >
-            {{ t('installCodexHookBroken') }}
-          </div>
-          <div v-if="installCodexMsg" class="field-hint" style="margin-top: 4px">{{ installCodexMsg }}</div>
-        </div>
-        <button type="button" class="suggest-btn" :disabled="installCodexBusy" @click="doInstallCodexHook">
-          {{ codexHookStatus && codexHookStatus.installed ? t('installCcHookReinstall') : t('installCcHookBtn') }}
-        </button>
-      </div>
 
       <!-- Master switch: does the SessionStart hook inject task context? -->
       <div class="card toggle-card" @click="toggleHookContext">
@@ -1923,6 +1943,18 @@ function handleSave() {
   flex: 1;
   min-width: 0;
   min-height: 0;
+}
+
+.provider-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 8px 2px -2px;
+}
+.provider-title:first-child {
+  margin-top: 0;
 }
 
 /* Left side: a vertical tab rail. */

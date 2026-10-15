@@ -99,6 +99,8 @@ export function formatRunEvent(event) {
   if (kind === "verify") return `${prefix}${attempt}: verify ${event.ok ? "ok" : "issue"}`.trim();
   if (kind === "rollback") return `${prefix}${attempt}: rollback to ${event.to ?? "previous attempt"}`.trim();
   if (kind === "park") return `${prefix}: park ${event.park_kind || event.stop_kind || "unknown"}${event.reason ? ` — ${event.reason}` : ""}`.trim();
+  if (kind === "budget_warn") return `${prefix}${attempt}: budget warn ${event.source || "unknown"} — $${event.spent} spent of $${event.ceiling}`.trim();
+  if (kind === "gate_skipped") return `${prefix}: gate skipped${event.reason ? ` — ${event.reason}` : ""}`.trim();
   if (kind === "step_start") return `${prefix}${attempt}: step start${event.route ? ` (${event.route})` : ""}`.trim();
   if (kind === "worker_done") {
     const fallback = Array.isArray(event.fallback) && event.fallback.length ? `, fallback ${event.fallback.map((item) => `${item.provider}/${item.model}:${item.reason}`).join(" -> ")}` : "";
@@ -109,6 +111,7 @@ export function formatRunEvent(event) {
   if (kind === "worker_session") return `${prefix}${attempt}: worker session ${event.engine || "?"} ${event.session || ""}`.trim();
   if (kind === "attempt_snapshot") return `${prefix}${attempt}: snapshot ${String(event.snapshot || "").slice(0, 12)}`.trim();
   if (kind === "attempt_end") return `${prefix}${attempt}: attempt end ${event.outcome || "?"} (${event.reason || "?"})${event.detail ? ` — ${event.detail}` : ""}`.trim();
+  if (kind === "warning") return `${prefix}${attempt}: warning ${event.warning || "unknown"}${event.error ? ` — ${event.error}` : ""}`.trim();
   if (kind === "escalate") return `${prefix}${attempt}: escalate${event.route ? ` (${event.route})` : ""}`.trim();
   return `${prefix}${attempt}: ${kind}`.trim();
 }

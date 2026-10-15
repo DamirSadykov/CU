@@ -703,6 +703,7 @@ describe("buildRecordedContext", () => {
       notes: ["keep: #7 is done"],
       warnings: ["change without budget"],
       created: [{ number: 40 }, { number: 41 }],
+      change: { number: 39 },
       root: null,
       applied: true,
     },
@@ -719,6 +720,16 @@ describe("buildRecordedContext", () => {
     const ctx = buildRecordedContext(recorded, "");
     expect(ctx).not.toContain("todos apply");
     expect(ctx).toMatch(/do not record it again/i);
+  });
+
+  it("launches the recorded graph in the background without session monitoring", () => {
+    const ctx = buildRecordedContext(recorded, "");
+    expect(ctx).toContain("todos run c#39 --go");
+    expect(ctx).toContain("run_in_background: true");
+    expect(ctx).toContain("Do not observe or narrate");
+    expect(ctx).toContain("final stdout lines");
+    expect(ctx).not.toContain("todos run watch");
+    expect(ctx).not.toContain("Monitor");
   });
 
   it("keeps the KB warnings block and the plan file's whereabouts", () => {

@@ -26,7 +26,11 @@ import type { AlertTiers, AlertTypes } from "./kernel/thresholds";
 import { localizeAlert } from "./analytics/alertFormat";
 import type { AlertEvent } from "./analytics/alertFormat";
 import { useUpdater, initUpdater } from "./kernel/updater";
-import { loadSettingsStoreForWrite, readSettingsSnapshot } from "./kernel/settingsStore";
+import {
+    loadRuntimeStoreForWrite,
+    loadSettingsStoreForWrite,
+    readSettingsSnapshot,
+} from "./kernel/settingsStore";
 import { logInfo, logWarn, logError } from "./kernel/logging";
 import type { CodexRateLimits, ForecastData, UsageData, UsageLevels } from "./contracts/types";
 
@@ -214,12 +218,12 @@ async function loadSettings() {
     forecastWindowMinutes.value = s.forecastWindowMinutes;
     alertTiers.value = s.alertTiers;
     alertTypes.value = s.alertTypes;
-    quietHoursEnabled.value = s.quietHoursEnabled;
-    quietHoursStart.value = s.quietHoursStart;
-    quietHoursEnd.value = s.quietHoursEnd;
+    quietHoursEnabled.value = s.quietHours.enabled;
+    quietHoursStart.value = s.quietHours.start;
+    quietHoursEnd.value = s.quietHours.end;
     ccAnalyticsEnabled.value = s.ccAnalyticsEnabled;
-    dailyBudgetEnabled.value = s.dailyBudgetEnabled;
-    dailyBudget.value = s.dailyBudget;
+    dailyBudgetEnabled.value = s.dailyBudget !== null;
+    dailyBudget.value = s.dailyBudget ?? 0;
     goalCostPerHourMax.value = s.goalCostPerHourMax;
     goalErrorRateMax.value = s.goalErrorRateMax;
     notificationsMutedUntil.value = s.notificationsMutedUntil;
@@ -228,8 +232,8 @@ async function loadSettings() {
     serviceStatusNotify.value = s.serviceStatusNotify;
     memoryBloatEnabled.value = s.memoryBloatEnabled;
     todoNotificationsEnabled.value = s.todoNotificationsEnabled;
-    runtimeInsightsEnabled.value = s.runtimeInsightsEnabled;
-    runtimeInsightKinds.value = s.runtimeInsightKinds;
+    runtimeInsightsEnabled.value = s.runtimeInsights.enabled;
+    runtimeInsightKinds.value = s.runtimeInsights.kinds;
     keepAwakeEnabled.value = s.keepAwakeEnabled;
     systemInfoEnabled.value = s.systemInfoEnabled;
     correctionsEnabled.value = s.correctionsEnabled;
@@ -247,11 +251,12 @@ async function togglePin() {
 
 async function saveSettings() {
     const store = await loadSettingsStoreForWrite();
+    const runtimeStore = await loadRuntimeStoreForWrite();
     await store.set("sessionKey", sessionKey.value);
     await store.set("orgId", orgId.value);
     await store.set("refreshInterval", refreshInterval.value);
     await store.set("autoStartSession", autoStartSession.value);
-    await store.set("projectId", projectId.value);
+    await runtimeStore.set("projectId", projectId.value);
     await store.set("thresholdsSession", sessionThresholds.value);
     await store.set("thresholdsWeekly", weeklyThresholds.value);
     await store.set("notificationsEnabled", notificationsEnabled.value);
@@ -259,22 +264,25 @@ async function saveSettings() {
     await store.set("forecastWindowMinutes", forecastWindowMinutes.value);
     await store.set("alertTiers", alertTiers.value);
     await store.set("alertTypes", alertTypes.value);
-    await store.set("quietHoursEnabled", quietHoursEnabled.value);
-    await store.set("quietHoursStart", quietHoursStart.value);
-    await store.set("quietHoursEnd", quietHoursEnd.value);
+    await store.set("quietHours", {
+        enabled: quietHoursEnabled.value,
+        start: quietHoursStart.value,
+        end: quietHoursEnd.value,
+    });
     await store.set("ccAnalyticsEnabled", ccAnalyticsEnabled.value);
-    await store.set("dailyBudgetEnabled", dailyBudgetEnabled.value);
-    await store.set("dailyBudget", dailyBudget.value);
+    await store.set("dailyBudget", dailyBudgetEnabled.value ? dailyBudget.value : null);
     await store.set("goalCostPerHourMax", goalCostPerHourMax.value);
     await store.set("goalErrorRateMax", goalErrorRateMax.value);
-    await store.set("notificationsMutedUntil", notificationsMutedUntil.value);
+    await runtimeStore.set("notificationsMutedUntil", notificationsMutedUntil.value);
     await store.set("serviceStatusEnabled", serviceStatusEnabled.value);
     await store.set("serviceStatusInterval", serviceStatusInterval.value);
     await store.set("serviceStatusNotify", serviceStatusNotify.value);
     await store.set("memoryBloatEnabled", memoryBloatEnabled.value);
     await store.set("todoNotificationsEnabled", todoNotificationsEnabled.value);
-    await store.set("runtimeInsightsEnabled", runtimeInsightsEnabled.value);
-    await store.set("runtimeInsightKinds", [...runtimeInsightKinds.value]);
+    await store.set("runtimeInsights", {
+        enabled: runtimeInsightsEnabled.value,
+        kinds: [...runtimeInsightKinds.value],
+    });
     await store.set("keepAwakeEnabled", keepAwakeEnabled.value);
     await store.set("systemInfoEnabled", systemInfoEnabled.value);
     await store.set("correctionsEnabled", correctionsEnabled.value);
@@ -282,6 +290,7 @@ async function saveSettings() {
     await store.set("uiTheme", uiTheme.value);
     await store.set("uiSkin", uiSkin.value);
     await store.save();
+    await runtimeStore.save();
 }
 
 // Push the current settings to the Rust polling loop. The backend owns the
@@ -564,14 +573,11 @@ async function handleSave(settings: {
     notificationsEnabled: boolean;
     notifyForecastMinutes: number;
     forecastWindowMinutes: number;
-    quietHoursEnabled: boolean;
-    quietHoursStart: string;
-    quietHoursEnd: string;
+    quietHours: { enabled: boolean; start: string; end: string };
     alertTiers: AlertTiers;
     alertTypes: AlertTypes;
     ccAnalyticsEnabled: boolean;
-    dailyBudgetEnabled: boolean;
-    dailyBudget: number;
+    dailyBudget: number | null;
     goalCostPerHourMax: number | null;
     goalErrorRateMax: number | null;
     serviceStatusEnabled: boolean;
@@ -594,14 +600,14 @@ async function handleSave(settings: {
     notificationsEnabled.value = settings.notificationsEnabled;
     notifyForecastMinutes.value = settings.notifyForecastMinutes;
     forecastWindowMinutes.value = settings.forecastWindowMinutes;
-    quietHoursEnabled.value = settings.quietHoursEnabled;
-    quietHoursStart.value = settings.quietHoursStart;
-    quietHoursEnd.value = settings.quietHoursEnd;
+    quietHoursEnabled.value = settings.quietHours.enabled;
+    quietHoursStart.value = settings.quietHours.start;
+    quietHoursEnd.value = settings.quietHours.end;
     alertTiers.value = normalizeAlertTiers(settings.alertTiers);
     alertTypes.value = normalizeAlertTypes(settings.alertTypes);
     ccAnalyticsEnabled.value = settings.ccAnalyticsEnabled;
-    dailyBudgetEnabled.value = settings.dailyBudgetEnabled;
-    dailyBudget.value = settings.dailyBudget;
+    dailyBudgetEnabled.value = settings.dailyBudget !== null;
+    dailyBudget.value = settings.dailyBudget ?? 0;
     goalCostPerHourMax.value = settings.goalCostPerHourMax;
     goalErrorRateMax.value = settings.goalErrorRateMax;
     serviceStatusEnabled.value = settings.serviceStatusEnabled;
@@ -1045,7 +1051,7 @@ onUnmounted(() => {
                     </p>
                     <button
                         class="btn-primary"
-                        @click="openSettings('account')"
+                        @click="openSettings('providers')"
                         style="margin-top: 12px"
                     >
                         {{ t("configure") }}
@@ -1071,7 +1077,7 @@ onUnmounted(() => {
                     <button
                         v-if="sessionExpired"
                         class="btn-primary"
-                        @click="openSettings('account')"
+                        @click="openSettings('providers')"
                         style="margin-top: 10px; width: 100%"
                     >
                         {{ t("updateSessionKey") }}

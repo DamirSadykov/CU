@@ -51,7 +51,7 @@ const openRows = computed(() => overview.value.changes.filter((row) => !row.clos
 const closedRows = computed(() => overview.value.changes.filter((row) => row.closed));
 const shownRows = computed(() => filterChangeRows(overview.value.changes, showClosed.value, query.value));
 
-const dailyLimit = computed(() => settings.value.dailyBudgetEnabled && settings.value.dailyBudget > 0 ? settings.value.dailyBudget : null);
+const dailyLimit = computed(() => (settings.value.dailyBudget ?? 0) > 0 ? settings.value.dailyBudget : null);
 const days = computed(() => fillDays(spend.value?.daily ?? [], range.value.from, range.value.to));
 const periodLimit = computed(() => dailyLimit.value !== null && range.value.days !== null ? dailyLimit.value * range.value.days : null);
 const spent = computed(() => spend.value?.totals.cost ?? 0);

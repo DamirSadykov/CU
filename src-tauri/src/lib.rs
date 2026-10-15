@@ -2369,6 +2369,171 @@ fn claude_settings_path(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(home.join(".claude").join("settings.json"))
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct HookConfigStamp {
+    len: u64,
+    modified: SystemTime,
+}
+
+struct HookConfigRead {
+    root: serde_json::Value,
+    original: Option<Vec<u8>>,
+    stamp: Option<HookConfigStamp>,
+}
+
+fn hook_config_stamp(path: &Path) -> Result<Option<HookConfigStamp>, String> {
+    match std::fs::metadata(path) {
+        Ok(meta) => Ok(Some(HookConfigStamp {
+            len: meta.len(),
+            modified: meta
+                .modified()
+                .map_err(|e| format!("HOOK_CONFIG_READ_FAILED: {}: {e}", path.display()))?,
+        })),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
+        Err(e) => Err(format!("HOOK_CONFIG_READ_FAILED: {}: {e}", path.display())),
+    }
+}
+
+fn read_hook_config(path: &Path) -> Result<HookConfigRead, String> {
+    let before = hook_config_stamp(path)?;
+    let Some(_) = before else {
+        return Ok(HookConfigRead {
+            root: serde_json::json!({}),
+            original: None,
+            stamp: None,
+        });
+    };
+    let bytes = std::fs::read(path)
+        .map_err(|e| format!("HOOK_CONFIG_READ_FAILED: {}: {e}", path.display()))?;
+    let after = hook_config_stamp(path)?;
+    if before != after {
+        return Err(format!("HOOK_CONFIG_CHANGED: {}", path.display()));
+    }
+    let root: serde_json::Value = serde_json::from_slice(&bytes)
+        .map_err(|e| format!("HOOK_CONFIG_INVALID_JSON: {}: {e}", path.display()))?;
+    if !root.is_object() {
+        return Err(format!("HOOK_CONFIG_ROOT_NOT_OBJECT: {}", path.display()));
+    }
+    validate_hook_config_shape(&root, path)?;
+    Ok(HookConfigRead {
+        root,
+        original: Some(bytes),
+        stamp: after,
+    })
+}
+
+fn validate_hook_config_shape(root: &serde_json::Value, path: &Path) -> Result<(), String> {
+    let Some(hooks) = root.get("hooks") else {
+        return Ok(());
+    };
+    let Some(events) = hooks.as_object() else {
+        return Err(format!("HOOK_CONFIG_SHAPE_INVALID: {}: hooks", path.display()));
+    };
+    if let Some((event, _)) = events.iter().find(|(_, value)| !value.is_array()) {
+        return Err(format!(
+            "HOOK_CONFIG_SHAPE_INVALID: {}: hooks.{event}",
+            path.display()
+        ));
+    }
+    Ok(())
+}
+
+static HOOK_CONFIG_TMP_ID: AtomicU64 = AtomicU64::new(0);
+
+#[cfg(windows)]
+fn replace_hook_config_file(tmp: &Path, path: &Path, target_exists: bool) -> std::io::Result<()> {
+    if !target_exists {
+        return std::fs::rename(tmp, path);
+    }
+    use std::os::windows::ffi::OsStrExt;
+    let replaced: Vec<u16> = path.as_os_str().encode_wide().chain(Some(0)).collect();
+    let replacement: Vec<u16> = tmp.as_os_str().encode_wide().chain(Some(0)).collect();
+    #[link(name = "Kernel32")]
+    extern "system" {
+        fn ReplaceFileW(
+            replaced_file_name: *const u16,
+            replacement_file_name: *const u16,
+            backup_file_name: *const u16,
+            replace_flags: u32,
+            exclude: *mut std::ffi::c_void,
+            reserved: *mut std::ffi::c_void,
+        ) -> i32;
+    }
+    const REPLACEFILE_WRITE_THROUGH: u32 = 0x00000002;
+    // SAFETY: both paths are owned, NUL-terminated UTF-16 buffers and all
+    // optional pointers are null as required by ReplaceFileW.
+    let ok = unsafe {
+        ReplaceFileW(
+            replaced.as_ptr(),
+            replacement.as_ptr(),
+            std::ptr::null(),
+            REPLACEFILE_WRITE_THROUGH,
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+        )
+    };
+    if ok == 0 {
+        Err(std::io::Error::last_os_error())
+    } else {
+        Ok(())
+    }
+}
+
+#[cfg(not(windows))]
+fn replace_hook_config_file(tmp: &Path, path: &Path, target_exists: bool) -> std::io::Result<()> {
+    if target_exists {
+        return std::fs::rename(tmp, path);
+    }
+    std::fs::hard_link(tmp, path)?;
+    let _ = std::fs::remove_file(tmp);
+    Ok(())
+}
+
+fn update_hook_config_if<R>(
+    path: &Path,
+    mutate: impl FnOnce(&mut serde_json::Value) -> Option<R>,
+) -> Result<(Option<R>, bool), String> {
+    let mut read = read_hook_config(path)?;
+    let Some(result) = mutate(&mut read.root) else {
+        return Ok((None, false));
+    };
+    let json = serde_json::to_vec_pretty(&read.root).map_err(|e| e.to_string())?;
+
+    if hook_config_stamp(path)? != read.stamp {
+        return Err(format!("HOOK_CONFIG_CHANGED: {}", path.display()));
+    }
+    if read.original.as_deref() == Some(json.as_slice()) {
+        return Ok((Some(result), false));
+    }
+    if let Some(dir) = path.parent() {
+        std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    }
+    let id = HOOK_CONFIG_TMP_ID.fetch_add(1, Ordering::Relaxed);
+    let tmp = path.with_extension(format!("json.{}.{}.tmp", std::process::id(), id));
+    std::fs::write(&tmp, &json).map_err(|e| e.to_string())?;
+
+    if hook_config_stamp(path)? != read.stamp {
+        let _ = std::fs::remove_file(&tmp);
+        return Err(format!("HOOK_CONFIG_CHANGED: {}", path.display()));
+    }
+    if let Err(e) = replace_hook_config_file(&tmp, path, read.stamp.is_some()) {
+        let _ = std::fs::remove_file(&tmp);
+        return Err(e.to_string());
+    }
+    Ok((Some(result), true))
+}
+
+fn update_hook_config<R>(
+    path: &Path,
+    mutate: impl FnOnce(&mut serde_json::Value) -> R,
+) -> Result<(R, bool), String> {
+    let (result, wrote) = update_hook_config_if(path, |root| Some(mutate(root)))?;
+    Ok((
+        result.expect("unconditional hook update returned no result"),
+        wrote,
+    ))
+}
+
 /// True if any hook command under `event` (SessionStart / Stop) is ours.
 fn settings_has_cc_hook(v: &serde_json::Value, event: &str) -> bool {
     v.get("hooks")
@@ -2560,57 +2725,52 @@ fn cc_hook_status(app: AppHandle) -> Result<CcHookStatus, String> {
 /// Returns the healed path, if it healed anything.
 fn heal_cc_hook(app: &AppHandle) -> Option<String> {
     let settings_path = claude_settings_path(app).ok()?;
-    let mut root: serde_json::Value =
-        serde_json::from_str(&std::fs::read_to_string(&settings_path).ok()?).ok()?;
-    if !root.is_object() || !settings_has_cc_hook(&root, "SessionStart") {
-        return None; // not our user — don't install anything uninvited
-    }
-    let wired = wired_script_path(&root, "SessionStart")?;
-    if Path::new(&wired).exists() {
-        return None; // still a real file → nothing to heal
-    }
-
     let script = cc_hook_script_path(app).ok()?;
-    wire_hook_event(
-        &mut root,
-        "SessionStart",
-        &format!("node \"{script}\" hook"),
-    );
-    wire_hook_event(&mut root, "Stop", &format!("node \"{script}\" stop-hook"));
-    wire_hook_event_matched(
-        &mut root,
-        "PostToolUse",
-        "EnterPlanMode",
-        &format!("node \"{script}\" plan-hook enter"),
-    );
-    wire_hook_event_matched(
-        &mut root,
-        "PostToolUse",
-        "ExitPlanMode",
-        &format!("node \"{script}\" plan-hook exit"),
-    );
-    wire_hook_event_matched(
-        &mut root,
-        "PreToolUse",
-        "ExitPlanMode",
-        &format!("node \"{script}\" plan-guard"),
-    );
-    wire_hook_event(
-        &mut root,
-        "UserPromptSubmit",
-        &format!("node \"{script}\" plan-hook prompt"),
-    );
-    wire_hook_event_matched(
-        &mut root,
-        "PostToolUse",
-        "Read|Grep|Glob",
-        &format!("node \"{script}\" plan-hook prompt"),
-    );
-    let json = serde_json::to_string_pretty(&root).ok()?;
-    let tmp = settings_path.with_extension("json.tmp");
-    std::fs::write(&tmp, json.as_bytes()).ok()?;
-    std::fs::rename(&tmp, &settings_path).ok()?;
-    Some(script)
+    let (healed, _) = update_hook_config_if(&settings_path, |root| {
+        if !settings_has_cc_hook(root, "SessionStart") {
+            return None;
+        }
+        let Some(wired) = wired_script_path(root, "SessionStart") else {
+            return None;
+        };
+        if Path::new(&wired).exists() {
+            return None;
+        }
+        wire_hook_event(root, "SessionStart", &format!("node \"{script}\" hook"));
+        wire_hook_event(root, "Stop", &format!("node \"{script}\" stop-hook"));
+        wire_hook_event_matched(
+            root,
+            "PostToolUse",
+            "EnterPlanMode",
+            &format!("node \"{script}\" plan-hook enter"),
+        );
+        wire_hook_event_matched(
+            root,
+            "PostToolUse",
+            "ExitPlanMode",
+            &format!("node \"{script}\" plan-hook exit"),
+        );
+        wire_hook_event_matched(
+            root,
+            "PreToolUse",
+            "ExitPlanMode",
+            &format!("node \"{script}\" plan-guard"),
+        );
+        wire_hook_event(
+            root,
+            "UserPromptSubmit",
+            &format!("node \"{script}\" plan-hook prompt"),
+        );
+        wire_hook_event_matched(
+            root,
+            "PostToolUse",
+            "Read|Grep|Glob",
+            &format!("node \"{script}\" plan-hook prompt"),
+        );
+        Some(())
+    })
+    .ok()?;
+    healed.map(|_| script)
 }
 
 /// Wire one hook event (SessionStart / Stop) to `command` inside a settings root.
@@ -2676,77 +2836,62 @@ fn install_cc_hook(app: AppHandle) -> Result<String, String> {
     let script = cc_hook_script_path(&app)?;
     let settings_path = claude_settings_path(&app)?;
 
-    let mut root: serde_json::Value = std::fs::read_to_string(&settings_path)
-        .ok()
-        .and_then(|s| serde_json::from_str(&s).ok())
-        .unwrap_or_else(|| serde_json::json!({}));
-    if !root.is_object() {
-        root = serde_json::json!({});
-    }
-
     // The dirs of any LEGACY (cc-todos-hook.mjs) entries we rewired — their
     // now-orphan cc-*.mjs scripts get deleted after the write, so migrating to
     // cli.mjs doesn't leave the old standalone scripts piling up on disk.
-    let mut legacy_dirs = wire_hook_event(
-        &mut root,
-        "SessionStart",
-        &format!("node \"{script}\" hook"),
-    );
-    legacy_dirs.extend(wire_hook_event(
-        &mut root,
-        "Stop",
-        &format!("node \"{script}\" stop-hook"),
-    ));
-    // Plan-mode ritual (t#253): PostToolUse is matcher-scoped, one entry per tool.
-    wire_hook_event_matched(
-        &mut root,
-        "PostToolUse",
-        "EnterPlanMode",
-        &format!("node \"{script}\" plan-hook enter"),
-    );
-    wire_hook_event_matched(
-        &mut root,
-        "PostToolUse",
-        "ExitPlanMode",
-        &format!("node \"{script}\" plan-hook exit"),
-    );
-    // The format GUARD (t#318), on the way IN to ExitPlanMode: PostToolUse fires
-    // after the plan has been shown and approved, so a plan that is not a valid
-    // graph file can only be caught before the permission prompt, not after it.
-    wire_hook_event_matched(
-        &mut root,
-        "PreToolUse",
-        "ExitPlanMode",
-        &format!("node \"{script}\" plan-guard"),
-    );
-    // The EnterPlanMode entry above only fires when the MODEL calls that tool; a
-    // user flipping plan mode from the keyboard never triggers it, so the format
-    // never arrived (measured: 9 of 9 real plan-mode sessions entered by mode,
-    // only 3 also called the tool). These entries key off permission_mode in the
-    // payload and cover both ways in; a shared one-shot marker in plan-hook.mjs
-    // keeps them from injecting the format twice.
-    legacy_dirs.extend(wire_hook_event(
-        &mut root,
-        "UserPromptSubmit",
-        &format!("node \"{script}\" plan-hook prompt"),
-    ));
-    // ...and the same on the tools a planning session reaches for first, because
-    // UserPromptSubmit alone misses the mode being flipped AFTER the prompt was
-    // sent (measured: 12 seconds after, and no further prompt to carry it).
-    wire_hook_event_matched(
-        &mut root,
-        "PostToolUse",
-        "Read|Grep|Glob",
-        &format!("node \"{script}\" plan-hook prompt"),
-    );
+    let (legacy_dirs, _) = update_hook_config(&settings_path, |root| {
+        let mut legacy_dirs =
+            wire_hook_event(root, "SessionStart", &format!("node \"{script}\" hook"));
+        legacy_dirs.extend(wire_hook_event(
+            root,
+            "Stop",
+            &format!("node \"{script}\" stop-hook"),
+        ));
+        // Plan-mode ritual (t#253): PostToolUse is matcher-scoped, one entry per tool.
+        wire_hook_event_matched(
+            root,
+            "PostToolUse",
+            "EnterPlanMode",
+            &format!("node \"{script}\" plan-hook enter"),
+        );
+        wire_hook_event_matched(
+            root,
+            "PostToolUse",
+            "ExitPlanMode",
+            &format!("node \"{script}\" plan-hook exit"),
+        );
+        // The format GUARD (t#318), on the way IN to ExitPlanMode: PostToolUse fires
+        // after the plan has been shown and approved, so a plan that is not a valid
+        // graph file can only be caught before the permission prompt, not after it.
+        wire_hook_event_matched(
+            root,
+            "PreToolUse",
+            "ExitPlanMode",
+            &format!("node \"{script}\" plan-guard"),
+        );
+        // The EnterPlanMode entry above only fires when the MODEL calls that tool; a
+        // user flipping plan mode from the keyboard never triggers it, so the format
+        // never arrived (measured: 9 of 9 real plan-mode sessions entered by mode,
+        // only 3 also called the tool). These entries key off permission_mode in the
+        // payload and cover both ways in; a shared one-shot marker in plan-hook.mjs
+        // keeps them from injecting the format twice.
+        legacy_dirs.extend(wire_hook_event(
+            root,
+            "UserPromptSubmit",
+            &format!("node \"{script}\" plan-hook prompt"),
+        ));
+        // ...and the same on the tools a planning session reaches for first, because
+        // UserPromptSubmit alone misses the mode being flipped AFTER the prompt was
+        // sent (measured: 12 seconds after, and no further prompt to carry it).
+        wire_hook_event_matched(
+            root,
+            "PostToolUse",
+            "Read|Grep|Glob",
+            &format!("node \"{script}\" plan-hook prompt"),
+        );
 
-    if let Some(dir) = settings_path.parent() {
-        std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
-    }
-    let json = serde_json::to_string_pretty(&root).map_err(|e| e.to_string())?;
-    let tmp = settings_path.with_extension("json.tmp");
-    std::fs::write(&tmp, json.as_bytes()).map_err(|e| e.to_string())?;
-    std::fs::rename(&tmp, &settings_path).map_err(|e| e.to_string())?;
+        legacy_dirs
+    })?;
 
     // Settings now point at cli.mjs — clean up the orphaned legacy scripts next
     // to any old cc-todos-hook.mjs entry we just rewired (best-effort, never fatal).
@@ -2854,22 +2999,21 @@ fn wire_codex_session_start(root: &mut serde_json::Value, command: &str) {
 }
 
 fn heal_codex_hook_file(hooks_path: &Path, script: &str) -> Option<()> {
-    let mut root: serde_json::Value =
-        serde_json::from_str(&std::fs::read_to_string(hooks_path).ok()?).ok()?;
-    if !root.is_object() || !settings_has_cc_hook(&root, "SessionStart") {
-        return None;
-    }
-    let wired = wired_script_path(&root, "SessionStart")?;
-    if Path::new(&wired).exists() {
-        return None;
-    }
-
-    wire_codex_session_start(&mut root, &format!("node \"{script}\" hook --host codex"));
-    let json = serde_json::to_string_pretty(&root).ok()?;
-    let tmp = hooks_path.with_extension("json.tmp");
-    std::fs::write(&tmp, json.as_bytes()).ok()?;
-    std::fs::rename(&tmp, hooks_path).ok()?;
-    Some(())
+    let (healed, _) = update_hook_config_if(hooks_path, |root| {
+        if !settings_has_cc_hook(root, "SessionStart") {
+            return None;
+        }
+        let Some(wired) = wired_script_path(root, "SessionStart") else {
+            return None;
+        };
+        if Path::new(&wired).exists() {
+            return None;
+        }
+        wire_codex_session_start(root, &format!("node \"{script}\" hook --host codex"));
+        Some(())
+    })
+    .ok()?;
+    healed
 }
 
 fn heal_codex_hook(app: &AppHandle) -> Option<String> {
@@ -2922,21 +3066,9 @@ fn codex_hook_status(app: AppHandle) -> Result<CodexHookStatus, String> {
 fn install_codex_hook(app: AppHandle) -> Result<String, String> {
     let script = cc_hook_script_path(&app)?;
     let hooks_path = codex_hooks_path(&app)?;
-    let mut root: serde_json::Value = std::fs::read_to_string(&hooks_path)
-        .ok()
-        .and_then(|s| serde_json::from_str(&s).ok())
-        .unwrap_or_else(|| serde_json::json!({}));
-    if !root.is_object() {
-        root = serde_json::json!({});
-    }
-    wire_codex_session_start(&mut root, &format!("node \"{script}\" hook --host codex"));
-    if let Some(dir) = hooks_path.parent() {
-        std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
-    }
-    let json = serde_json::to_string_pretty(&root).map_err(|e| e.to_string())?;
-    let tmp = hooks_path.with_extension("json.tmp");
-    std::fs::write(&tmp, json.as_bytes()).map_err(|e| e.to_string())?;
-    std::fs::rename(&tmp, &hooks_path).map_err(|e| e.to_string())?;
+    update_hook_config(&hooks_path, |root| {
+        wire_codex_session_start(root, &format!("node \"{script}\" hook --host codex"));
+    })?;
     install_codex_guard_file(&codex_guard_rules_path(&app)?, CODEX_GUARD_RULES)?;
     Ok(script)
 }
@@ -3801,6 +3933,124 @@ fn show_migration_failure(error: &data_dir::MigrationError) {
 #[cfg(test)]
 mod hook_install_tests {
     use super::*;
+
+    fn hook_config_test_path(name: &str) -> PathBuf {
+        let id = HOOK_CONFIG_TMP_ID.fetch_add(1, Ordering::Relaxed);
+        let dir = std::env::temp_dir().join(format!(
+            "cu_hook_config_{name}_{}_{}",
+            std::process::id(),
+            id
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        dir.join("settings.json")
+    }
+
+    #[test]
+    fn hook_config_rejects_invalid_json_and_non_object_without_writing() {
+        for (name, original, marker) in [
+            (
+                "invalid",
+                b"{ trailing,".as_slice(),
+                "HOOK_CONFIG_INVALID_JSON",
+            ),
+            ("array", b"[]".as_slice(), "HOOK_CONFIG_ROOT_NOT_OBJECT"),
+        ] {
+            let path = hook_config_test_path(name);
+            std::fs::write(&path, original).unwrap();
+            let err = update_hook_config(&path, |root| root["changed"] = true.into()).unwrap_err();
+            assert!(err.contains(marker), "unexpected error: {err}");
+            assert_eq!(std::fs::read(&path).unwrap(), original);
+            let _ = std::fs::remove_dir_all(path.parent().unwrap());
+        }
+    }
+
+    #[test]
+    fn hook_config_preserves_foreign_keys_and_hooks() {
+        let path = hook_config_test_path("foreign");
+        let foreign = "node foreign.mjs";
+        let original = serde_json::json!({
+            "theme": "dark",
+            "hooks": { "SessionStart": [ { "hooks": [
+                { "type": "command", "command": foreign }
+            ] } ] }
+        });
+        std::fs::write(&path, serde_json::to_vec_pretty(&original).unwrap()).unwrap();
+
+        update_hook_config(&path, |root| {
+            wire_codex_session_start(root, "node cli.mjs hook --host codex");
+        })
+        .unwrap();
+        let saved: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+        assert_eq!(saved["theme"], "dark");
+        let commands = commands_for(&saved, "SessionStart");
+        assert!(commands.iter().any(|command| command == foreign));
+        assert!(commands
+            .iter()
+            .any(|command| command == "node cli.mjs hook --host codex"));
+        let _ = std::fs::remove_dir_all(path.parent().unwrap());
+    }
+
+    #[test]
+    fn hook_config_rejects_foreign_hook_container_shapes_without_writing() {
+        for (name, original) in [
+            ("hooks_array", serde_json::json!({ "hooks": ["foreign"] })),
+            (
+                "event_object",
+                serde_json::json!({ "hooks": { "SessionStart": { "foreign": true } } }),
+            ),
+        ] {
+            let path = hook_config_test_path(name);
+            let original = serde_json::to_vec_pretty(&original).unwrap();
+            std::fs::write(&path, &original).unwrap();
+
+            let err = update_hook_config(&path, |root| {
+                wire_codex_session_start(root, "node cli.mjs hook --host codex");
+            })
+            .unwrap_err();
+            assert!(
+                err.contains("HOOK_CONFIG_SHAPE_INVALID"),
+                "unexpected error: {err}"
+            );
+            assert_eq!(std::fs::read(&path).unwrap(), original);
+            let _ = std::fs::remove_dir_all(path.parent().unwrap());
+        }
+    }
+
+    #[test]
+    fn hook_config_rejects_a_concurrent_edit() {
+        let path = hook_config_test_path("race");
+        std::fs::write(&path, b"{}").unwrap();
+        let concurrent = br#"{"changedBy":"another process"}"#;
+
+        let err = update_hook_config(&path, |root| {
+            root["ours"] = true.into();
+            std::fs::write(&path, concurrent).unwrap();
+        })
+        .unwrap_err();
+        assert!(
+            err.contains("HOOK_CONFIG_CHANGED"),
+            "unexpected error: {err}"
+        );
+        assert_eq!(std::fs::read(&path).unwrap(), concurrent);
+        let _ = std::fs::remove_dir_all(path.parent().unwrap());
+    }
+
+    #[test]
+    fn repeated_hook_config_install_is_idempotent() {
+        let path = hook_config_test_path("idempotent");
+        let install = |root: &mut serde_json::Value| {
+            wire_hook_event(root, "SessionStart", SS_CMD);
+            wire_hook_event(root, "Stop", STOP_CMD);
+        };
+        let (_, first_write) = update_hook_config(&path, install).unwrap();
+        let first = std::fs::read(&path).unwrap();
+        let (_, second_write) = update_hook_config(&path, install).unwrap();
+        assert!(first_write);
+        assert!(!second_write);
+        assert_eq!(std::fs::read(&path).unwrap(), first);
+        let _ = std::fs::remove_dir_all(path.parent().unwrap());
+    }
 
     #[test]
     fn recognizes_legacy_and_unified_hook_commands() {

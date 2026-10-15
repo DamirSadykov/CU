@@ -18,6 +18,7 @@ import {
   runRedGate,
   recoverMarkers,
 } from "./red-gate.mjs";
+import { runVerify } from "./run-step.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -97,6 +98,37 @@ describe("red-gate — the mechanics", () => {
       expect(readFileSync(path.join(dir, "src/fix.js")).equals(Buffer.from(CRLF_TEXT_FIXED))).toBe(true);
       expect(readFileSync(path.join(dir, "bin/data.bin")).equals(BINARY_WORKER)).toBe(true);
       expect(existsSync(markerDir(appDataDir, task.id))).toBe(false);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }, 20000);
+
+  it("runs the red command with the runner's own cargo target dir", async () => {
+    const dir = initRepo("cut-redgate-cargo-");
+    try {
+      write(dir, "src/fix.js", "base\n");
+      const base = commitAll(dir, "base");
+      write(dir, "src/fix.js", "worker fixed it\n");
+      write(dir, "test/regression.spec.js", "it('repros', () => {})\n");
+      const task = {
+        id: "task-cargo",
+        number: 3,
+        red: `"${process.execPath}" -e "console.log(process.env.CARGO_TARGET_DIR); process.exit(1)"`,
+        step_base: base,
+        red_tests: ["test/regression.spec.js"],
+        produces: ["src/fix.js"],
+      };
+      const seen = {};
+      const { CARGO_TARGET_DIR: _dropped, ...env } = process.env;
+      const runCmd = async (opts) => {
+        const r = await runVerify({ ...opts, env });
+        seen.stdout = r.stdout;
+        return r;
+      };
+      const appDataDir = appDataDirFor(dir);
+      const result = await runRedGate({ task, cwd: dir, timeoutMs: 5000, appDataDir, runCmd });
+      expect(result.ok).toBe(true);
+      expect(seen.stdout.trim()).toBe(path.join(dir, "src-tauri", "target-runner"));
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

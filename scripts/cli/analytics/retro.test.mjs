@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { buildDutyPrompt, DUTIES, STARTER_DUTIES } from "../agents/agents.mjs";
-import { buildRetroPrompt, parseRetroOutput, runRetro, runRetroSession } from "./retro.mjs";
+import { buildRetroPrompt, parseRetroOutput, retroStatusPath, runRetro, runRetroSession } from "./retro.mjs";
 
 const change = { id: "change-3", number: 3, title: "Проверить процесс" };
 const facts = {
@@ -103,6 +103,8 @@ describe("runRetro", () => {
   function rig(answer) {
     const board = { changes: [{ ...change, ext: { retro: { proposals: [{ id: "old", status: "accepted" }] } } }] };
     const reports = [];
+    const statuses = [];
+    const removedStatuses = [];
     const saves = [];
     let locks = 0;
     const options = {
@@ -117,8 +119,11 @@ describe("runRetro", () => {
       lock: (_file, fn) => { locks += 1; return fn(); },
       save: (_file, data) => saves.push(structuredClone(data)),
       writeReport: (file, text) => reports.push({ file, text }),
+      writeStatus: (file, text) => statuses.push({ file, value: JSON.parse(text) }),
+      removeStatus: (file) => removedStatuses.push(file),
+      now: () => new Date("2026-10-13T09:10:11.000Z"),
     };
-    return { board, reports, saves, options, locks: () => locks };
+    return { board, reports, statuses, removedStatuses, saves, options, locks: () => locks };
   }
 
   it("stores brief episodes and measure passports with proposed records", () => {
@@ -130,6 +135,11 @@ describe("runRetro", () => {
       status: "proposed",
     }] });
     expect(test.reports).toEqual([{ file: expect.stringMatching(/retro[\\/]c3-report\.md$/), text: expect.stringContaining("# Ретро") }]);
+    expect(test.statuses).toEqual([{
+      file: expect.stringMatching(/retro[\\/]c3-status\.json$/),
+      value: { status: "started", pid: process.pid, at: "2026-10-13T09:10:11.000Z" },
+    }]);
+    expect(test.removedStatuses).toEqual([expect.stringMatching(/retro[\\/]c3-status\.json$/)]);
     expect(test.locks()).toBe(1);
     expect(test.saves).toHaveLength(1);
     expect(test.board.changes[0].ext.retro.proposals).toEqual([
@@ -164,6 +174,47 @@ describe("runRetro", () => {
     expect(test.locks()).toBe(0);
     expect(test.saves).toEqual([]);
     expect(test.board.changes[0].ext.retro.proposals).toEqual([{ id: "old", status: "accepted" }]);
+  });
+
+  it.each([
+    ["agent failure", { ok: false, error: "provider exited 1", failureReason: "agent" }],
+    ["agent timeout", { ok: false, error: "spawnSync ETIMEDOUT", failureReason: "timeout" }],
+  ])("writes a diagnostic report and clears the started marker after %s", (_label, answer) => {
+    const test = rig(envelope());
+    test.options.invoke = () => answer;
+
+    expect(() => runRetro("c#3", test.options)).toThrow(/diagnostic report saved/);
+    expect(test.reports).toEqual([{
+      file: expect.stringMatching(/retro[\\/]c3-report\.md$/),
+      text: answer.error,
+    }]);
+    expect(test.statuses).toHaveLength(1);
+    expect(test.removedStatuses).toHaveLength(1);
+    expect(test.saves).toEqual([]);
+  });
+
+  it("keeps the started marker when invoking the duty throws before a report exists", () => {
+    const test = rig(envelope());
+    test.options.invoke = () => { throw new Error("retro duty unavailable"); };
+
+    expect(() => runRetro("c#3", test.options)).toThrow("retro duty unavailable");
+    expect(test.statuses).toHaveLength(1);
+    expect(test.removedStatuses).toEqual([]);
+    expect(test.reports).toEqual([]);
+  });
+
+  it("records a skipped duty as a diagnostic report and clears its marker", () => {
+    const test = rig(envelope());
+    test.options.invoke = () => ({ skipped: true, ok: true, text: "" });
+
+    expect(runRetro("c#3", test.options)).toMatchObject({ parsed: false, proposals: [] });
+    expect(test.reports[0].text).toBe("retro agent returned no output");
+    expect(test.removedStatuses).toHaveLength(1);
+    expect(test.saves).toEqual([]);
+  });
+
+  it("uses the public c<N> status path", () => {
+    expect(retroStatusPath(80, "C:/roaming")).toMatch(/retro[\\/]c80-status\.json$/);
   });
 
   it("writes a one-session report but never returns proposals for the board", () => {

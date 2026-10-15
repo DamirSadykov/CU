@@ -20,7 +20,18 @@ export function gitHead(cwd) {
 
 export const UNTRACKED_SNAPSHOT_LIMIT = 2000;
 
-export function snapshotTree(cwd, { requireComplete = false } = {}) {
+const declaredKey = (p) => normalizePath(p).replace(/\/+$/, "").toLowerCase();
+
+export function untrackedProduces(untracked, produces) {
+  const declared = (Array.isArray(produces) ? produces : []).map(declaredKey).filter(Boolean);
+  if (!declared.length) return [];
+  return untracked.filter((file) => {
+    const key = normalizePath(file).toLowerCase();
+    return declared.some((d) => key === d || key.startsWith(d + "/"));
+  });
+}
+
+export function snapshotTree(cwd, { requireComplete = false, produces = null } = {}) {
   let indexRel;
   try {
     indexRel = execFileSync("git", ["rev-parse", "--git-path", "index"], {
@@ -39,15 +50,16 @@ export function snapshotTree(cwd, { requireComplete = false } = {}) {
     if (!err || err.code !== "ENOENT") return { ok: false, error: String((err && err.message) || err) };
   }
   const env = { ...process.env, GIT_INDEX_FILE: tmpIndex };
-  let untracked = 0;
+  let untrackedFiles = [];
   try {
-    untracked = execFileSync("git", ["ls-files", "--others", "--exclude-standard", "-z"], {
+    untrackedFiles = execFileSync("git", ["ls-files", "--others", "--exclude-standard", "-z"], {
       cwd,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
       maxBuffer: 256 * 1024 * 1024,
-    }).split("\0").filter(Boolean).length;
+    }).split("\0").filter(Boolean);
   } catch {}
+  const untracked = untrackedFiles.length;
   const trackedOnly = untracked > UNTRACKED_SNAPSHOT_LIMIT;
   // A checkpoint may deliberately omit a very large untracked set, but that
   // truncated view can never prove that a failed model attempt had no side
@@ -70,6 +82,15 @@ export function snapshotTree(cwd, { requireComplete = false } = {}) {
   }
   try {
     execFileSync("git", ["add", trackedOnly ? "-u" : "-A"], { cwd, env, stdio: ["ignore", "pipe", "pipe"] });
+    const declaredUntracked = trackedOnly ? untrackedProduces(untrackedFiles, produces) : [];
+    if (declaredUntracked.length) {
+      execFileSync("git", ["add", "--pathspec-from-file=-", "--pathspec-file-nul", "--"], {
+        cwd,
+        env,
+        input: declaredUntracked.join("\0"),
+        stdio: ["pipe", "pipe", "pipe"],
+      });
+    }
     const tree = execFileSync("git", ["write-tree"], {
       cwd,
       env,
@@ -82,7 +103,7 @@ export function snapshotTree(cwd, { requireComplete = false } = {}) {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
     }).trim();
-    return { ok: true, sha };
+    return { ok: true, sha, trackedOnly };
   } catch (err) {
     return { ok: false, error: String((err && err.message) || err) };
   } finally {
@@ -92,10 +113,10 @@ export function snapshotTree(cwd, { requireComplete = false } = {}) {
   }
 }
 
-export function gitBase(cwd) {
+export function gitBase(cwd, { produces = null } = {}) {
   const head = gitHead(cwd);
   if (!head.ok) return head;
-  const snap = snapshotTree(cwd);
+  const snap = snapshotTree(cwd, { produces });
   if (!snap.ok) return snap;
   try {
     const headTree = execFileSync("git", ["rev-parse", `${head.sha}^{tree}`], {

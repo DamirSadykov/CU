@@ -60,11 +60,11 @@ import {
   notifyTaskEvent,
 } from "../board/todos.mjs";
 import { checkGraph, splitFindings } from "./graph-rules.mjs";
-import { createChange, findChangeByTitle, changeAddress } from "../board/change.mjs";
+import { createChange, findChangeByTitle, changeAddress, CHANGE_REF, findChange } from "../board/change.mjs";
 import { parseYamlSubset } from "../kernel/yaml-subset.mjs";
 import { withBoardLock, withDataDir } from "../kernel/board-lock.mjs";
 import path from "node:path";
-import { flowLanguages, readSettings } from "../kernel/settings.mjs";
+import { flowLanguages, flowcheckExe as configuredFlowcheckExe } from "../kernel/settings.mjs";
 
 const USAGE =
   "usage: cli todos apply <file> [--go] [--force] [--json]\n" +
@@ -140,11 +140,36 @@ export function inferRedTests(red) {
   return [...new Set(found)];
 }
 
+export const CLI_LAYERS_VERIFY = "npx vitest run scripts/cli/kernel/layers.test.mjs";
+
+const isUnderCli = (file) => {
+  const normalized = String(file || "").trim().replace(/\\/g, "/").replace(/^\.\/+/, "").toLowerCase();
+  return normalized.startsWith("scripts/cli/") || normalized.includes("/scripts/cli/");
+};
+
+const RUNS_LAYERS_TEST = /vitest\s+run\b[^&|;]*layers\.test\.mjs/i;
+
+export function needsCliLayersVerify(step) {
+  return Boolean(
+    step?.verify && (step.produces || []).some(isUnderCli) && !RUNS_LAYERS_TEST.test(String(step.verify)),
+  );
+}
+
 export function inferDocument(doc) {
   const inferred = [];
   const steps = doc.steps.map((step) => {
     const next = { ...step, redTests: [...(step.redTests || [])] };
-    if (next.task) return next;
+    if (needsCliLayersVerify(next)) {
+      next.verify = `${next.verify} && ${CLI_LAYERS_VERIFY}`;
+      inferred.push({ step: next.id, field: "verify", value: next.verify });
+    }
+    if (next.task) {
+      if (!next.retry) {
+        next.retry = "2";
+        inferred.push({ step: next.id, field: "retry", value: "2" });
+      }
+      return next;
+    }
     if (!next.kind) {
       next.kind = next.verify ? "auto" : "manual";
       inferred.push({ step: next.id, field: "kind", value: next.kind });
@@ -405,7 +430,11 @@ function mergeChangeItems(existing, planned) {
 // steps sharing a phrase must not collapse onto one row, and a board that
 // already holds duplicates must not have them silently merged.
 function matchExisting(data, doc, project) {
-  const record = doc.change ? findChangeByTitle(data, doc.change, project) : null;
+  const record = doc.change
+    ? CHANGE_REF.test(doc.change)
+      ? findChange(data, doc.change)
+      : findChangeByTitle(data, doc.change, project)
+    : null;
   const children = record ? data.todos.filter((t) => t && t.change_id === record.id) : [];
   const board = data.todos.filter((t) => t && boardOf(t) === project);
   const byStep = new Map();
@@ -525,6 +554,19 @@ export function applyDocument(doc, { go = false, force = false, project, board, 
     };
 
   const { record: existingChange, byStep, adopted, renamed } = matchExisting(data, doc, project);
+  if (doc.change && CHANGE_REF.test(doc.change) && !existingChange)
+    return {
+      ok: false,
+      errors: [`no change ${doc.change.trim()} on the board — a \`change:\` address names an existing record; to open a new one write \`change: CHANGE: <что меняем>\``],
+      warnings,
+      plan: [],
+      notes: [],
+      log: [],
+      created: [],
+      root: null,
+      applied: false,
+      inferred: inferredResult.inferred,
+    };
   const plan = [];
   const say = (line) => plan.push(line);
 
@@ -713,7 +755,7 @@ export function applyDocument(doc, { go = false, force = false, project, board, 
         }
         if (s.priority) set(t, "priority", s.priority);
         if (s.verify) set(t, "verify", s.verify);
-        if (s.retry) {
+        if (s.retry && !(wasInferred(s.id, "retry") && t.retry_limit != null)) {
           const oldLimit = t.retry_limit;
           const newLimit = Number(s.retry);
           set(t, "retry", s.retry);
@@ -752,7 +794,7 @@ export function applyDocument(doc, { go = false, force = false, project, board, 
           if (typeof s.flow !== "string") {
             const rendered = renderPlanDiagram({
               flow: s.flow,
-              exe: flowcheckExe ?? readSettings().flowcheckExe ?? "",
+              exe: flowcheckExe ?? configuredFlowcheckExe(),
               cwd,
               runCmd: runFlowcheck,
             });

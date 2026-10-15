@@ -254,6 +254,9 @@ pub struct Todo {
     pub updated_at: String,
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
     pub ext: HashMap<String, Value>,
+    #[serde(default, flatten)]
+    #[schemars(skip)]
+    pub unknown: HashMap<String, Value>,
 }
 
 /// One entry of a todo's transition log: the status entered and when (RFC3339).
@@ -1147,6 +1150,9 @@ pub fn upsert(file: &mut TodoFile, mut todo: Todo, now: &str) {
             }
         }
         todo.ext = merged_ext;
+        let mut merged_unknown = existing.unknown.clone();
+        merged_unknown.extend(todo.unknown);
+        todo.unknown = merged_unknown;
         // Provenance is set once (by the CLI) and has no UI field, so a UI edit
         // that doesn't carry it must not erase it.
         if todo.from.is_none() {
@@ -2866,6 +2872,28 @@ mod tests {
     }
 
     #[test]
+    fn app_upsert_preserves_runner_attempts_missing_from_ui_snapshot() {
+        let mut file = TodoFile::default();
+        let mut stored = todo("a", "review");
+        stored.unknown.insert(
+            "attempts".to_string(),
+            serde_json::json!([{
+                "attempt": 1,
+                "reason": "verify",
+                "cost_usd": 0.25,
+                "verify": "issue",
+                "ended_at": "2026-10-13T12:00:00Z"
+            }]),
+        );
+        file.todos.push(stored);
+
+        let edited = todo("a", "review");
+        upsert(&mut file, edited, "T2");
+
+        assert_eq!(file.todos[0].unknown["attempts"][0]["reason"], "verify");
+    }
+
+    #[test]
     fn upsert_merges_ext_namespaces_from_an_outdated_ui_snapshot() {
         let mut file = TodoFile::default();
         let mut stored = todo("a", "queue");
@@ -4302,7 +4330,7 @@ mod tests {
     }
 
     #[test]
-    fn v2_unknown_field_fixtures_preserve_ext_and_drop_unknown_top_level_fields() {
+    fn v2_unknown_field_fixtures_preserve_ext_and_unknown_top_level_fields() {
         let (dir, path) = staged_fixture("v2-unknown-fixtures", "v2/unknown-field.json");
         let file = match load_checked(&path) {
             LoadOutcome::Ok(f) => f,
@@ -4316,8 +4344,8 @@ mod tests {
         save(&save_path, &file).unwrap();
         let raw = std::fs::read_to_string(&save_path).unwrap();
         assert!(
-            !raw.contains("reviewer_note"),
-            "unknown field must be dropped on write: {raw}"
+            raw.contains("reviewer_note"),
+            "unknown field must survive write: {raw}"
         );
         let saved: Value = serde_json::from_str(&raw).unwrap();
         assert_eq!(saved["version"], Value::from(CURRENT_VERSION));
@@ -4329,6 +4357,28 @@ mod tests {
         assert_eq!(saved["todos"][0]["number"], Value::from(50));
 
         std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn runner_attempts_survive_a_rust_round_trip() {
+        let path = std::env::temp_dir().join("cut_todos_runner_attempts_round_trip.json");
+        std::fs::write(
+            &path,
+            r#"{"version":3,"todos":[{"id":"a","number":7,"subject":"step","status":"review","attempts":[{"attempt":1,"reason":"verify","cost_usd":0.25,"verify":"issue","ended_at":"2026-10-13T12:00:00Z"}]}]}"#,
+        )
+        .unwrap();
+
+        let file = match load_checked(&path) {
+            LoadOutcome::Ok(f) => f,
+            other => panic!("attempt board: expected Ok, got {other:?}"),
+        };
+        assert_eq!(file.todos[0].unknown["attempts"][0]["reason"], "verify");
+        save(&path, &file).unwrap();
+        let saved: Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(saved["todos"][0]["attempts"][0]["cost_usd"], 0.25);
+        assert!(saved["todos"][0].get("unknown").is_none());
+
+        std::fs::remove_file(&path).ok();
     }
 
     #[test]

@@ -805,6 +805,7 @@ export function buildReviewPrompt({ task, workerResult = "", execution, appData,
     "Before it, list every finding exactly as `- [critical|high|medium|low] file:line — substance — evidence`.",
     "Levels: critical = the project does not build, data is lost/corrupted, or the function is unavailable; high = a step obligation is unmet or a visible regression; medium = the goal is only partly met or an edge case; low = style or a minor detail.",
     "Critical and high findings require both file:line and evidence (a concrete scenario); without either, label them medium. An obligation absent from the files is an issue.",
+    "Report out-of-scope defects too, but do not use them to reject this step: the runner classifies each finding by produces and this attempt's diff and files out-of-scope findings separately.",
   ].filter(Boolean).join("\n");
 }
 
@@ -1239,6 +1240,12 @@ export async function executeReview(options = {}) {
 // never assembled from anything else: no task subject, path, session id or
 // model output is ever concatenated into a command line. A caller that wants no
 // shell at all passes an argv array instead, which is spawned directly.
+export function verifyEnv(cwd, env) {
+  const base = env || process.env;
+  if (String(base.CARGO_TARGET_DIR || "").trim()) return base;
+  return { ...base, CARGO_TARGET_DIR: path.join(cwd || process.cwd(), "src-tauri", "target-runner") };
+}
+
 export async function runVerify({
   cmd,
   cwd,
@@ -1247,6 +1254,7 @@ export async function runVerify({
   env,
   onOutput,
 } = {}) {
+  env = verifyEnv(cwd, env);
   if (Array.isArray(cmd)) {
     const [file, ...args] = cmd.filter((x) => x != null).map(String);
     if (!file)

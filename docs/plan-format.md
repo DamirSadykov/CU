@@ -1,19 +1,25 @@
 # Plan graph format
 
-Write recordable YAML: one step is one task and one work session. Omitted
-runner-owned fields are inferred; explicit values win.
+Write recordable YAML: one task/work session per step. Omitted runner fields
+are inferred; explicit values win.
+
+## 0. When to write a plan
+
+Scout: locate files and size each step S/M/L. Any L step or open branch requires
+plan mode; use `<cli> todos apply` only for auto-runner work. Otherwise a plan
+is optional. Keep graphs current. Decide after scouting, not by edit count.
 
 ## 1. Field legend
 
 Document fields:
 
-`change` — creates or selects the change root; declare when the plan opens new tasks.
-`vision` — WHAT & WHY in 2–5 labelled blocks; declare when creating or revising a change.
-`out` — durable non-goals (`what`, `why`, optional `ref`); declare decided exclusions.
-`measure` — measures (`what`, `how`, optional `target`, `actual`, `ok`, `note`); declare observable outcomes.
-`parallel` — maximum simultaneous steps; declare only a justified group limit.
-`budget` — group spend ceiling; declare only a justified group limit.
-`steps` — graph nodes; declare whenever the plan records work.
+`change` — creates/selects the root; use when the plan opens tasks.
+`vision` — WHAT & WHY in 2–5 labelled blocks; use when creating/revising a change.
+`out` — decided non-goals (`what`, `why`, optional `ref`).
+`measure` — outcomes (`what`, `how`, optional `target`, `actual`, `ok`, `note`).
+`parallel` — justified group concurrency limit.
+`budget` — justified group spend ceiling.
+`steps` — graph nodes; required when the plan records work.
 
 Step fields:
 
@@ -32,8 +38,8 @@ Step fields:
 `flow` — method delta for configured source (`file`, `method`, `params`, `change`, `preserve`), or `n/a <reason>`; `nth` in `change` selects the 1-based anchor occurrence.
 `risk` — exceptional routing; declare only `high` or `sensitive`.
 
-`why` is the task's durable reasoning: what the step rests on and where its risk
-is. The guard's refusal explains invalid `out` and `measure` items.
+`why` is the task's durable reasoning: its basis and risk. A refusal explains
+invalid `out` and `measure` items.
 
 ## 2. Graph skeleton
 

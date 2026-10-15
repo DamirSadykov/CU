@@ -76,6 +76,8 @@ const V2_FIELDS = {
   review: { verdict: ["string"], findings: ["array"], fallback: ["array"], guard: ["string"] },
   attempt_snapshot: { attempt: ["number"], snapshot: ["string"] },
   verify: { log: ["string"] },
+  park: { attempts: ["array"] },
+  warning: { warning: ["string"], write: ["number"], retrying: ["boolean"], error: ["string"] },
   attempt_end: {
     task: ["string"],
     attempt: ["number"],
@@ -102,11 +104,13 @@ const ATTEMPT_END_REASON_SET = [
   "reconcile",
   "mechanics",
   "undecided",
+  "interrupted",
 ];
 
 const STEP_FIELDS = { task: ["string"], subject: ["string"], kind: ["string"], needs: ["array"] };
 
 const FINDING_FIELDS = { level: ["string"], file: ["string", "null"], line: ["number", "null"], text: ["string"], evidence: ["string", "null"] };
+const PARK_ATTEMPT_FIELDS = { attempt: ["number"], reason: ["string", "null"], cost_usd: ["number", "null"], verify: ["string", "null"], ended_at: ["string", "null"] };
 
 const typeOf = (value) => (value === null ? "null" : Array.isArray(value) ? "array" : typeof value);
 
@@ -139,6 +143,7 @@ function expectV2Event(event) {
     }
   }
   if (event.kind === "attempt_snapshot") expect(event.snapshot).toMatch(/^[0-9a-f]{40}$/);
+  if (event.kind === "park") for (const attempt of event.attempts) expectFields(attempt, PARK_ATTEMPT_FIELDS, "park.attempts[]");
   if (event.kind === "attempt_end") {
     expect(event.task).toMatch(/^t#\d+$/);
     expect(Number.isInteger(event.attempt) && event.attempt >= 1).toBe(true);
@@ -214,6 +219,24 @@ describe("worker_session contract", () => {
     rmSync(tmp, { recursive: true, force: true });
   });
 
+  it("emits a park with attempts for every stopped node in one wave", async () => {
+    const attempt = (reason) => ({ attempt: 1, reason, cost_usd: 0.1, verify: null, ended_at: "2026-10-13T12:00:00Z" });
+    const data = { version: 3, todos: [
+      { id: "root", number: 90, subject: "change", status: "queue", change: true, depends_on: ["a", "b"] },
+      { id: "a", number: 1, subject: "a", status: "queue", kind: "auto", verify: "test", attempts: [attempt("mechanics")] },
+      { id: "b", number: 2, subject: "b", status: "queue", kind: "auto", verify: "test", attempts: [attempt("mechanics")] },
+    ] };
+    const ctx = buildRunContext({ data, change: 90, dry: false, events: true, spent: 0, effects: { setStatus: async () => {} } });
+    for (const task of ctx.members) await applyResult(ctx, {
+      task, kind: "mechanics", attempt: 1, limit: 1, cost: 0.1, reason: `crashed ${task.number}`, endReason: "mechanics",
+    }, { dry: false, log: () => {} });
+
+    const file = path.join(tmp, "com.cu.app", "run-events.jsonl");
+    const parks = readFileSync(file, "utf8").trim().split("\n").map(JSON.parse).filter((event) => event.kind === "park");
+    expect(parks.map((event) => event.task)).toEqual(["t#1", "t#2"]);
+    expect(parks.map((event) => event.attempts[0].reason)).toEqual(["mechanics", "mechanics"]);
+  });
+
   async function emitRun() {
     const work = path.join(tmp, "work");
     mkdirSync(work, { recursive: true });
@@ -230,7 +253,7 @@ describe("worker_session contract", () => {
       todos: [
         root,
         { id: "id-1", number: 1, subject: "claude step", status: "queue", kind: "auto", verify: "npm test", retry_limit: 2 },
-        { id: "id-2", number: 2, subject: "codex step", status: "queue", kind: "auto", verify: "npm test", retry_limit: 2 },
+        { id: "id-2", number: 2, subject: "codex step", status: "queue", kind: "auto", verify: "npm test", retry_limit: 2, produces: ["src/b.ts"] },
         { id: "id-3", number: 3, subject: "manual check", status: "queue", kind: "manual", depends_on: ["id-1", "id-2"] },
       ],
     };
@@ -356,12 +379,12 @@ describe("worker_session contract", () => {
       ["t#1", 1, "approve"], ["t#2", 1, "issue"], ["t#2", 2, "approve"],
     ]);
     expect(reviews[0].findings).toEqual([
-      { level: "medium", file: "src/app.ts", line: 12, text: "absolute path inside the repository", evidence: "a reload drops the filter" },
-      { level: "low", file: "src/util.ts", line: 3, text: "dot-relative path", evidence: null },
-      { level: "low", file: null, line: null, text: "path outside the repository", evidence: null },
+      { level: "medium", file: "src/app.ts", line: 12, text: "absolute path inside the repository", evidence: "a reload drops the filter", scope: "out" },
+      { level: "low", file: "src/util.ts", line: 3, text: "dot-relative path", evidence: null, scope: "out" },
+      { level: "low", file: null, line: null, text: "path outside the repository", evidence: null, scope: "out" },
     ]);
     expect(reviews[1].findings).toEqual([
-      { level: "high", file: "src/b.ts", line: 7, text: "the obligation is unmet", evidence: "saving twice keeps the stale row" },
+      { level: "high", file: "src/b.ts", line: 7, text: "the obligation is unmet", evidence: "saving twice keeps the stale row", scope: "in" },
     ]);
     const verifies = events.filter((event) => event.kind === "verify");
     expect(verifies.map((event) => [event.task, event.attempt, event.ok])).toEqual([["t#1", 1, true], ["t#2", 2, false]]);
@@ -387,6 +410,12 @@ describe("worker_session contract", () => {
     expect(at("verify", 2)).toBeLessThan(events.indexOf(ends[1]));
     expect(events.indexOf(ends[1]) + 1).toBe(events.findIndex((event) => event.kind === "park"));
     expect(formatRunEvent(ends[0])).toBe(`c#98 t#2 attempt 1/2: attempt end retry (review) — ${ends[0].detail}`);
+    const parked = events.find((event) => event.kind === "park" && event.task === "t#2");
+    expect(parked.attempts).toEqual([
+      expect.objectContaining({ attempt: 1, reason: "review", cost_usd: 0.002, verify: null }),
+      expect.objectContaining({ attempt: 2, reason: "verify", cost_usd: 0.002, verify: "issue" }),
+    ]);
+    parked.attempts.forEach((attempt) => expect(attempt.ended_at).toMatch(/^\d{4}-\d{2}-\d{2}T/));
   });
 
   it("documents exactly the reasons the runner can emit", () => {
@@ -480,6 +509,10 @@ describe("worker_session contract", () => {
     const lines = events.map((event, i) => {
       const out = {};
       for (const [key, value] of Object.entries(event)) out[key] = key === "change" || key === "task" || key === "kind" ? value : clean(value);
+      if (event.kind === "park") out.attempts = out.attempts.map((attempt, j) => ({
+        ...attempt,
+        ended_at: new Date(Date.UTC(2026, 9, 12, 9, 59, j)).toISOString(),
+      }));
       out.ts = new Date(Date.UTC(2026, 9, 12, 10, 0, i)).toISOString();
       return JSON.stringify(out);
     });
@@ -494,7 +527,7 @@ describe("worker_session contract", () => {
     writeFileSync(FIXTURE, `${lines.join("\n")}\n`);
     const fixture = readFileSync(FIXTURE, "utf8");
     expect(fixture).not.toContain(path.basename(tmp));
-    for (const marker of ['"attempt_snapshot"', '"base"', '"findings"', '"steps"', '"parallel"', '"log"', '"attempt_end"']) expect(fixture).toContain(marker);
+    for (const marker of ['"attempt_snapshot"', '"base"', '"findings"', '"steps"', '"parallel"', '"log"', '"attempt_end"', '"attempts"']) expect(fixture).toContain(marker);
   });
 });
 
@@ -549,8 +582,14 @@ describe("attempt_end causes", () => {
         ownChanges: async () => ({ ok: true, own: [], outside: [], damaged: current().damaged || [] }),
         reviewContext: async () => null,
         reviewStep: async () => ({ approved: true, ok: true, findings: [] }),
-        runVerify: async () => ({ code: 0, stdout: "ok\n", stderr: "" }),
-        reconcile: async () => current().reconcile || { outcome: "ok", outcome_reason: "ok" },
+        runVerify: async () => {
+          if (current().verifyThrows) throw new Error(current().verifyThrows);
+          return { code: 0, stdout: "ok\n", stderr: "" };
+        },
+        reconcile: async () => {
+          if (current().reconcileThrows) throw new Error(current().reconcileThrows);
+          return current().reconcile || { outcome: "ok", outcome_reason: "ok" };
+        },
       },
     });
     const events = readFileSync(path.join(tmp, "com.cu.app", "run-events.jsonl"), "utf8").trim().split("\n").map((line) => JSON.parse(line));
@@ -590,6 +629,16 @@ describe("attempt_end causes", () => {
     expect(crashed.ends[0].detail).toBe(`step failed: ${"x".repeat(5000)}`.slice(0, 2000));
   });
 
+  it.each([
+    ["verify", { verifyThrows: "verify boom" }, /runVerify crashed: verify boom/],
+    ["reconcile", { reconcileThrows: "reconcile boom" }, /reconcile crashed: reconcile boom/],
+  ])("parks and closes the run event stream when %s throws", async (_phase, attempt, reason) => {
+    const { report, events, ends } = await runWith({ retryLimit: 1, attempts: [attempt] });
+    expect(report.stop).toMatchObject({ kind: "mechanics", reason: expect.stringMatching(reason) });
+    expect(ends).toEqual([expect.objectContaining({ outcome: "park", reason: "mechanics" })]);
+    expect(events.at(-1)).toMatchObject({ kind: "run_end", complete: false, stop: "mechanics" });
+  });
+
   it("emits nothing for an accepted attempt", async () => {
     const { ends, report } = await runWith({ attempts: [{}] });
     expect(report.complete).toBe(true);
@@ -627,11 +676,11 @@ describe("finding paths", () => {
       { level: "low", file: null, line: 9, text: "no file", evidence: null },
       { level: "low", file: path.join(path.dirname(root), "x.ts"), line: 2, text: "outside" },
     ], root)).toEqual([
-      { level: "high", file: "src/a.ts", line: 4, text: "t", evidence: "e" },
-      { level: "medium", file: null, line: null, text: "no line", evidence: null },
-      { level: "medium", file: null, line: null, text: "zero line", evidence: null },
-      { level: "low", file: null, line: null, text: "no file", evidence: null },
-      { level: "low", file: null, line: null, text: "outside", evidence: null },
+      { level: "high", file: "src/a.ts", line: 4, text: "t", evidence: "e", scope: "out" },
+      { level: "medium", file: null, line: null, text: "no line", evidence: null, scope: "out" },
+      { level: "medium", file: null, line: null, text: "zero line", evidence: null, scope: "out" },
+      { level: "low", file: null, line: null, text: "no file", evidence: null, scope: "out" },
+      { level: "low", file: null, line: null, text: "outside", evidence: null, scope: "out" },
     ]);
   });
 });

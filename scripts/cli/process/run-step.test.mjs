@@ -616,6 +616,19 @@ describe("runVerify", () => {
     expect(r.stdout).toContain("2 failing");
   });
 
+  it("points cargo at its own target dir so a live dev build does not lock the check", async () => {
+    const { CARGO_TARGET_DIR: _dropped, ...env } = process.env;
+    const r = await runVerify({ cmd: [process.execPath, "-e", "console.log(process.env.CARGO_TARGET_DIR)"], cwd: tmp, env });
+    expect(r.code).toBe(0);
+    expect(r.stdout.trim()).toBe(path.join(tmp, "src-tauri", "target-runner"));
+  });
+
+  it("keeps a CARGO_TARGET_DIR the caller already set", async () => {
+    const env = { ...process.env, CARGO_TARGET_DIR: "D:/elsewhere" };
+    const r = await runVerify({ cmd: [process.execPath, "-e", "console.log(process.env.CARGO_TARGET_DIR)"], cwd: tmp, env });
+    expect(r.stdout.trim()).toBe("D:/elsewhere");
+  });
+
   it("refuses an empty command instead of reporting a pass", async () => {
     const r = await runVerify({ cmd: "  ", cwd: tmp });
     expect(r.code).not.toBe(0);
@@ -1039,6 +1052,12 @@ describe("clampOutput / parseClaudeResult", () => {
     expect(parseReviewVerdict("finding\nVERDICT: issue")).toEqual({ approved: false, verdict: "issue", findings: [{ level: "high", file: null, line: null, text: "finding", evidence: null }] });
     expect(parseReviewVerdict("looks good but omitted the contract line"))
       .toEqual({ approved: false, verdict: "issue", findings: [{ level: "high", file: null, line: null, text: "looks good but omitted the contract line", evidence: null }] });
+  });
+
+  it("tells review to report out-of-scope defects without rejecting the step", () => {
+    const prompt = buildReviewPrompt({ task: { number: 7, subject: "scope", produces: ["src/a.mjs"], verify: "npm test" } });
+    expect(prompt).toContain("Report out-of-scope defects too");
+    expect(prompt).toContain("do not use them to reject this step");
   });
 
   it("parses structured findings and downgrades unsupported critical/high findings", () => {

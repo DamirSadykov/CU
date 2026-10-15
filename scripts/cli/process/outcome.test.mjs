@@ -23,6 +23,8 @@ import {
   pathMatches,
   isPathLike,
   stepChanges,
+  latestInProgressAt,
+  reconcileTodo,
 } from "./outcome.mjs";
 import { loadBoard } from "../board/todos.mjs";
 
@@ -137,6 +139,14 @@ describe("path matching", () => {
   it("matches a repo-relative declaration against an absolute Windows path", () => {
     expect(pathMatches("scripts/cli/process/outcome.mjs", "D:/p/scripts/cli/process/outcome.mjs")).toBe(true);
     expect(pathMatches("scripts/cli/process/outcome.mjs", "D:/p/scripts/cli/process/outcome.test.mjs")).toBe(false);
+  });
+
+  it("t#1129: a declared directory matches a file written under it, trailing slash or not", () => {
+    expect(pathMatches("src-tauri/tests/fixtures/projects", "D:/p/src-tauri/tests/fixtures/projects/a.json")).toBe(true);
+    expect(pathMatches("pristine/exec-ledger/", "pristine/exec-ledger/run-1/ledger.json")).toBe(true);
+    expect(pathMatches("pristine/exec-ledger/", "D:/p/pristine/exec-ledger/ledger.json")).toBe(true);
+    expect(pathMatches("src-tauri/tests/fixtures/projects", "D:/p/src-tauri/tests/fixtures/projects-old/a.json")).toBe(false);
+    expect(pathMatches("src-tauri/tests/fixtures/projects", "D:/p/src-tauri/tests/fixtures/a.json")).toBe(false);
   });
 
   it("tells a path-shaped declaration from a prose one", () => {
@@ -382,6 +392,64 @@ describe("outcome --write (end to end)", () => {
     expect(stderr).toContain("is newer than this writer");
     expect(readFileSync(file).equals(before)).toBe(true);
     expect(readdirSync(path.dirname(file)).some((f) => f.includes(".corrupt-"))).toBe(false);
+  });
+
+  it("uses the current git delta when a manual task has no runner step_base", () => {
+    const repo = path.join(dir, "repo");
+    mkdirSync(repo);
+    execFileSync("git", ["init"], { cwd: repo, stdio: "pipe" });
+    execFileSync("git", ["config", "user.email", "test@example.com"], { cwd: repo, stdio: "pipe" });
+    execFileSync("git", ["config", "user.name", "Test"], { cwd: repo, stdio: "pipe" });
+    const produced = path.join(repo, "src", "greet.mjs");
+    mkdirSync(path.dirname(produced), { recursive: true });
+    writeFileSync(produced, "export const greeting = 'before';\n");
+    execFileSync("git", ["add", "."], { cwd: repo, stdio: "pipe" });
+    execFileSync("git", ["commit", "-m", "base"], { cwd: repo, stdio: "pipe" });
+    const started = new Date(Date.now() - 1_000).toISOString();
+    writeFileSync(produced, "export const greeting = 'after';\n");
+    const manual = todo(1, {
+      produces: ["src/greet.mjs"],
+      status_history: [{ status: "in_progress", at: started }],
+    });
+    expect([...stepChanges(manual, repo)]).toContain("src/greet.mjs");
+  });
+
+  it("does not attribute repository dirt to a manual row without an in_progress boundary", () => {
+    const manual = todo(1, { produces: ["scripts/cli/process/outcome.mjs"] });
+    expect(stepChanges(manual, process.cwd())).toBeNull();
+  });
+
+  it("counts a produces file newer than in_progress without a runner attempt", () => {
+    const cwd = path.join(dir, "manual");
+    mkdirSync(cwd);
+    writeFileSync(path.join(cwd, "output.txt"), "manual result\n");
+    const started = new Date(Date.now() - 60_000).toISOString();
+    const manual = todo(1, {
+      produces: ["output.txt"],
+      status_history: [{ status: "in_progress", at: started }],
+    });
+    const data = { version: 2, todos: [manual] };
+    const report = reconcileTodo({
+      file,
+      data,
+      todo: manual,
+      cwd,
+      now: new Date(Date.now() + 60_000).toISOString(),
+    }).report;
+    expect(report.produces[0]).toMatchObject({ produced: true, evidence: "mtime" });
+    expect(report.outcome).toBe("ok");
+  });
+});
+
+describe("latestInProgressAt", () => {
+  it("returns the latest valid transition into the current work cycle", () => {
+    expect(latestInProgressAt({
+      status_history: [
+        { status: "in_progress", at: "2026-01-01T10:00:00.000Z" },
+        { status: "review", at: "2026-01-01T11:00:00.000Z" },
+        { status: "in_progress", at: "2026-01-01T12:00:00.000Z" },
+      ],
+    })).toBe("2026-01-01T12:00:00.000Z");
   });
 });
 

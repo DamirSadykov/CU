@@ -23,6 +23,7 @@ import { readFileSync } from "node:fs";
 import { boardPath, loadBoard, isDone, isChangeRoot } from "../board/todos.mjs";
 import { collectChange } from "./run.mjs";
 import { checkGraph, splitFindings } from "./graph-rules.mjs";
+import { CLI_LAYERS_VERIFY, needsCliLayersVerify } from "./apply.mjs";
 import { flowLanguages } from "../kernel/settings.mjs";
 
 const USAGE =
@@ -145,7 +146,18 @@ export function scopeOf(data, change) {
 export function lint(data, change) {
   const scope = scopeOf(data, change);
   const project = path.basename(process.cwd().replace(/[\\/]+$/, ""));
-  const findings = checkGraph(boardGraph(data, scope.tasks, flowLanguages(project)));
+  const graph = boardGraph(data, scope.tasks, flowLanguages(project));
+  const findings = checkGraph(graph);
+  for (const node of graph.nodes) {
+    if (node.closed || !needsCliLayersVerify(node)) continue;
+    findings.push({
+      rule: "scripts-cli-without-layers-verify",
+      severity: "warning",
+      node: node.id,
+      label: node.label,
+      message: `${node.label}: produces under scripts/cli/ but verify does not include ${CLI_LAYERS_VERIFY}`,
+    });
+  }
   return { scope, findings, ...splitFindings(findings) };
 }
 

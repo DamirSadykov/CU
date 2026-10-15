@@ -135,6 +135,19 @@ describe("todos lint checks the recorded graph", () => {
     expect(out).toMatch(/#1: auto with no verify runs as a GATE/);
   });
 
+  it("warns when a scripts/cli step's verify omits the layers test", () => {
+    board(task(1, { produces: ["scripts\\cli\\process\\apply.mjs"], verify: "npm test" }));
+    const { code, out } = lint();
+    expect(code).toBe(0);
+    expect(out).toMatch(/#1: produces under scripts\/cli\/ but verify does not include .*layers\.test\.mjs/);
+
+    board(task(1, {
+      produces: ["scripts/cli/process/apply.mjs"],
+      verify: "npm test && npx vitest run scripts/cli/kernel/layers.test.mjs",
+    }));
+    expect(lint().out).toMatch(/nothing violates/);
+  });
+
   it("warns when a broad promise includes an existing file over 1500 lines", () => {
     const large = path.join(dir, "large.mjs");
     writeFileSync(large, Array.from({ length: 1501 }, () => "x").join("\n"));
