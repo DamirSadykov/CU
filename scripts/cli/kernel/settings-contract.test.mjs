@@ -18,6 +18,7 @@ import {
   taskContextPriority,
   taskContextMinRank,
   taskHandoffGuard,
+  runnerEnabled,
   uiLocale,
   workflowContextEnabled,
 } from "./settings.mjs";
@@ -38,6 +39,7 @@ describe("CLI settings contract", () => {
       expect(taskContextMinRank(appData)).toBe(2);
       expect(hookContextEnabled(appData)).toBe(defaults.get("hookContextEnabled"));
       expect(workflowContextEnabled(appData)).toBe(defaults.get("workflowContextEnabled"));
+      expect(runnerEnabled(appData)).toBe(defaults.get("runnerEnabled"));
       expect(taskHandoffGuard(appData)).toBe(defaults.get("taskHandoffGuard"));
       expect(specDeltaGuard(appData)).toBe(defaults.get("specs").deltaGuard);
       expect(specsEnabled(appData)).toBe(defaults.get("specs").enabled);
@@ -55,6 +57,8 @@ describe("CLI settings contract", () => {
       expect(parkedStepExpiryHours(appData)).toBe(0);
       writeFileSync(path.join(dir, "settings.json"), JSON.stringify({ parkedStepExpiryHours: -1 }));
       expect(parkedStepExpiryHours(appData)).toBe(24);
+      writeFileSync(path.join(dir, "settings.json"), JSON.stringify({ runnerEnabled: false }));
+      expect(runnerEnabled(appData)).toBe(false);
 
       writeFileSync(path.join(dir, "settings.json"), JSON.stringify({ specs: { enabled: true, deltaGuard: "off" } }));
       expect(specsEnabled(appData)).toBe(true);

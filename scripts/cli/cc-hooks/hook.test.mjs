@@ -407,6 +407,17 @@ describe("cli.mjs hook (stdin payload)", () => {
     expect(out).toContain("Auto runner — `<cli> todos run <c#N> --go`, its own background process, NOT this session");
   });
 
+  it("drops the runner from the workflow when the work mode turns it off", () => {
+    setup({ workflowContextEnabled: true, runnerEnabled: false });
+    const out = runHook();
+    expect(out).toContain("──────── WORKFLOW · this session");
+    expect(out).not.toContain("todos run <c#N> --go");
+    expect(out).not.toContain("todos apply");
+    expect(out).toContain("Auto runner — off in the tracker's work mode");
+    const resumeOut = runHook(undefined, "resume");
+    expect(resumeOut).toContain("runner: off");
+  });
+
   it("injects host-correct workflow text for Codex", () => {
     setup({ workflowContextEnabled: true });
     const out = runHook("codex");

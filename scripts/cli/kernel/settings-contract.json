@@ -49,6 +49,7 @@
     { "key": "taskContextPriority", "scope": "shared", "writer": "app", "readers": ["ui", "cli"], "default": "medium", "direct": true },
     { "key": "hookContextEnabled", "scope": "shared", "writer": "app", "readers": ["ui", "cli"], "default": true, "direct": true },
     { "key": "workflowContextEnabled", "scope": "shared", "writer": "app", "readers": ["ui", "cli"], "default": false, "direct": true },
+    { "key": "runnerEnabled", "scope": "shared", "writer": "app", "readers": ["ui", "cli"], "default": true, "direct": true },
     { "key": "taskHandoffGuard", "scope": "shared", "writer": "app", "readers": ["ui", "cli"], "default": "both", "direct": true },
     { "key": "specRoot", "scope": "shared", "writer": "manual", "readers": ["rust", "cli"], "default": "docs/specs" },
     { "key": "matchPlanCli", "scope": "hook", "writer": "manual", "readers": ["cli"], "default": "" },

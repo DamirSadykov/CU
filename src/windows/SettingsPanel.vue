@@ -15,6 +15,7 @@ import { useUpdater } from "../kernel/updater";
 import { INSIGHT_KINDS } from "../analytics/insightKinds";
 import { modelFamilyClass } from "../analytics/modelFamily";
 import CuSeg from "../kernel/ui/CuSeg.vue";
+import { WORK_MODES, deriveWorkMode, workModeChanges, type WorkMode } from "../kernel/workMode";
 import type { CuSegOption } from "../kernel/ui/types";
 import {
   applyTheme,
@@ -663,6 +664,7 @@ onMounted(loadTaskCtxPrio);
 // Same store-write pattern as ignoredInsights above.
 const hookContextEnabled = ref(true);
 const workflowContextEnabled = ref(false);
+const runnerEnabled = ref(true);
 
 async function loadHookContext() {
   try {
@@ -672,6 +674,8 @@ async function loadHookContext() {
     if (typeof v === "boolean") hookContextEnabled.value = v;
     const workflow = await store.get<boolean>("workflowContextEnabled");
     if (typeof workflow === "boolean") workflowContextEnabled.value = workflow;
+    const runner = await store.get<boolean>("runnerEnabled");
+    if (typeof runner === "boolean") runnerEnabled.value = runner;
   } catch {}
 }
 
@@ -693,7 +697,45 @@ async function toggleWorkflowContext() {
   } catch {}
 }
 
+async function toggleRunner() {
+  runnerEnabled.value = !runnerEnabled.value;
+  try {
+    const store = await loadSettingsStoreForWrite();
+    await store.set("runnerEnabled", runnerEnabled.value);
+    await store.save();
+  } catch {}
+}
+
 onMounted(loadHookContext);
+
+const currentWorkMode = computed(() => deriveWorkMode({
+  hookContextEnabled: hookContextEnabled.value,
+  workflowContextEnabled: workflowContextEnabled.value,
+  runnerEnabled: runnerEnabled.value,
+  architectMode: dutyState("architect").mode,
+  reviewMode: dutyState("review").mode,
+}));
+const taskDetailsOpen = ref(false);
+const workModeNeedsHooks = computed(() => currentWorkMode.value !== "tracking" && !!ccHookStatus.value && !ccHookStatus.value.installed);
+
+async function applyWorkMode(mode: WorkMode) {
+  const changes = workModeChanges(mode);
+  if (changes.hookContextEnabled !== undefined) hookContextEnabled.value = changes.hookContextEnabled;
+  if (changes.workflowContextEnabled !== undefined) workflowContextEnabled.value = changes.workflowContextEnabled;
+  if (changes.runnerEnabled !== undefined) runnerEnabled.value = changes.runnerEnabled;
+  for (const p of agentProfiles.value) {
+    if (p.duty === "architect" && changes.architectMode) p.mode = changes.architectMode;
+    if (p.duty === "review" && changes.reviewMode) p.mode = changes.reviewMode;
+  }
+  try {
+    const store = await loadSettingsStoreForWrite();
+    await store.set("hookContextEnabled", hookContextEnabled.value);
+    await store.set("workflowContextEnabled", workflowContextEnabled.value);
+    await store.set("runnerEnabled", runnerEnabled.value);
+    await store.save();
+  } catch {}
+  if (changes.architectMode || changes.reviewMode) await saveAgentProfiles();
+}
 
 // --- Spec registry channel (t#361) ---
 // Master switch for the spec registry's part in the AUTOMATIC workflow: the
@@ -1710,6 +1752,33 @@ function handleSave() {
       <!-- ===== Tasks ===== -->
       <template v-if="tab === 'tasks'">
       <div class="card">
+        <div class="field-label">{{ t('workModeTitle') }}</div>
+        <div class="field-hint" style="margin-top: 0; margin-bottom: 10px">{{ t('workModeDesc') }}</div>
+        <div class="work-modes">
+          <button
+            v-for="m in WORK_MODES"
+            :key="m"
+            type="button"
+            class="work-mode"
+            :class="{ active: currentWorkMode === m }"
+            @click="applyWorkMode(m)"
+          >
+            <span class="work-mode-name">{{ t(`workMode_${m}`) }}</span>
+            <span class="work-mode-desc">{{ t(`workModeDesc_${m}`) }}</span>
+          </button>
+        </div>
+        <div v-if="currentWorkMode === 'custom'" class="field-hint">{{ t('workModeCustom') }}</div>
+        <div v-if="workModeNeedsHooks" class="budget-suggest">
+          <span class="field-hint" style="margin: 0; color: var(--warn)">{{ t('workModeNeedsHooks') }}</span>
+          <button type="button" class="suggest-btn" :disabled="installCcBusy" @click="doInstallCcHook">{{ t('installCcHookBtn') }}</button>
+        </div>
+        <button type="button" class="cu-btn sm ghost work-mode-details" @click="taskDetailsOpen = !taskDetailsOpen">
+          {{ taskDetailsOpen || currentWorkMode === 'custom' ? t('workModeDetailsHide') : t('workModeDetailsShow') }}
+        </button>
+      </div>
+
+      <template v-if="taskDetailsOpen || currentWorkMode === 'custom'">
+      <div class="card">
         <div class="card-row" style="align-items: center">
           <div style="flex: 1; min-width: 0">
             <div class="card-title">{{ t('agentProfilesTitle') }}</div>
@@ -1804,6 +1873,20 @@ function handleSave() {
         </div>
       </div>
 
+      <div
+        class="card toggle-card"
+        :class="{ disabled: !hookContextEnabled || !workflowContextEnabled }"
+        @click="hookContextEnabled && workflowContextEnabled && toggleRunner()"
+      >
+        <div style="flex: 1; min-width: 0">
+          <div class="card-title" style="font-size: 13px">{{ t('runnerSetting') }}</div>
+          <div class="card-sub">{{ t('runnerSettingDesc') }}</div>
+        </div>
+        <div class="toggle" :class="{ on: runnerEnabled }">
+          <div class="toggle-knob"></div>
+        </div>
+      </div>
+
       <!-- Master switch: does a change carry the spec registry (t#361)? -->
       <div class="card toggle-card" @click="toggleSpecsEnabled">
         <div style="flex: 1; min-width: 0">
@@ -1841,6 +1924,8 @@ function handleSave() {
         </select>
         <div class="field-hint">{{ t('taskCtxPrioDesc') }}</div>
       </div>
+
+      </template>
 
       <!-- Board import / export (#181): moving a board between machines. Import is a
            merge that never overwrites — see the script block for why a plain copy
@@ -1943,6 +2028,43 @@ function handleSave() {
   flex: 1;
   min-width: 0;
   min-height: 0;
+}
+
+.work-modes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.work-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  padding: 10px 12px;
+  border: 1px solid var(--stroke-strong);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.work-mode:hover {
+  border-color: var(--text-2);
+}
+.work-mode.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.work-mode-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+.work-mode-desc {
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.35;
+}
+.work-mode-details {
+  margin-top: 10px;
 }
 
 .provider-title {
