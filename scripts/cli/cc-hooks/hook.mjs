@@ -34,7 +34,7 @@ import {
   STATUSES,
 } from "../board/todos.mjs";
 import { formatSpecSections } from "../spec/board-ritual.mjs";
-import { taskContextMinRank, hookContextEnabled, workflowContextEnabled } from "../kernel/settings.mjs";
+import { taskContextMinRank, hookContextEnabled, workflowContextEnabled, runnerEnabled } from "../kernel/settings.mjs";
 import { appDataDir, appDataFile } from "../kernel/appdata.mjs";
 import { resolveRoot } from "../spec/spec.mjs";
 import { readAgentConfig } from "../agents/agents.mjs";
@@ -114,6 +114,7 @@ export function workflowState(appData, cwd = process.cwd(), host = "claude", ava
     worker: model("worker"),
     review: mode("review") !== "off",
     reviewModel: model("review"),
+    runner: runnerEnabled(appData),
   };
 }
 
@@ -140,6 +141,16 @@ export function buildWorkflowContext(state = workflowState(), host = "claude") {
     (state.worker ? ` (${state.worker})` : "") +
     (state.review ? ` → review (${state.reviewModel || "configured"})` : "") +
     " → verify+reconcile → next ready step; issue → retry inside the node's budget → parked for the user.";
+  const runnerOn = state.runner !== false;
+  const choose = runnerOn
+    ? "2 choose — all steps S or M, files known, no open branch → no plan: implement in this session or with agents; use a graph via `<cli> todos apply` only when the auto runner is needed."
+    : "2 choose — all steps S or M, files known, no open branch → no plan: implement in this session or with agents.";
+  const runnerLines = runnerOn
+    ? [
+        `Auto runner — \`<cli> todos run <c#N> --go\`, its own background process, NOT this session: ${runner}`,
+        "   Start it with background execution (`run_in_background: true` in Claude Code) and do not observe it from this session. On a stop the process exits; its final stdout lines are the decision card and restart command.",
+      ]
+    : ["Auto runner — off in the tracker's work mode; this session implements the plan itself."];
   if (host === "codex") {
     const critic = state.critic === "off"
       ? "1 critic — off; go straight to 2."
@@ -151,12 +162,11 @@ export function buildWorkflowContext(state = workflowState(), host = "claude") {
       "0 scout — locate the files and mark every step S/M/L before choosing the workflow.",
       critic,
       "   question still open → ask the user, then back to 1.",
-      "2 choose — all steps S or M, files known, no open branch → no plan: implement in this session or with agents; use a graph via `<cli> todos apply` only when the auto runner is needed.",
+      choose,
       "   Any L step or open branch → plan; keep it current as evidence changes.",
       "   No tracker ExitPlanMode gate is wired for Codex; this session owns plan quality and review.",
       "3 implement → verify. Check fails → fix and re-verify. The PLAN was wrong → back to 2. Out of moves → ask the user.",
-      `Auto runner — \`<cli> todos run <c#N> --go\`, its own background process, NOT this session: ${runner}`,
-      "   Start it with background execution (`run_in_background: true` in Claude Code) and do not observe it from this session. On a stop the process exits; its final stdout lines are the decision card and restart command.",
+      ...runnerLines,
     ].join("\n");
   }
   return [
@@ -164,12 +174,11 @@ export function buildWorkflowContext(state = workflowState(), host = "claude") {
     "0 scout — locate the files and mark every step S/M/L before choosing the workflow.",
     criticLine(state),
     "   question still open → ask the user, then back to 1.",
-    "2 choose — all steps S or M, files known, no open branch → no plan: implement in this session or with agents; use a graph via `<cli> todos apply` only when the auto runner is needed.",
+    choose,
     "   Any L step or open branch → plan mode → ExitPlanMode.",
     architectLine(state),
     "3 implement → verify. Check fails → fix and re-verify. The PLAN was wrong → back to 2. Out of moves → ask the user.",
-    `Auto runner — \`<cli> todos run <c#N> --go\`, its own background process, NOT this session: ${runner}`,
-    "   Start it with background execution (`run_in_background: true` in Claude Code) and do not observe it from this session. On a stop the process exits; its final stdout lines are the decision card and restart command.",
+    ...runnerLines,
   ].join("\n");
 }
 
@@ -188,6 +197,7 @@ function planGateSummary(state, host) {
 }
 
 function runnerSummary(state) {
+  if (state.runner === false) return "off";
   const review = state.review ? state.reviewModel || "configured" : "off";
   return `worker ${state.worker || "unset"}, review ${review}`;
 }

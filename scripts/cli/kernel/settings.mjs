@@ -75,6 +75,10 @@ export function workflowContextEnabled(appData) {
   return readSettings(appData).workflowContextEnabled === true;
 }
 
+export function runnerEnabled(appData) {
+  return readSettings(appData).runnerEnabled !== false;
+}
+
 // `taskHandoffGuard`: which tasks owe a baton before a session ends —
 // off|submitted|unfinished|both. Default both.
 const TASK_GUARD_MODES = ["off", "submitted", "unfinished", "both"];
