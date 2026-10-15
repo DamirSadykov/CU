@@ -7,6 +7,8 @@
 добавленный соседним изменением `parkedStepExpiryHours` в этот снимок не входил.
 
 Вердикты ниже **приняты пользователем 2026-10-14** и исполнены в t#1250.
+2026-10-15 подключение Claude и Codex вынесено на вкладку «Провайдеры», интервал
+опроса — на «Обновления»; столбец «Вкладка» отражает новое место.
 
 - **keep** — оставить отдельным ключом;
 - **drop** — удалить настройку и возможность её задавать;
@@ -23,9 +25,9 @@
 
 | Ключ | Scope | Вкладка → подпись в SettingsPanel | Кто читает | Умолчание | Предложенный вердикт и причина |
 |---|---|---|---|---|---|
-| `sessionKey` | ui | Аккаунт → «Session Key» | `App.vue` → Rust usage API | `""` | **keep** — обязательная учётная пара для Claude usage API. |
-| `orgId` | ui | Аккаунт → «Organization ID» | `App.vue` → Rust usage API | `""` | **keep** — второй обязательный идентификатор Claude usage API. |
-| `refreshInterval` | ui | Аккаунт → «Интервал обновления» | `App.vue` → Rust polling/AppConfig | `60` с | **keep** — понятный пользователю компромисс свежести и частоты запросов. |
+| `sessionKey` | ui | Провайдеры → «Session Key» | `App.vue` → Rust usage API | `""` | **keep** — обязательная учётная пара для Claude usage API. |
+| `orgId` | ui | Провайдеры → «Organization ID» | `App.vue` → Rust usage API | `""` | **keep** — второй обязательный идентификатор Claude usage API. |
+| `refreshInterval` | ui | Обновления → «Интервал обновления» | `App.vue` → Rust polling/AppConfig | `60` с | **keep** — понятный пользователю компромисс свежести и частоты запросов. |
 | `autoStartSession` | ui | Аккаунт → «Автостарт сессии» | `App.vue` → Rust AppConfig; `SessionCard.vue` | `false` | **keep** — самостоятельная автоматизация с заметным внешним эффектом. |
 | `projectId` | ui | — нет поля; создаётся автоматически | `App.vue` → Rust start-session API | `""` | **move** — это внутренний UUID созданного проекта, а не предпочтение пользователя. |
 | `thresholdsSession` | ui | Пороги → «Пороги сессии (5ч)» | `App.vue` → Rust alerts; tray colour | `[25, 50, 75]` | **keep** — отдельная шкала для 5-часового лимита. |

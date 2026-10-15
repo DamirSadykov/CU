@@ -15,6 +15,7 @@ import SettingsPanel from "./SettingsPanel.vue";
 
 type SettingsTab =
     | "account"
+    | "providers"
     | "limits"
     | "notifications"
     | "budget"

@@ -1051,7 +1051,7 @@ onUnmounted(() => {
                     </p>
                     <button
                         class="btn-primary"
-                        @click="openSettings('account')"
+                        @click="openSettings('providers')"
                         style="margin-top: 12px"
                     >
                         {{ t("configure") }}
@@ -1077,7 +1077,7 @@ onUnmounted(() => {
                     <button
                         v-if="sessionExpired"
                         class="btn-primary"
-                        @click="openSettings('account')"
+                        @click="openSettings('providers')"
                         style="margin-top: 10px; width: 100%"
                     >
                         {{ t("updateSessionKey") }}

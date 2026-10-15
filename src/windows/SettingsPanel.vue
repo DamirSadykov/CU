@@ -51,7 +51,7 @@ const { t } = useI18n();
 // Settings are grouped into topic tabs. The panel now lives in a dedicated
 // settings window (issue #45); each screen's gear opens it on a matching tab via
 // the `openTab` prop (the window forwards the backend's `settings-open` event).
-type SettingsTab = "account" | "limits" | "notifications" | "budget" | "insights" | "tasks" | "integrations" | "updates";
+type SettingsTab = "account" | "providers" | "limits" | "notifications" | "budget" | "insights" | "tasks" | "integrations" | "updates";
 const tab = ref<SettingsTab>("account");
 
 const {
@@ -972,6 +972,19 @@ function handleSave() {
       <button
         type="button"
         class="settings-tab"
+        :class="{ active: tab === 'providers' }"
+        @click="tab = 'providers'"
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+          <path d="M6 2.5v3M10 2.5v3" stroke-linecap="round" />
+          <path d="M4 5.5h8v2.5a4 4 0 0 1-8 0z" stroke-linejoin="round" />
+          <path d="M8 12v1.5" stroke-linecap="round" />
+        </svg>
+        <span>{{ t('tabProviders') }}</span>
+      </button>
+      <button
+        type="button"
+        class="settings-tab"
         :class="{ active: tab === 'limits' }"
         @click="tab = 'limits'"
       >
@@ -1066,48 +1079,6 @@ function handleSave() {
     <div class="cards">
       <!-- ===== Account ===== -->
       <template v-if="tab === 'account'">
-      <!-- Session Key -->
-      <div class="card">
-        <div class="field-label">{{ t('sessionKey') }}</div>
-        <input
-          v-model="localSessionKey"
-          type="password"
-          class="field-input"
-          :placeholder="t('sessionKeyPlaceholder')"
-          autocomplete="off"
-        />
-        <div class="field-hint">{{ t('sessionKeyHint') }}</div>
-      </div>
-
-      <!-- Org ID -->
-      <div class="card">
-        <div class="field-label">{{ t('orgId') }}</div>
-        <input
-          v-model="localOrgId"
-          type="text"
-          class="field-input"
-          :placeholder="t('orgIdPlaceholder')"
-          autocomplete="off"
-        />
-        <div class="field-hint">{{ t('orgIdHint') }}</div>
-      </div>
-
-      <!-- Refresh interval -->
-      <div class="card">
-        <div class="card-row" style="align-items: center">
-          <div class="field-label" style="margin-bottom: 0">{{ t('refreshInterval') }}</div>
-          <span class="pct muted" style="font-size: 14px">{{ localInterval }}s</span>
-        </div>
-        <input
-          v-model.number="localInterval"
-          type="range"
-          class="field-range"
-          min="60"
-          max="300"
-          step="5"
-        />
-      </div>
-
       <!-- Language -->
       <div class="card">
         <div class="card-row" style="align-items: center">
@@ -1174,6 +1145,101 @@ function handleSave() {
           <div class="toggle-knob"></div>
         </div>
       </div>
+      </template>
+
+      <template v-if="tab === 'providers'">
+      <div class="provider-title">Claude</div>
+      <!-- Session Key -->
+      <div class="card">
+        <div class="field-label">{{ t('sessionKey') }}</div>
+        <input
+          v-model="localSessionKey"
+          type="password"
+          class="field-input"
+          :placeholder="t('sessionKeyPlaceholder')"
+          autocomplete="off"
+        />
+        <div class="field-hint">{{ t('sessionKeyHint') }}</div>
+      </div>
+
+      <!-- Org ID -->
+      <div class="card">
+        <div class="field-label">{{ t('orgId') }}</div>
+        <input
+          v-model="localOrgId"
+          type="text"
+          class="field-input"
+          :placeholder="t('orgIdPlaceholder')"
+          autocomplete="off"
+        />
+        <div class="field-hint">{{ t('orgIdHint') }}</div>
+      </div>
+
+      <!-- Install the cc-todos CLI + the SessionStart/Stop hooks into ~/.claude/settings.json -->
+      <div class="card" style="display: flex; align-items: center; gap: 12px">
+        <div style="flex: 1; min-width: 0">
+          <div class="card-title" style="font-size: 13px">{{ t('installCcHook') }}</div>
+          <div class="card-sub">{{ t('installCcHookDesc') }}</div>
+          <div v-if="ccHookStatus" class="card-sub" style="margin-top: 6px">
+            {{ ccHookStatus.installed ? t('installCcHookOn') : t('installCcHookOff') }}
+            <span v-if="ccHookStatus.installed && ccHookStatus.wired_path" class="muted">
+              — {{ ccHookStatus.wired_path }}
+            </span>
+          </div>
+          <div class="field-hint guard-state guard-state-active">{{ t('agentGuardActiveClaude') }}</div>
+          <!-- Wired, but the script is gone: Claude Code has been running
+               `node "<gone>"` and getting nothing. -->
+          <div
+            v-if="ccHookStatus && ccHookStatus.installed && !ccHookStatus.wired_path_exists"
+            class="field-hint"
+            style="margin-top: 4px; color: var(--crit)"
+          >
+            {{ t('installCcHookBroken') }}
+          </div>
+          <!-- Installed before the Stop guard existed: the SessionStart hook runs,
+               but nothing checks the handoff at session end until a re-install. -->
+          <div
+            v-if="ccHookStatus && ccHookStatus.installed && !ccHookStatus.stop_installed"
+            class="field-hint"
+            style="margin-top: 4px; color: var(--warn)"
+          >
+            {{ t('installCcHookStopMissing') }}
+          </div>
+          <div v-if="installCcMsg" class="field-hint" style="margin-top: 4px">{{ installCcMsg }}</div>
+        </div>
+        <button type="button" class="suggest-btn" :disabled="installCcBusy" @click="doInstallCcHook">
+          {{ ccHookStatus && ccHookStatus.installed ? t('installCcHookReinstall') : t('installCcHookBtn') }}
+        </button>
+      </div>
+
+      <div class="provider-title">Codex</div>
+      <div class="card" style="display: flex; align-items: center; gap: 12px">
+        <div style="flex: 1; min-width: 0">
+          <div class="card-title" style="font-size: 13px">{{ t('installCodexHook') }}</div>
+          <div class="card-sub">{{ t('installCodexHookDesc') }}</div>
+          <div v-if="codexHookStatus" class="card-sub" style="margin-top: 6px">
+            {{ codexHookStatus.installed ? t('installCcHookOn') : t('installCcHookOff') }}
+            <span v-if="codexHookStatus.installed && codexHookStatus.wired_path" class="muted">
+              — {{ codexHookStatus.wired_path }}
+            </span>
+          </div>
+          <div v-if="codexHookStatus" class="field-hint guard-state" :class="codexHookStatus.guard_active ? 'guard-state-active' : 'guard-state-absent'">
+            {{ codexHookStatus.guard_active ? t('agentGuardActive') : t('agentGuardAbsent') }}
+          </div>
+          <div
+            v-if="codexHookStatus && codexHookStatus.installed && !codexHookStatus.wired_path_exists"
+            class="field-hint"
+            style="margin-top: 4px; color: var(--crit)"
+          >
+            {{ t('installCodexHookBroken') }}
+          </div>
+          <div v-if="installCodexMsg" class="field-hint" style="margin-top: 4px">{{ installCodexMsg }}</div>
+        </div>
+        <button type="button" class="suggest-btn" :disabled="installCodexBusy" @click="doInstallCodexHook">
+          {{ codexHookStatus && codexHookStatus.installed ? t('installCcHookReinstall') : t('installCcHookBtn') }}
+        </button>
+      </div>
+
       </template>
 
       <!-- ===== Limits / thresholds ===== -->
@@ -1560,6 +1626,22 @@ function handleSave() {
 
       <!-- ===== Updates ===== -->
       <template v-if="tab === 'updates'">
+      <!-- Refresh interval -->
+      <div class="card">
+        <div class="card-row" style="align-items: center">
+          <div class="field-label" style="margin-bottom: 0">{{ t('refreshInterval') }}</div>
+          <span class="pct muted" style="font-size: 14px">{{ localInterval }}s</span>
+        </div>
+        <input
+          v-model.number="localInterval"
+          type="range"
+          class="field-range"
+          min="60"
+          max="300"
+          step="5"
+        />
+      </div>
+
       <!-- Updates -->
       <div class="card">
         <div class="card-row" style="align-items: center">
@@ -1696,70 +1778,6 @@ function handleSave() {
         :review="dutyState('review')"
         :plan-installed="!!ccHookStatus?.plan_installed"
       />
-
-      <!-- Install the cc-todos CLI + the SessionStart/Stop hooks into ~/.claude/settings.json -->
-      <div class="card" style="display: flex; align-items: center; gap: 12px">
-        <div style="flex: 1; min-width: 0">
-          <div class="card-title" style="font-size: 13px">{{ t('installCcHook') }}</div>
-          <div class="card-sub">{{ t('installCcHookDesc') }}</div>
-          <div v-if="ccHookStatus" class="card-sub" style="margin-top: 6px">
-            {{ ccHookStatus.installed ? t('installCcHookOn') : t('installCcHookOff') }}
-            <span v-if="ccHookStatus.installed && ccHookStatus.wired_path" class="muted">
-              — {{ ccHookStatus.wired_path }}
-            </span>
-          </div>
-          <div class="field-hint guard-state guard-state-active">{{ t('agentGuardActiveClaude') }}</div>
-          <!-- Wired, but the script is gone: Claude Code has been running
-               `node "<gone>"` and getting nothing. -->
-          <div
-            v-if="ccHookStatus && ccHookStatus.installed && !ccHookStatus.wired_path_exists"
-            class="field-hint"
-            style="margin-top: 4px; color: var(--crit)"
-          >
-            {{ t('installCcHookBroken') }}
-          </div>
-          <!-- Installed before the Stop guard existed: the SessionStart hook runs,
-               but nothing checks the handoff at session end until a re-install. -->
-          <div
-            v-if="ccHookStatus && ccHookStatus.installed && !ccHookStatus.stop_installed"
-            class="field-hint"
-            style="margin-top: 4px; color: var(--warn)"
-          >
-            {{ t('installCcHookStopMissing') }}
-          </div>
-          <div v-if="installCcMsg" class="field-hint" style="margin-top: 4px">{{ installCcMsg }}</div>
-        </div>
-        <button type="button" class="suggest-btn" :disabled="installCcBusy" @click="doInstallCcHook">
-          {{ ccHookStatus && ccHookStatus.installed ? t('installCcHookReinstall') : t('installCcHookBtn') }}
-        </button>
-      </div>
-
-      <div class="card" style="display: flex; align-items: center; gap: 12px">
-        <div style="flex: 1; min-width: 0">
-          <div class="card-title" style="font-size: 13px">{{ t('installCodexHook') }}</div>
-          <div class="card-sub">{{ t('installCodexHookDesc') }}</div>
-          <div v-if="codexHookStatus" class="card-sub" style="margin-top: 6px">
-            {{ codexHookStatus.installed ? t('installCcHookOn') : t('installCcHookOff') }}
-            <span v-if="codexHookStatus.installed && codexHookStatus.wired_path" class="muted">
-              — {{ codexHookStatus.wired_path }}
-            </span>
-          </div>
-          <div v-if="codexHookStatus" class="field-hint guard-state" :class="codexHookStatus.guard_active ? 'guard-state-active' : 'guard-state-absent'">
-            {{ codexHookStatus.guard_active ? t('agentGuardActive') : t('agentGuardAbsent') }}
-          </div>
-          <div
-            v-if="codexHookStatus && codexHookStatus.installed && !codexHookStatus.wired_path_exists"
-            class="field-hint"
-            style="margin-top: 4px; color: var(--crit)"
-          >
-            {{ t('installCodexHookBroken') }}
-          </div>
-          <div v-if="installCodexMsg" class="field-hint" style="margin-top: 4px">{{ installCodexMsg }}</div>
-        </div>
-        <button type="button" class="suggest-btn" :disabled="installCodexBusy" @click="doInstallCodexHook">
-          {{ codexHookStatus && codexHookStatus.installed ? t('installCcHookReinstall') : t('installCcHookBtn') }}
-        </button>
-      </div>
 
       <!-- Master switch: does the SessionStart hook inject task context? -->
       <div class="card toggle-card" @click="toggleHookContext">
@@ -1925,6 +1943,18 @@ function handleSave() {
   flex: 1;
   min-width: 0;
   min-height: 0;
+}
+
+.provider-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 8px 2px -2px;
+}
+.provider-title:first-child {
+  margin-top: 0;
 }
 
 /* Left side: a vertical tab rail. */
