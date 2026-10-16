@@ -208,6 +208,64 @@ pub fn build_task_work_tree(
     restart_params: &RestartParams,
     restart_points_path: Option<&Path>,
 ) -> TaskWorkTree {
+    build_task_work_tree_inner(
+        task,
+        task_number,
+        blocks,
+        run_events,
+        run_steps,
+        task_numbers,
+        claude_base,
+        codex_base,
+        restart_params,
+        restart_points_path,
+        None,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn build_task_work_tree_with_index(
+    task: &str,
+    task_number: u32,
+    blocks: &[TaskBlock],
+    run_events: &[RunEvent],
+    run_steps: &[RunStep],
+    task_numbers: &HashMap<String, u32>,
+    claude_base: Option<&Path>,
+    codex_base: Option<&Path>,
+    restart_params: &RestartParams,
+    restart_points_path: Option<&Path>,
+    transcripts: &TranscriptIndex,
+) -> TaskWorkTree {
+    build_task_work_tree_inner(
+        task,
+        task_number,
+        blocks,
+        run_events,
+        run_steps,
+        task_numbers,
+        claude_base,
+        codex_base,
+        restart_params,
+        restart_points_path,
+        Some(transcripts),
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn build_task_work_tree_inner(
+    task: &str,
+    task_number: u32,
+    blocks: &[TaskBlock],
+    run_events: &[RunEvent],
+    run_steps: &[RunStep],
+    task_numbers: &HashMap<String, u32>,
+    claude_base: Option<&Path>,
+    codex_base: Option<&Path>,
+    restart_params: &RestartParams,
+    restart_points_path: Option<&Path>,
+    transcripts: Option<&TranscriptIndex>,
+) -> TaskWorkTree {
     let task_blocks: Vec<&TaskBlock> = blocks.iter().filter(|block| block.task == task).collect();
     let events: Vec<RunEvent> = run_events
         .iter()
@@ -224,12 +282,19 @@ pub fn build_task_work_tree(
     }
 
     for block in task_blocks {
-        let Some((tree, transcript, provider)) = tree_for_block(block, claude_base, codex_base)
+        let Some((tree, transcript, provider)) =
+            tree_for_block(block, claude_base, codex_base, transcripts)
         else {
             continue;
         };
-        let context =
-            context_for_block(block, run_steps, task_numbers, &session_tasks, claude_base);
+        let context = context_for_block(
+            block,
+            run_steps,
+            task_numbers,
+            &session_tasks,
+            claude_base,
+            transcripts,
+        );
         let restart_point = calculate_restart_point(&tree.turns, provider, &restart_params.params);
         if let (Some(store), Some(stamp)) = (
             restart_points_path,
@@ -398,6 +463,7 @@ fn context_for_block(
     task_numbers: &HashMap<String, u32>,
     session_tasks: &HashMap<String, String>,
     claude_base: Option<&Path>,
+    transcripts: Option<&TranscriptIndex>,
 ) -> TaskWorkContext {
     for step in run_steps
         .iter()
@@ -421,8 +487,11 @@ fn context_for_block(
             };
         }
     }
-    let Some(path) = claude_base.and_then(|base| cc::transcript_path(base, &block.session, None))
-    else {
+    let path = match transcripts {
+        Some(index) => index.claude.get(&block.session).cloned(),
+        None => claude_base.and_then(|base| cc::transcript_path(base, &block.session, None)),
+    };
+    let Some(path) = path else {
         return TaskWorkContext {
             mode: ContextMode::Unknown,
             role: None,
@@ -501,11 +570,23 @@ fn tree_for_block(
     block: &TaskBlock,
     claude_base: Option<&Path>,
     codex_base: Option<&Path>,
+    transcripts: Option<&TranscriptIndex>,
 ) -> Option<(WorkTree, PathBuf, RestartProvider)> {
     let interval = WorkTreeInterval {
         start: Some(block.from.clone()),
         end: Some(block.to.clone()),
     };
+    if let Some(index) = transcripts {
+        let (path, provider) = index.get(&block.session)?;
+        return match provider {
+            RestartProvider::Anthropic => cached(&path, work_tree::build_session_work_tree)
+                .ok()
+                .map(|tree| (slice_tree(tree, &interval), path, provider)),
+            RestartProvider::OpenAi => cached(&path, codex_work_tree::build_codex_work_tree)
+                .ok()
+                .map(|tree| (slice_tree(tree, &interval), path, provider)),
+        };
+    }
     if let Some(path) = claude_base.and_then(|base| cc::transcript_path(base, &block.session, None))
     {
         return cached(&path, work_tree::build_session_work_tree)
@@ -535,6 +616,79 @@ pub fn transcript_path_for_block(
     claude_base
         .and_then(|base| cc::transcript_path(base, &block.session, None))
         .or_else(|| codex_base.and_then(|base| codex_transcript_path(base, &block.session)))
+}
+
+pub(crate) struct TranscriptIndex {
+    claude: HashMap<String, PathBuf>,
+    codex: HashMap<String, PathBuf>,
+}
+
+impl TranscriptIndex {
+    pub(crate) fn build(claude_base: Option<&Path>, codex_base: Option<&Path>) -> Self {
+        let mut index = Self {
+            claude: HashMap::new(),
+            codex: HashMap::new(),
+        };
+        if let Some(base) = claude_base {
+            index_claude_transcripts(base, &mut index.claude);
+        }
+        if let Some(base) = codex_base {
+            let mut files = Vec::new();
+            collect_rollouts(&base.join("sessions"), &mut files);
+            collect_rollouts(&base.join("archived_sessions"), &mut files);
+            for path in files {
+                let session =
+                    rollout_session_id_from_name(&path).or_else(|| rollout_session_id(&path));
+                if let Some(session) = session {
+                    index.codex.entry(session).or_insert(path);
+                }
+            }
+        }
+        index
+    }
+
+    pub(crate) fn path_for_block(&self, block: &TaskBlock) -> Option<PathBuf> {
+        self.get(&block.session).map(|(path, _)| path)
+    }
+
+    fn get(&self, session: &str) -> Option<(PathBuf, RestartProvider)> {
+        self.claude
+            .get(session)
+            .cloned()
+            .map(|path| (path, RestartProvider::Anthropic))
+            .or_else(|| {
+                self.codex
+                    .get(session)
+                    .cloned()
+                    .map(|path| (path, RestartProvider::OpenAi))
+            })
+    }
+}
+
+fn index_claude_transcripts(base: &Path, out: &mut HashMap<String, PathBuf>) {
+    let Ok(projects) = std::fs::read_dir(base.join("projects")) else {
+        return;
+    };
+    for project in projects.flatten() {
+        let dir = project.path();
+        if !dir.is_dir() {
+            continue;
+        }
+        let Ok(files) = std::fs::read_dir(dir) else {
+            continue;
+        };
+        for file in files.flatten() {
+            let path = file.path();
+            if !path.is_file()
+                || path.extension().and_then(|extension| extension.to_str()) != Some("jsonl")
+            {
+                continue;
+            }
+            if let Some(session) = path.file_stem().and_then(|stem| stem.to_str()) {
+                out.entry(session.to_string()).or_insert(path);
+            }
+        }
+    }
 }
 
 fn slice_tree(mut tree: WorkTree, interval: &WorkTreeInterval) -> WorkTree {
@@ -709,6 +863,22 @@ fn rollout_session_id(path: &Path) -> Option<String> {
     None
 }
 
+fn rollout_session_id_from_name(path: &Path) -> Option<String> {
+    let stem = path.file_stem()?.to_str()?;
+    let start = stem.len().checked_sub(36)?;
+    let candidate = stem.get(start..)?;
+    let bytes = candidate.as_bytes();
+    if bytes.len() != 36
+        || bytes.iter().enumerate().any(|(index, byte)| match index {
+            8 | 13 | 18 | 23 => *byte != b'-',
+            _ => !byte.is_ascii_hexdigit(),
+        })
+    {
+        return None;
+    }
+    Some(candidate.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -832,6 +1002,7 @@ mod tests {
                 &task_numbers,
                 &session_tasks,
                 None,
+                None,
             ),
             TaskWorkContext {
                 mode: ContextMode::Fork,
@@ -846,7 +1017,14 @@ mod tests {
             ..block
         };
         assert_eq!(
-            context_for_block(&review, &[worker], &task_numbers, &session_tasks, None,),
+            context_for_block(
+                &review,
+                &[worker],
+                &task_numbers,
+                &session_tasks,
+                None,
+                None,
+            ),
             TaskWorkContext {
                 mode: ContextMode::Fresh,
                 role: Some(WorkRole::Review),
@@ -939,6 +1117,28 @@ mod tests {
         let before = cache_files(&root).unwrap();
         std::fs::write(&child, "changed child").unwrap();
         assert_ne!(before, cache_files(&root).unwrap());
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn codex_index_uses_uuid_suffix_and_falls_back_for_unusual_names() {
+        let dir = std::env::temp_dir().join("task-work-tree-transcript-index");
+        let sessions = dir.join("sessions/2026/01/01");
+        std::fs::create_dir_all(&sessions).unwrap();
+        let named_id = "01234567-89ab-cdef-0123-456789abcdef";
+        let fallback_id = "fedcba98-7654-3210-fedc-ba9876543210";
+        let named = sessions.join(format!("rollout-2026-01-01T00-00-00-{named_id}.jsonl"));
+        let unusual = sessions.join("rollout-legacy.jsonl");
+        std::fs::write(&named, "not json").unwrap();
+        std::fs::write(
+            &unusual,
+            format!(r#"{{"type":"session_meta","payload":{{"id":"{fallback_id}"}}}}"#),
+        )
+        .unwrap();
+
+        let index = TranscriptIndex::build(None, Some(&dir));
+        assert_eq!(index.codex.get(named_id), Some(&named));
+        assert_eq!(index.codex.get(fallback_id), Some(&unusual));
         std::fs::remove_dir_all(dir).unwrap();
     }
 }

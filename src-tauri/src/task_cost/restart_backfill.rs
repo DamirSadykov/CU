@@ -2,13 +2,13 @@
 //! steps.  It deliberately reuses `build_task_work_tree`, the trace path, so a
 //! background record and an interactively opened trace cannot disagree.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
 use super::{
-    build_task_work_tree, load_run_steps,
-    restart_store::{has_current_record, load_params, transcript_stamp},
-    transcript_path_for_block,
+    load_run_steps,
+    restart_store::{load_params, transcript_stamp, TranscriptStamp},
+    work_tree::{build_task_work_tree_with_index, TranscriptIndex},
 };
 use crate::board::{task_sessions, task_sessions::TaskBlock};
 
@@ -39,21 +39,20 @@ pub fn backfill(
 ) -> RestartBackfillResult {
     let events = task_sessions::load(&paths.task_sessions);
     let blocks = task_sessions::blocks(&events, &HashMap::new());
+    let transcripts =
+        TranscriptIndex::build(paths.claude_base.as_deref(), paths.codex_base.as_deref());
+    let current_records = load_current_records(&paths.restart_points);
     let pending: Vec<TaskBlock> = blocks
         .into_iter()
         .filter(|block| block.source == "run-step" && block.to > block.from)
         .filter(|block| {
-            let Some(transcript) = transcript_path_for_block(
-                block,
-                paths.claude_base.as_deref(),
-                paths.codex_base.as_deref(),
-            ) else {
+            let Some(transcript) = transcripts.path_for_block(block) else {
                 return false;
             };
             let Some(stamp) = transcript_stamp(&transcript) else {
                 return false;
             };
-            !has_current_record(&paths.restart_points, &block.session, &block.task, &stamp)
+            !current_records.contains(&RestartRecordKey::new(&block.session, &block.task, &stamp))
         })
         .collect();
     let pending_blocks = pending.len();
@@ -67,7 +66,7 @@ pub fn backfill(
     for (task, task_blocks) in by_task {
         // The builder owns both provider-specific parsing and append-if-new;
         // this is intentionally the exact path used by `get_task_work_tree`.
-        let _ = build_task_work_tree(
+        let _ = build_task_work_tree_with_index(
             &task,
             task_numbers.get(&task).copied().unwrap_or_default(),
             &task_blocks,
@@ -78,12 +77,56 @@ pub fn backfill(
             paths.codex_base.as_deref(),
             &params,
             Some(&paths.restart_points),
+            &transcripts,
         );
     }
     RestartBackfillResult {
         pending_blocks,
         calculated_tasks,
     }
+}
+
+#[derive(Debug, Hash, PartialEq, Eq)]
+struct RestartRecordKey {
+    session: String,
+    task: String,
+    size: u64,
+    mtime_ns: u128,
+}
+
+impl RestartRecordKey {
+    fn new(session: &str, task: &str, stamp: &TranscriptStamp) -> Self {
+        Self {
+            session: session.to_string(),
+            task: task.to_string(),
+            size: stamp.size,
+            mtime_ns: stamp.mtime_ns,
+        }
+    }
+}
+
+fn load_current_records(path: &std::path::Path) -> HashSet<RestartRecordKey> {
+    #[derive(serde::Deserialize)]
+    struct StoredRecord {
+        session: String,
+        task: String,
+        stamp: TranscriptStamp,
+    }
+
+    std::fs::read_to_string(path)
+        .ok()
+        .map(|raw| {
+            raw.lines()
+                .filter_map(|line| serde_json::from_str::<StoredRecord>(line).ok())
+                .map(|record| RestartRecordKey {
+                    session: record.session,
+                    task: record.task,
+                    size: record.stamp.size,
+                    mtime_ns: record.stamp.mtime_ns,
+                })
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 #[cfg(test)]
@@ -121,5 +164,28 @@ mod tests {
             RestartBackfillResult::default()
         );
         fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn loads_restart_keys_once_and_ignores_broken_lines() {
+        let path = std::env::temp_dir().join("restart-backfill-current-records.jsonl");
+        fs::write(
+            &path,
+            concat!(
+                "broken\n",
+                r#"{"session":"s","task":"t","stamp":{"size":42,"mtime_ns":99}}"#,
+                "\n"
+            ),
+        )
+        .unwrap();
+        let records = load_current_records(&path);
+        assert!(records.contains(&RestartRecordKey {
+            session: "s".into(),
+            task: "t".into(),
+            size: 42,
+            mtime_ns: 99,
+        }));
+        assert_eq!(records.len(), 1);
+        fs::remove_file(path).unwrap();
     }
 }
