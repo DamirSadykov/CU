@@ -206,6 +206,9 @@ const MIGRATIONS: &[&str] = &[
         snapshot_ts     TEXT,
         formula_version INTEGER NOT NULL
     );",
+    "ALTER TABLE cc_files ADD COLUMN byte_offset INTEGER NOT NULL DEFAULT 0;
+     ALTER TABLE cc_files ADD COLUMN parse_context TEXT;
+     DELETE FROM cc_files;",
 ];
 
 fn migrate(conn: &Connection) -> Result<(), rusqlite::Error> {
@@ -757,29 +760,40 @@ mod tests {
     fn cc_file_state_roundtrip() {
         let db = mem_db();
         assert!(db.cc_file_state("a.jsonl").unwrap().is_none());
-        db.cc_set_file_state("a.jsonl", 123, "2026-01-01T00:00:00Z")
-            .unwrap();
+        db.cc_set_file_state(
+            "a.jsonl",
+            123,
+            "2026-01-01T00:00:00Z",
+            100,
+            Some("{\"session_id\":\"s1\"}"),
+        )
+        .unwrap();
         assert_eq!(
             db.cc_file_state("a.jsonl").unwrap(),
-            Some((123, "2026-01-01T00:00:00Z".to_string()))
+            Some(cc_store::CcFileState {
+                size: 123,
+                mtime: "2026-01-01T00:00:00Z".to_string(),
+                byte_offset: 100,
+                parse_context: Some("{\"session_id\":\"s1\"}".to_string()),
+            })
         );
         // upsert overwrites
-        db.cc_set_file_state("a.jsonl", 456, "2026-01-02T00:00:00Z")
+        db.cc_set_file_state("a.jsonl", 456, "2026-01-02T00:00:00Z", 450, None)
             .unwrap();
-        assert_eq!(db.cc_file_state("a.jsonl").unwrap().unwrap().0, 456);
+        assert_eq!(db.cc_file_state("a.jsonl").unwrap().unwrap().size, 456);
     }
 
-    // --- migrations: v8–v15 ---
+    // --- migrations: v8–v16 ---
 
     #[test]
-    fn migration_count_advances_to_fifteen() {
+    fn migration_count_advances_to_sixteen() {
         let db = mem_db();
         let conn = db.conn.lock().unwrap();
         let v: i64 = conn
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .unwrap();
         assert_eq!(v, MIGRATIONS.len() as i64);
-        assert_eq!(MIGRATIONS.len(), 15);
+        assert_eq!(MIGRATIONS.len(), 16);
     }
 
     #[test]

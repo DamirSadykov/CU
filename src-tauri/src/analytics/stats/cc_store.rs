@@ -5,6 +5,14 @@ use rusqlite::{params, OptionalExtension};
 
 use super::StatsDb;
 
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct CcFileState {
+    pub size: i64,
+    pub mtime: String,
+    pub byte_offset: i64,
+    pub parse_context: Option<String>,
+}
+
 /// One deduplicated assistant message's token usage + computed cost.
 #[derive(Debug, Clone)]
 pub struct CcUsageRow {
@@ -293,13 +301,20 @@ impl StatsDb {
         Ok(inserted)
     }
 
-    /// Stored (size, mtime) for a transcript file, if previously ingested.
-    pub fn cc_file_state(&self, path: &str) -> Result<Option<(i64, String)>, rusqlite::Error> {
+    /// Stored metadata, last complete-line offset, and optional parser context.
+    pub(crate) fn cc_file_state(&self, path: &str) -> Result<Option<CcFileState>, rusqlite::Error> {
         let conn = self.conn.lock().unwrap();
         conn.query_row(
-            "SELECT size, mtime FROM cc_files WHERE path = ?1",
+            "SELECT size, mtime, byte_offset, parse_context FROM cc_files WHERE path = ?1",
             params![path],
-            |r| Ok((r.get(0)?, r.get(1)?)),
+            |r| {
+                Ok(CcFileState {
+                    size: r.get(0)?,
+                    mtime: r.get(1)?,
+                    byte_offset: r.get(2)?,
+                    parse_context: r.get(3)?,
+                })
+            },
         )
         .optional()
     }
@@ -309,12 +324,16 @@ impl StatsDb {
         path: &str,
         size: i64,
         mtime: &str,
+        byte_offset: i64,
+        parse_context: Option<&str>,
     ) -> Result<(), rusqlite::Error> {
         let conn = self.conn.lock().unwrap();
         conn.execute(
-            "INSERT INTO cc_files (path, size, mtime) VALUES (?1, ?2, ?3)
-             ON CONFLICT(path) DO UPDATE SET size = ?2, mtime = ?3",
-            params![path, size, mtime],
+            "INSERT INTO cc_files (path, size, mtime, byte_offset, parse_context)
+             VALUES (?1, ?2, ?3, ?4, ?5)
+             ON CONFLICT(path) DO UPDATE SET
+                 size = ?2, mtime = ?3, byte_offset = ?4, parse_context = ?5",
+            params![path, size, mtime, byte_offset, parse_context],
         )?;
         Ok(())
     }

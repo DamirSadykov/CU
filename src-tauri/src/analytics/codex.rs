@@ -17,11 +17,43 @@ use crate::analytics::stats::{CcUsageRow, CodexLimitFileState, StatsDb};
 
 const LIMITS_FORMULA_VERSION: i64 = 1;
 
-#[derive(Default)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 struct RolloutContext {
     session_id: Option<String>,
     project: Option<String>,
     model: Option<String>,
+}
+
+fn parse_rollout_file(
+    path: &Path,
+    start_offset: u64,
+    mut ctx: RolloutContext,
+) -> (Vec<CcUsageRow>, u64, RolloutContext) {
+    let Ok(mut file) = File::open(path) else {
+        return (Vec::new(), start_offset, ctx);
+    };
+    if file.seek(SeekFrom::Start(start_offset)).is_err() {
+        return (Vec::new(), start_offset, ctx);
+    }
+    let mut reader = BufReader::new(file);
+    let mut line = String::new();
+    let mut byte_offset = start_offset;
+    let mut rows = Vec::new();
+    loop {
+        line.clear();
+        let bytes = match reader.read_line(&mut line) {
+            Ok(0) | Err(_) => break,
+            Ok(bytes) => bytes,
+        };
+        if !line.ends_with('\n') {
+            break;
+        }
+        byte_offset += bytes as u64;
+        if let Some(row) = parse_rollout_line(line.trim_end_matches(['\r', '\n']), &mut ctx) {
+            rows.push(row);
+        }
+    }
+    (rows, byte_offset, ctx)
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
@@ -358,7 +390,7 @@ pub fn latest_limits(base: &Path, db: &StatsDb) -> Result<Option<CodexRateLimits
         let size = meta.len();
         let mtime = mtime_key(meta.modified());
         let key = path.to_string_lossy().to_string();
-        let stored = db.codex_limit_file_state(&key).map_err(|e| e.to_string())?;
+        let stored = db.codex_limit_file_state(&key).ok().flatten();
         let reusable = stored.as_ref().filter(|state| {
             state.formula_version == LIMITS_FORMULA_VERSION
                 && state.size >= 0
@@ -388,7 +420,10 @@ pub fn latest_limits(base: &Path, db: &StatsDb) -> Result<Option<CodexRateLimits
         let (byte_offset, latest) = if unchanged {
             (reusable.unwrap().byte_offset as u64, prior)
         } else {
-            scan_limits_tail(&path, start, prior)?
+            match scan_limits_tail(&path, start, prior) {
+                Ok(scanned) => scanned,
+                Err(_) => continue,
+            }
         };
         if !unchanged {
             let state = CodexLimitFileState {
@@ -397,14 +432,11 @@ pub fn latest_limits(base: &Path, db: &StatsDb) -> Result<Option<CodexRateLimits
                 byte_offset: byte_offset as i64,
                 snapshot_json: latest
                     .as_ref()
-                    .map(|(_, value)| serde_json::to_string(value))
-                    .transpose()
-                    .map_err(|e| e.to_string())?,
+                    .and_then(|(_, value)| serde_json::to_string(value).ok()),
                 snapshot_ts: latest.as_ref().map(|(_, value)| value.observed_at.clone()),
                 formula_version: LIMITS_FORMULA_VERSION,
             };
-            db.set_codex_limit_file_state(&key, &state)
-                .map_err(|e| e.to_string())?;
+            let _ = db.set_codex_limit_file_state(&key, &state);
         }
         if let Some((_, snapshot)) = latest {
             // Rollout mtimes can be flushed out of order. The event's RFC3339
@@ -443,22 +475,29 @@ pub fn ingest(base: &Path, db: &StatsDb) -> Result<usize, String> {
             .map(|t| DateTime::<Utc>::from(t).to_rfc3339())
             .unwrap_or_default();
         let key = path.to_string_lossy().to_string();
-        if matches!(db.cc_file_state(&key), Ok(Some((s, ref m))) if s == size && *m == mtime) {
-            continue;
+        let state = db.cc_file_state(&key).map_err(|e| e.to_string())?;
+        if let Some(previous) = state.as_ref() {
+            if previous.size == size && previous.mtime == mtime {
+                continue;
+            }
         }
-        let Ok(file) = File::open(&path) else {
-            continue;
-        };
-        let mut ctx = RolloutContext::default();
-        let rows: Vec<_> = BufReader::new(file)
-            .lines()
-            .map_while(Result::ok)
-            .filter_map(|line| parse_rollout_line(&line, &mut ctx))
-            .collect();
+        let append_state = state.as_ref().filter(|previous| {
+            size > previous.size
+                && previous.byte_offset >= 0
+                && previous.byte_offset <= previous.size
+        });
+        let (start_offset, ctx) = append_state
+            .and_then(|previous| {
+                let context = serde_json::from_str(previous.parse_context.as_deref()?).ok()?;
+                Some((previous.byte_offset as u64, context))
+            })
+            .unwrap_or((0, RolloutContext::default()));
+        let (rows, byte_offset, ctx) = parse_rollout_file(&path, start_offset, ctx);
         if !rows.is_empty() {
             inserted += db.cc_upsert(&rows).map_err(|e| e.to_string())?;
         }
-        db.cc_set_file_state(&key, size, &mtime)
+        let context_json = serde_json::to_string(&ctx).map_err(|e| e.to_string())?;
+        db.cc_set_file_state(&key, size, &mtime, byte_offset as i64, Some(&context_json))
             .map_err(|e| e.to_string())?;
     }
     Ok(inserted)
@@ -467,6 +506,67 @@ pub fn ingest(base: &Path, db: &StatsDb) -> Result<usize, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn usage_line(timestamp: &str, total: i64) -> String {
+        format!(
+            r#"{{"type":"event_msg","timestamp":"{timestamp}","payload":{{"type":"token_count","info":{{"total_token_usage":{{"input_tokens":{total},"output_tokens":1}},"last_token_usage":{{"input_tokens":{total},"output_tokens":1}}}}}}}}"#
+        )
+    }
+
+    #[test]
+    fn ingest_restores_context_and_retries_an_unfinished_tail() {
+        use std::io::Write;
+
+        let base = limits_base("ingest-tail");
+        let path = base
+            .join("sessions")
+            .join("2026")
+            .join("10")
+            .join("16")
+            .join("rollout-tail.jsonl");
+        let initial = format!(
+            "{}\n{}\n{}\n",
+            r#"{"type":"session_meta","payload":{"id":"s1","cwd":"D:\\work\\app"}}"#,
+            r#"{"type":"turn_context","payload":{"model":"gpt-5.6-sol"}}"#,
+            usage_line("2026-10-16T08:00:00Z", 10)
+        );
+        std::fs::write(&path, initial).unwrap();
+        let db = StatsDb::open(Path::new(":memory:")).unwrap();
+        assert_eq!(ingest(&base, &db).unwrap(), 1);
+        let key = path.to_string_lossy();
+        let complete_offset = db.cc_file_state(&key).unwrap().unwrap().byte_offset;
+
+        let mut file = std::fs::OpenOptions::new()
+            .append(true)
+            .open(&path)
+            .unwrap();
+        write!(file, "{}", usage_line("2026-10-16T09:00:00Z", 20)).unwrap();
+        drop(file);
+        assert_eq!(ingest(&base, &db).unwrap(), 0);
+        assert_eq!(
+            db.cc_file_state(&key).unwrap().unwrap().byte_offset,
+            complete_offset
+        );
+
+        let mut file = std::fs::OpenOptions::new()
+            .append(true)
+            .open(&path)
+            .unwrap();
+        writeln!(file).unwrap();
+        drop(file);
+        assert_eq!(ingest(&base, &db).unwrap(), 1);
+        let state = db.cc_file_state(&key).unwrap().unwrap();
+        let context: RolloutContext =
+            serde_json::from_str(state.parse_context.as_deref().unwrap()).unwrap();
+        assert_eq!(context.session_id.as_deref(), Some("s1"));
+        assert_eq!(context.project.as_deref(), Some("app"));
+        assert_eq!(context.model.as_deref(), Some("gpt-5.6-sol"));
+        assert_eq!(
+            state.byte_offset,
+            std::fs::metadata(&path).unwrap().len() as i64
+        );
+        let _ = std::fs::remove_dir_all(&base);
+    }
 
     fn limits_line(timestamp: &str, used: f64) -> String {
         format!(
