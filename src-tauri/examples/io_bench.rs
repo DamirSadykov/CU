@@ -19,6 +19,21 @@ const SCENARIOS: &[&str] = &[
     "ingest_codex",
 ];
 
+const GROUPS: &[&[&str]] = &[
+    &["limits_cold", "limits_warm"],
+    &["backfill_first", "backfill_repeat"],
+    &["ingest_cc"],
+    &["ingest_codex"],
+];
+
+const METRICS: &[(&str, &str)] = &[
+    ("wall_ms", "wall ms"),
+    ("cpu_ms", "cpu ms"),
+    ("retained_mb", "retained MB"),
+    ("peak_mb", "peak MB"),
+    ("read_mb", "read MB"),
+];
+
 const BACKFILL_FILES: &[&str] = &[
     "task-sessions.jsonl",
     "runs.jsonl",
@@ -31,6 +46,7 @@ struct Options {
     runs: usize,
     label: String,
     out: PathBuf,
+    child: bool,
 }
 
 fn app_dir() -> PathBuf {
@@ -61,34 +77,88 @@ fn default_out() -> PathBuf {
         .join("io-bench.jsonl")
 }
 
+#[derive(Clone, Copy, Default)]
+struct Snapshot {
+    cpu_ms: f64,
+    private_bytes: f64,
+    peak_bytes: f64,
+    read_bytes: f64,
+}
+
+struct Sample {
+    wall_ms: f64,
+    cpu_ms: f64,
+    retained_mb: f64,
+    peak_mb: f64,
+    read_mb: f64,
+}
+
 #[cfg(windows)]
-fn cpu_ms() -> f64 {
+#[repr(C)]
+#[derive(Default)]
+struct ProcessMemoryCountersEx {
+    cb: u32,
+    page_fault_count: u32,
+    peak_working_set_size: usize,
+    working_set_size: usize,
+    quota_peak_paged_pool_usage: usize,
+    quota_paged_pool_usage: usize,
+    quota_peak_non_paged_pool_usage: usize,
+    quota_non_paged_pool_usage: usize,
+    pagefile_usage: usize,
+    peak_pagefile_usage: usize,
+    private_usage: usize,
+}
+
+#[cfg(windows)]
+#[link(name = "kernel32")]
+extern "system" {
+    fn K32GetProcessMemoryInfo(
+        process: windows_sys::Win32::Foundation::HANDLE,
+        counters: *mut ProcessMemoryCountersEx,
+        cb: u32,
+    ) -> i32;
+}
+
+#[cfg(windows)]
+fn snapshot() -> Snapshot {
     use windows_sys::Win32::Foundation::FILETIME;
-    use windows_sys::Win32::System::Threading::{GetCurrentProcess, GetProcessTimes};
+    use windows_sys::Win32::System::Threading::{
+        GetCurrentProcess, GetProcessIoCounters, GetProcessTimes, IO_COUNTERS,
+    };
     let zero = FILETIME {
         dwLowDateTime: 0,
         dwHighDateTime: 0,
     };
     let (mut created, mut exited, mut kernel, mut user) = (zero, zero, zero, zero);
-    let ok = unsafe {
-        GetProcessTimes(
-            GetCurrentProcess(),
-            &mut created,
-            &mut exited,
-            &mut kernel,
-            &mut user,
-        )
+    let mut memory = ProcessMemoryCountersEx {
+        cb: std::mem::size_of::<ProcessMemoryCountersEx>() as u32,
+        ..Default::default()
     };
-    if ok == 0 {
-        return f64::NAN;
-    }
+    let mut io: IO_COUNTERS = unsafe { std::mem::zeroed() };
+    let process = unsafe { GetCurrentProcess() };
+    let times_ok =
+        unsafe { GetProcessTimes(process, &mut created, &mut exited, &mut kernel, &mut user) } != 0;
+    let memory_ok = unsafe { K32GetProcessMemoryInfo(process, &mut memory, memory.cb) } != 0;
+    let io_ok = unsafe { GetProcessIoCounters(process, &mut io) } != 0;
     let ticks = |t: FILETIME| ((t.dwHighDateTime as u64) << 32) | t.dwLowDateTime as u64;
-    (ticks(kernel) + ticks(user)) as f64 / 10_000.0
+    let or_nan = |ok: bool, v: f64| if ok { v } else { f64::NAN };
+    Snapshot {
+        cpu_ms: or_nan(times_ok, (ticks(kernel) + ticks(user)) as f64 / 10_000.0),
+        private_bytes: or_nan(memory_ok, memory.private_usage as f64),
+        peak_bytes: or_nan(memory_ok, memory.peak_working_set_size as f64),
+        read_bytes: or_nan(io_ok, io.ReadTransferCount as f64),
+    }
 }
 
 #[cfg(not(windows))]
-fn cpu_ms() -> f64 {
-    f64::NAN
+fn snapshot() -> Snapshot {
+    Snapshot {
+        cpu_ms: f64::NAN,
+        private_bytes: f64::NAN,
+        peak_bytes: f64::NAN,
+        read_bytes: f64::NAN,
+    }
 }
 
 fn git_rev() -> String {
@@ -108,6 +178,7 @@ fn parse_args(args: &[String]) -> Options {
         runs: 3,
         label: git_rev(),
         out: default_out(),
+        child: false,
     };
     let mut i = 0;
     while i < args.len() {
@@ -129,6 +200,11 @@ fn parse_args(args: &[String]) -> Options {
                 options.out = PathBuf::from(value);
                 i += 1;
             }
+            "--child" => {
+                options.child = true;
+                i += 1;
+                continue;
+            }
             other => {
                 eprintln!("unknown argument {other}");
                 std::process::exit(2);
@@ -145,12 +221,22 @@ fn parse_args(args: &[String]) -> Options {
     options
 }
 
-fn measure(f: impl FnOnce() -> Value) -> (f64, f64, Value) {
-    let cpu = cpu_ms();
+const MB: f64 = 1024.0 * 1024.0;
+
+fn measure(f: impl FnOnce() -> Value) -> (Sample, Value) {
+    let before = snapshot();
     let start = Instant::now();
     let result = f();
-    let wall = start.elapsed().as_secs_f64() * 1000.0;
-    (wall, cpu_ms() - cpu, result)
+    let wall_ms = start.elapsed().as_secs_f64() * 1000.0;
+    let after = snapshot();
+    let sample = Sample {
+        wall_ms,
+        cpu_ms: after.cpu_ms - before.cpu_ms,
+        retained_mb: (after.private_bytes - before.private_bytes) / MB,
+        peak_mb: after.peak_bytes / MB,
+        read_mb: (after.read_bytes - before.read_bytes) / MB,
+    };
+    (sample, result)
 }
 
 fn work_dir() -> PathBuf {
@@ -178,7 +264,8 @@ struct Bench {
 }
 
 impl Bench {
-    fn record(&mut self, scenario: &str, run: usize, wall: f64, cpu: f64, result: Value) {
+    fn record(&mut self, scenario: &str, run: usize, sample: Sample, result: Value) {
+        let round = |v: f64| (v * 10.0).round() / 10.0;
         let line = json!({
             "ts": chrono::Utc::now().to_rfc3339(),
             "label": self.options.label,
@@ -186,12 +273,18 @@ impl Bench {
             "profile": if cfg!(debug_assertions) { "debug" } else { "release" },
             "scenario": scenario,
             "run": run,
-            "wall_ms": (wall * 10.0).round() / 10.0,
-            "cpu_ms": (cpu * 10.0).round() / 10.0,
+            "wall_ms": round(sample.wall_ms),
+            "cpu_ms": round(sample.cpu_ms),
+            "retained_mb": round(sample.retained_mb),
+            "peak_mb": round(sample.peak_mb),
+            "read_mb": round(sample.read_mb),
             "result": result,
         });
         writeln!(self.journal, "{line}").unwrap();
-        println!("{scenario:<16} run {run}  wall {wall:>10.1} ms  cpu {cpu:>10.1} ms  {result}");
+        println!(
+            "{scenario:<16} run {run}  wall {:>9.1} ms  cpu {:>9.1} ms  retained {:>7.1} MB  peak {:>7.1} MB  read {:>8.1} MB  {result}",
+            sample.wall_ms, sample.cpu_ms, sample.retained_mb, sample.peak_mb, sample.read_mb
+        );
     }
 
     fn wanted(&self, scenario: &str) -> bool {
@@ -222,17 +315,16 @@ impl Bench {
         let runs = self.options.runs;
         if let Some(base) = self.codex.clone() {
             if self.wanted("limits_cold") {
-                let (wall, cpu, result) = measure(|| json!(codex::latest_limits(&base).is_some()));
-                self.record("limits_cold", 1, wall, cpu, json!({ "found": result }));
+                let (sample, result) = measure(|| json!(codex::latest_limits(&base).is_some()));
+                self.record("limits_cold", 1, sample, json!({ "found": result }));
             }
             if self.wanted("limits_warm") {
                 if !self.wanted("limits_cold") {
                     codex::latest_limits(&base);
                 }
                 for run in 1..=runs {
-                    let (wall, cpu, result) =
-                        measure(|| json!(codex::latest_limits(&base).is_some()));
-                    self.record("limits_warm", run, wall, cpu, json!({ "found": result }));
+                    let (sample, result) = measure(|| json!(codex::latest_limits(&base).is_some()));
+                    self.record("limits_warm", run, sample, json!({ "found": result }));
                 }
             }
         }
@@ -252,13 +344,13 @@ impl Bench {
                 json!({ "pending_blocks": r.pending_blocks, "calculated_tasks": r.calculated_tasks })
             };
             if self.wanted("backfill_first") {
-                let (wall, cpu, result) = measure(&mut call);
-                self.record("backfill_first", 1, wall, cpu, result);
+                let (sample, result) = measure(&mut call);
+                self.record("backfill_first", 1, sample, result);
             }
             if self.wanted("backfill_repeat") {
                 for run in 1..=runs {
-                    let (wall, cpu, result) = measure(&mut call);
-                    self.record("backfill_repeat", run, wall, cpu, result);
+                    let (sample, result) = measure(&mut call);
+                    self.record("backfill_repeat", run, sample, result);
                 }
             }
         }
@@ -272,7 +364,7 @@ impl Bench {
             }
             for run in 1..=runs {
                 let db = self.db();
-                let (wall, cpu, result) = measure(|| {
+                let (sample, result) = measure(|| {
                     let inserted = if is_cc {
                         cc::ingest(&base, db)
                     } else {
@@ -283,7 +375,7 @@ impl Bench {
                         Err(e) => json!({ "error": e }),
                     }
                 });
-                self.record(scenario, run, wall, cpu, result);
+                self.record(scenario, run, sample, result);
             }
         }
     }
@@ -312,7 +404,7 @@ fn compare(args: &[String]) {
         eprintln!("cannot read {}: {e}", out.display());
         std::process::exit(1);
     });
-    let mut samples: BTreeMap<(String, String), (Vec<f64>, Vec<f64>)> = BTreeMap::new();
+    let mut samples: BTreeMap<(String, String, &str), Vec<f64>> = BTreeMap::new();
     for line in raw.lines() {
         let Ok(v) = serde_json::from_str::<Value>(line) else {
             continue;
@@ -322,26 +414,63 @@ fn compare(args: &[String]) {
             continue;
         }
         let scenario = v["scenario"].as_str().unwrap_or_default().to_string();
-        let entry = samples.entry((scenario, label)).or_default();
-        entry.0.push(v["wall_ms"].as_f64().unwrap_or(f64::NAN));
-        entry.1.push(v["cpu_ms"].as_f64().unwrap_or(f64::NAN));
+        for (key, _) in METRICS {
+            if let Some(value) = v[*key].as_f64() {
+                samples
+                    .entry((scenario.clone(), label.clone(), *key))
+                    .or_default()
+                    .push(value);
+            }
+        }
     }
     println!(
-        "{:<16} {:>12} {:>12} {:>8}   {:>12} {:>12} {:>8}",
-        "scenario", "wall before", "wall after", "x", "cpu before", "cpu after", "x"
+        "{:<16} {:<12} {:>12} {:>12} {:>8}",
+        "scenario", "metric", before, after, "x"
     );
     for scenario in SCENARIOS {
-        let get = |label: &String| samples.get(&(scenario.to_string(), label.clone()));
-        let (Some(b), Some(a)) = (get(before), get(after)) else {
+        for (key, title) in METRICS {
+            let get = |label: &String| {
+                samples
+                    .get(&(scenario.to_string(), label.clone(), *key))
+                    .map(|v| median(v.clone()))
+            };
+            let (Some(b), Some(a)) = (get(before), get(after)) else {
+                continue;
+            };
+            let ratio = if a.abs() < 0.1 { f64::NAN } else { b / a };
+            let ratio = if ratio.is_nan() {
+                "-".to_string()
+            } else {
+                format!("{ratio:.1}")
+            };
+            println!("{scenario:<16} {title:<12} {b:>12.1} {a:>12.1} {ratio:>8}");
+        }
+    }
+}
+
+fn spawn_groups(options: &Options) {
+    let exe = std::env::current_exe().unwrap();
+    for group in GROUPS {
+        let wanted: Vec<&str> = group
+            .iter()
+            .copied()
+            .filter(|s| options.only.iter().any(|o| o == s))
+            .collect();
+        if wanted.is_empty() {
             continue;
-        };
-        let (wb, wa) = (median(b.0.clone()), median(a.0.clone()));
-        let (cb, ca) = (median(b.1.clone()), median(a.1.clone()));
-        println!(
-            "{scenario:<16} {wb:>12.1} {wa:>12.1} {:>8.1}   {cb:>12.1} {ca:>12.1} {:>8.1}",
-            wb / wa.max(0.1),
-            cb / ca.max(0.1)
-        );
+        }
+        let status = std::process::Command::new(&exe)
+            .arg("--child")
+            .args(["--only", &wanted.join(",")])
+            .args(["--runs", &options.runs.to_string()])
+            .args(["--label", &options.label])
+            .arg("--out")
+            .arg(&options.out)
+            .status()
+            .unwrap();
+        if !status.success() {
+            eprintln!("group {} failed: {status}", wanted.join(","));
+        }
     }
 }
 
@@ -355,21 +484,25 @@ fn main() {
     if let Some(parent) = options.out.parent() {
         fs::create_dir_all(parent).unwrap();
     }
+    if !options.child {
+        println!(
+            "label {}  journal {}  profile {}",
+            options.label,
+            options.out.display(),
+            if cfg!(debug_assertions) {
+                "debug"
+            } else {
+                "release"
+            }
+        );
+        spawn_groups(&options);
+        return;
+    }
     let journal = fs::OpenOptions::new()
         .create(true)
         .append(true)
         .open(&options.out)
         .unwrap();
-    println!(
-        "label {}  journal {}  profile {}",
-        options.label,
-        options.out.display(),
-        if cfg!(debug_assertions) {
-            "debug"
-        } else {
-            "release"
-        }
-    );
     let work = work_dir();
     let mut bench = Bench {
         options,
