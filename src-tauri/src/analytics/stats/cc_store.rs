@@ -1,6 +1,8 @@
 //! Claude Code usage rows ingested from `~/.claude` transcripts: dedup-insert by
 //! message id, plus the per-file (size, mtime) state that makes ingest incremental.
 
+use std::collections::HashMap;
+
 use rusqlite::{params, OptionalExtension};
 
 use super::StatsDb;
@@ -301,6 +303,7 @@ impl StatsDb {
         Ok(inserted)
     }
 
+    #[cfg(test)]
     /// Stored metadata, last complete-line offset, and optional parser context.
     pub(crate) fn cc_file_state(&self, path: &str) -> Result<Option<CcFileState>, rusqlite::Error> {
         let conn = self.conn.lock().unwrap();
@@ -317,6 +320,24 @@ impl StatsDb {
             },
         )
         .optional()
+    }
+
+    pub(crate) fn cc_file_states(&self) -> Result<HashMap<String, CcFileState>, rusqlite::Error> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt =
+            conn.prepare("SELECT path, size, mtime, byte_offset, parse_context FROM cc_files")?;
+        let rows = stmt.query_map([], |r| {
+            Ok((
+                r.get::<_, String>(0)?,
+                CcFileState {
+                    size: r.get(1)?,
+                    mtime: r.get(2)?,
+                    byte_offset: r.get(3)?,
+                    parse_context: r.get(4)?,
+                },
+            ))
+        })?;
+        rows.collect()
     }
 
     pub fn cc_set_file_state(

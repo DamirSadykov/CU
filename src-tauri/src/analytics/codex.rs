@@ -382,6 +382,7 @@ pub fn latest_limits(base: &Path, db: &StatsDb) -> Result<Option<CodexRateLimits
     let mut paths = Vec::new();
     collect_jsonl(&base.join("sessions"), &mut paths);
     collect_jsonl(&base.join("archived_sessions"), &mut paths);
+    let mut states = db.codex_limit_file_states().unwrap_or_default();
     let mut newest = None;
     for path in paths {
         let Ok(meta) = std::fs::metadata(&path) else {
@@ -390,7 +391,7 @@ pub fn latest_limits(base: &Path, db: &StatsDb) -> Result<Option<CodexRateLimits
         let size = meta.len();
         let mtime = mtime_key(meta.modified());
         let key = path.to_string_lossy().to_string();
-        let stored = db.codex_limit_file_state(&key).ok().flatten();
+        let stored = states.remove(&key);
         let reusable = stored.as_ref().filter(|state| {
             state.formula_version == LIMITS_FORMULA_VERSION
                 && state.size >= 0
@@ -463,6 +464,7 @@ pub fn ingest(base: &Path, db: &StatsDb) -> Result<usize, String> {
     let mut files = Vec::new();
     collect_jsonl(&base.join("sessions"), &mut files);
     collect_jsonl(&base.join("archived_sessions"), &mut files);
+    let mut states = db.cc_file_states().map_err(|e| e.to_string())?;
     let mut inserted = 0;
     for path in files {
         let Ok(meta) = std::fs::metadata(&path) else {
@@ -475,7 +477,7 @@ pub fn ingest(base: &Path, db: &StatsDb) -> Result<usize, String> {
             .map(|t| DateTime::<Utc>::from(t).to_rfc3339())
             .unwrap_or_default();
         let key = path.to_string_lossy().to_string();
-        let state = db.cc_file_state(&key).map_err(|e| e.to_string())?;
+        let state = states.remove(&key);
         if let Some(previous) = state.as_ref() {
             if previous.size == size && previous.mtime == mtime {
                 continue;

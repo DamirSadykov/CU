@@ -6,7 +6,7 @@
 //!   - `cc_store`  — Claude Code usage rows + per-file ingest state
 //!   - `analytics` — daily/model/heatmap aggregates over CC usage
 
-use rusqlite::{params, Connection, OptionalExtension};
+use rusqlite::{params, Connection};
 use std::path::Path;
 use std::sync::Mutex;
 
@@ -246,27 +246,28 @@ impl StatsDb {
 }
 
 impl StatsDb {
-    pub(crate) fn codex_limit_file_state(
+    pub(crate) fn codex_limit_file_states(
         &self,
-        path: &str,
-    ) -> Result<Option<CodexLimitFileState>, rusqlite::Error> {
+    ) -> Result<std::collections::HashMap<String, CodexLimitFileState>, rusqlite::Error> {
         let conn = self.conn.lock().unwrap();
-        conn.query_row(
-            "SELECT size, mtime, byte_offset, snapshot_json, snapshot_ts, formula_version
-             FROM codex_limit_files WHERE path = ?1",
-            [path],
-            |row| {
-                Ok(CodexLimitFileState {
-                    size: row.get(0)?,
-                    mtime: row.get(1)?,
-                    byte_offset: row.get(2)?,
-                    snapshot_json: row.get(3)?,
-                    snapshot_ts: row.get(4)?,
-                    formula_version: row.get(5)?,
-                })
-            },
-        )
-        .optional()
+        let mut stmt = conn.prepare(
+            "SELECT path, size, mtime, byte_offset, snapshot_json, snapshot_ts, formula_version
+             FROM codex_limit_files",
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                CodexLimitFileState {
+                    size: row.get(1)?,
+                    mtime: row.get(2)?,
+                    byte_offset: row.get(3)?,
+                    snapshot_json: row.get(4)?,
+                    snapshot_ts: row.get(5)?,
+                    formula_version: row.get(6)?,
+                },
+            ))
+        })?;
+        rows.collect()
     }
 
     pub(crate) fn set_codex_limit_file_state(

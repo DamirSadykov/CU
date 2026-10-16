@@ -505,6 +505,7 @@ pub fn ingest(base: &Path, db: &StatsDb) -> Result<usize, String> {
     let mut files = Vec::new();
     collect_jsonl(&projects, &mut files);
 
+    let mut states = db.cc_file_states().map_err(|e| e.to_string())?;
     let mut inserted = 0usize;
     for path in files {
         let meta = match std::fs::metadata(&path) {
@@ -519,7 +520,7 @@ pub fn ingest(base: &Path, db: &StatsDb) -> Result<usize, String> {
             .unwrap_or_default();
         let path_str = path.to_string_lossy().to_string();
 
-        let state = db.cc_file_state(&path_str).map_err(|e| e.to_string())?;
+        let state = states.remove(&path_str);
         if let Some(previous) = state.as_ref() {
             if previous.size == size && previous.mtime == mtime {
                 continue; // unchanged since last ingest
