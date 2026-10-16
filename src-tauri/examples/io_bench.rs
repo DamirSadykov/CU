@@ -11,6 +11,7 @@ use cu_lib::todos;
 use serde_json::{json, Value};
 
 const SCENARIOS: &[&str] = &[
+    "limits_empty",
     "limits_cold",
     "limits_warm",
     "backfill_first",
@@ -20,7 +21,7 @@ const SCENARIOS: &[&str] = &[
 ];
 
 const GROUPS: &[&[&str]] = &[
-    &["limits_cold", "limits_warm"],
+    &["limits_empty", "limits_cold", "limits_warm"],
     &["backfill_first", "backfill_repeat"],
     &["ingest_cc"],
     &["ingest_codex"],
@@ -314,16 +315,29 @@ impl Bench {
     fn run(&mut self) {
         let runs = self.options.runs;
         if let Some(base) = self.codex.clone() {
+            if self.wanted("limits_empty") {
+                let empty = StatsDb::open(&self.work.join("limits-empty.db")).unwrap();
+                let (sample, result) =
+                    measure(|| json!(codex::latest_limits(&base, &empty).unwrap().is_some()));
+                self.record("limits_empty", 1, sample, json!({ "found": result }));
+            }
             if self.wanted("limits_cold") {
-                let (sample, result) = measure(|| json!(codex::latest_limits(&base).is_some()));
+                codex::latest_limits(&base, self.db()).unwrap();
+                self.db = Some(StatsDb::open(&self.work.join("usage_stats.db")).unwrap());
+                let db = self.db();
+                let (sample, result) =
+                    measure(|| json!(codex::latest_limits(&base, db).unwrap().is_some()));
                 self.record("limits_cold", 1, sample, json!({ "found": result }));
             }
             if self.wanted("limits_warm") {
                 if !self.wanted("limits_cold") {
-                    codex::latest_limits(&base);
+                    let db = self.db();
+                    codex::latest_limits(&base, db).unwrap();
                 }
                 for run in 1..=runs {
-                    let (sample, result) = measure(|| json!(codex::latest_limits(&base).is_some()));
+                    let db = self.db();
+                    let (sample, result) =
+                        measure(|| json!(codex::latest_limits(&base, db).unwrap().is_some()));
                     self.record("limits_warm", run, sample, json!({ "found": result }));
                 }
             }

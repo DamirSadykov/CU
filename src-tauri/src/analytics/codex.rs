@@ -3,27 +3,60 @@
 //! subscription-limit snapshots, model, timestamp, thread id and cwd basename;
 //! prompt/response content and auth data are never stored.
 
-use std::collections::HashMap;
 use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
-use std::time::SystemTime;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use chrono::{DateTime, Utc};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::analytics::stats::{CcUsageRow, StatsDb};
+use crate::analytics::stats::{CcUsageRow, CodexLimitFileState, StatsDb};
 
-#[derive(Default)]
+const LIMITS_FORMULA_VERSION: i64 = 1;
+
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 struct RolloutContext {
     session_id: Option<String>,
     project: Option<String>,
     model: Option<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize)]
+fn parse_rollout_file(
+    path: &Path,
+    start_offset: u64,
+    mut ctx: RolloutContext,
+) -> (Vec<CcUsageRow>, u64, RolloutContext) {
+    let Ok(mut file) = File::open(path) else {
+        return (Vec::new(), start_offset, ctx);
+    };
+    if file.seek(SeekFrom::Start(start_offset)).is_err() {
+        return (Vec::new(), start_offset, ctx);
+    }
+    let mut reader = BufReader::new(file);
+    let mut line = String::new();
+    let mut byte_offset = start_offset;
+    let mut rows = Vec::new();
+    loop {
+        line.clear();
+        let bytes = match reader.read_line(&mut line) {
+            Ok(0) | Err(_) => break,
+            Ok(bytes) => bytes,
+        };
+        if !line.ends_with('\n') {
+            break;
+        }
+        byte_offset += bytes as u64;
+        if let Some(row) = parse_rollout_line(line.trim_end_matches(['\r', '\n']), &mut ctx) {
+            rows.push(row);
+        }
+    }
+    (rows, byte_offset, ctx)
+}
+
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CodexLimitWindow {
     pub used_percent: f64,
@@ -31,7 +64,7 @@ pub struct CodexLimitWindow {
     pub resets_at: i64,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CodexCredits {
     pub has_credits: bool,
@@ -39,7 +72,7 @@ pub struct CodexCredits {
     pub balance: String,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CodexRateLimits {
     pub observed_at: String,
@@ -289,73 +322,130 @@ fn collect_jsonl(dir: &Path, out: &mut Vec<PathBuf>) {
     }
 }
 
-struct FileLimits {
-    size: u64,
-    modified: Option<SystemTime>,
-    latest: Option<(DateTime<Utc>, CodexRateLimits)>,
+fn mtime_key(modified: Result<SystemTime, std::io::Error>) -> String {
+    modified
+        .ok()
+        .and_then(|time| time.duration_since(UNIX_EPOCH).ok())
+        .map(|value| format!("{}.{:09}", value.as_secs(), value.subsec_nanos()))
+        .unwrap_or_default()
 }
 
-#[derive(Default)]
-struct LimitsCache {
-    files: HashMap<PathBuf, FileLimits>,
-}
-
-fn file_latest_limits(path: &Path) -> Option<(DateTime<Utc>, CodexRateLimits)> {
-    let file = File::open(path).ok()?;
-    let snapshot = BufReader::new(file)
-        .lines()
-        .map_while(Result::ok)
-        .filter_map(|line| parse_rate_limits_line(&line))
-        .last()?;
-    let timestamp = DateTime::parse_from_rfc3339(&snapshot.observed_at)
-        .ok()?
-        .with_timezone(&Utc);
-    Some((timestamp, snapshot))
-}
-
-impl LimitsCache {
-    fn refresh(&mut self, base: &Path) -> Option<CodexRateLimits> {
-        let mut paths = Vec::new();
-        collect_jsonl(&base.join("sessions"), &mut paths);
-        collect_jsonl(&base.join("archived_sessions"), &mut paths);
-        let mut files = HashMap::with_capacity(paths.len());
-        for path in paths {
-            let Ok(meta) = std::fs::metadata(&path) else {
-                continue;
-            };
-            let size = meta.len();
-            let modified = meta.modified().ok();
-            let entry = match self.files.remove(&path) {
-                Some(cached) if cached.size == size && cached.modified == modified => cached,
-                _ => FileLimits {
-                    size,
-                    modified,
-                    latest: file_latest_limits(&path),
-                },
-            };
-            files.insert(path, entry);
-        }
-        self.files = files;
-        // File mtimes are not reliable here: Codex can flush several rollout
-        // files out of order (and an older file may receive the newest event).
-        // Select the newest rate-limit event by its own RFC3339 timestamp.
-        self.files
-            .values()
-            .filter_map(|f| f.latest.as_ref())
-            .max_by_key(|(timestamp, _)| *timestamp)
-            .map(|(_, snapshot)| snapshot.clone())
+fn newer_snapshot(
+    current: &mut Option<(DateTime<Utc>, CodexRateLimits)>,
+    candidate: CodexRateLimits,
+) {
+    let Ok(timestamp) = DateTime::parse_from_rfc3339(&candidate.observed_at) else {
+        return;
+    };
+    let timestamp = timestamp.with_timezone(&Utc);
+    if current.as_ref().is_none_or(|(old, _)| timestamp > *old) {
+        *current = Some((timestamp, candidate));
     }
+}
+
+fn scan_limits_tail(
+    path: &Path,
+    offset: u64,
+    mut latest: Option<(DateTime<Utc>, CodexRateLimits)>,
+) -> Result<(u64, Option<(DateTime<Utc>, CodexRateLimits)>), String> {
+    let mut file = File::open(path).map_err(|e| e.to_string())?;
+    file.seek(SeekFrom::Start(offset))
+        .map_err(|e| e.to_string())?;
+    let mut reader = BufReader::new(file);
+    let mut complete_offset = offset;
+    let mut bytes = Vec::new();
+    loop {
+        bytes.clear();
+        let read = reader
+            .read_until(b'\n', &mut bytes)
+            .map_err(|e| e.to_string())?;
+        if read == 0 || bytes.last() != Some(&b'\n') {
+            break;
+        }
+        complete_offset += read as u64;
+        let line = String::from_utf8_lossy(&bytes);
+        if let Some(snapshot) = parse_rate_limits_line(line.trim_end_matches(['\r', '\n'])) {
+            newer_snapshot(&mut latest, snapshot);
+        }
+    }
+    Ok((complete_offset, latest))
 }
 
 /// Latest subscription-limit snapshot emitted by a locally authenticated Codex
 /// session. No ChatGPT bearer token or OpenAI Admin key is read or transmitted.
-pub fn latest_limits(base: &Path) -> Option<CodexRateLimits> {
-    static CACHE: OnceLock<Mutex<LimitsCache>> = OnceLock::new();
-    CACHE
-        .get_or_init(Default::default)
+pub fn latest_limits(base: &Path, db: &StatsDb) -> Result<Option<CodexRateLimits>, String> {
+    static PASS_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    let _pass = PASS_LOCK
+        .get_or_init(|| Mutex::new(()))
         .lock()
-        .unwrap_or_else(|poisoned| poisoned.into_inner())
-        .refresh(base)
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    let mut paths = Vec::new();
+    collect_jsonl(&base.join("sessions"), &mut paths);
+    collect_jsonl(&base.join("archived_sessions"), &mut paths);
+    let mut states = db.codex_limit_file_states().unwrap_or_default();
+    let mut newest = None;
+    for path in paths {
+        let Ok(meta) = std::fs::metadata(&path) else {
+            continue;
+        };
+        let size = meta.len();
+        let mtime = mtime_key(meta.modified());
+        let key = path.to_string_lossy().to_string();
+        let stored = states.remove(&key);
+        let reusable = stored.as_ref().filter(|state| {
+            state.formula_version == LIMITS_FORMULA_VERSION
+                && state.size >= 0
+                && state.byte_offset >= 0
+                && state.byte_offset <= state.size
+        });
+        let unchanged =
+            reusable.is_some_and(|state| state.size as u64 == size && state.mtime == mtime);
+        let append = reusable.is_some_and(|state| size > state.size as u64);
+        let start = if append {
+            reusable.unwrap().byte_offset as u64
+        } else {
+            0
+        };
+        let prior = if unchanged || append {
+            reusable.and_then(|state| {
+                let snapshot: CodexRateLimits =
+                    serde_json::from_str(state.snapshot_json.as_deref()?).ok()?;
+                let timestamp = DateTime::parse_from_rfc3339(state.snapshot_ts.as_deref()?)
+                    .ok()?
+                    .with_timezone(&Utc);
+                Some((timestamp, snapshot))
+            })
+        } else {
+            None
+        };
+        let (byte_offset, latest) = if unchanged {
+            (reusable.unwrap().byte_offset as u64, prior)
+        } else {
+            match scan_limits_tail(&path, start, prior) {
+                Ok(scanned) => scanned,
+                Err(_) => continue,
+            }
+        };
+        if !unchanged {
+            let state = CodexLimitFileState {
+                size: size as i64,
+                mtime,
+                byte_offset: byte_offset as i64,
+                snapshot_json: latest
+                    .as_ref()
+                    .and_then(|(_, value)| serde_json::to_string(value).ok()),
+                snapshot_ts: latest.as_ref().map(|(_, value)| value.observed_at.clone()),
+                formula_version: LIMITS_FORMULA_VERSION,
+            };
+            let _ = db.set_codex_limit_file_state(&key, &state);
+        }
+        if let Some((_, snapshot)) = latest {
+            // Rollout mtimes can be flushed out of order. The event's RFC3339
+            // timestamp, not file metadata, defines the newest snapshot.
+            newer_snapshot(&mut newest, snapshot);
+        }
+    }
+    Ok(newest.map(|(_, snapshot)| snapshot))
 }
 
 pub fn codex_dir() -> Option<PathBuf> {
@@ -374,6 +464,7 @@ pub fn ingest(base: &Path, db: &StatsDb) -> Result<usize, String> {
     let mut files = Vec::new();
     collect_jsonl(&base.join("sessions"), &mut files);
     collect_jsonl(&base.join("archived_sessions"), &mut files);
+    let mut states = db.cc_file_states().map_err(|e| e.to_string())?;
     let mut inserted = 0;
     for path in files {
         let Ok(meta) = std::fs::metadata(&path) else {
@@ -386,22 +477,29 @@ pub fn ingest(base: &Path, db: &StatsDb) -> Result<usize, String> {
             .map(|t| DateTime::<Utc>::from(t).to_rfc3339())
             .unwrap_or_default();
         let key = path.to_string_lossy().to_string();
-        if matches!(db.cc_file_state(&key), Ok(Some((s, ref m))) if s == size && *m == mtime) {
-            continue;
+        let state = states.remove(&key);
+        if let Some(previous) = state.as_ref() {
+            if previous.size == size && previous.mtime == mtime {
+                continue;
+            }
         }
-        let Ok(file) = File::open(&path) else {
-            continue;
-        };
-        let mut ctx = RolloutContext::default();
-        let rows: Vec<_> = BufReader::new(file)
-            .lines()
-            .map_while(Result::ok)
-            .filter_map(|line| parse_rollout_line(&line, &mut ctx))
-            .collect();
+        let append_state = state.as_ref().filter(|previous| {
+            size > previous.size
+                && previous.byte_offset >= 0
+                && previous.byte_offset <= previous.size
+        });
+        let (start_offset, ctx) = append_state
+            .and_then(|previous| {
+                let context = serde_json::from_str(previous.parse_context.as_deref()?).ok()?;
+                Some((previous.byte_offset as u64, context))
+            })
+            .unwrap_or((0, RolloutContext::default()));
+        let (rows, byte_offset, ctx) = parse_rollout_file(&path, start_offset, ctx);
         if !rows.is_empty() {
             inserted += db.cc_upsert(&rows).map_err(|e| e.to_string())?;
         }
-        db.cc_set_file_state(&key, size, &mtime)
+        let context_json = serde_json::to_string(&ctx).map_err(|e| e.to_string())?;
+        db.cc_set_file_state(&key, size, &mtime, byte_offset as i64, Some(&context_json))
             .map_err(|e| e.to_string())?;
     }
     Ok(inserted)
@@ -410,6 +508,67 @@ pub fn ingest(base: &Path, db: &StatsDb) -> Result<usize, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn usage_line(timestamp: &str, total: i64) -> String {
+        format!(
+            r#"{{"type":"event_msg","timestamp":"{timestamp}","payload":{{"type":"token_count","info":{{"total_token_usage":{{"input_tokens":{total},"output_tokens":1}},"last_token_usage":{{"input_tokens":{total},"output_tokens":1}}}}}}}}"#
+        )
+    }
+
+    #[test]
+    fn ingest_restores_context_and_retries_an_unfinished_tail() {
+        use std::io::Write;
+
+        let base = limits_base("ingest-tail");
+        let path = base
+            .join("sessions")
+            .join("2026")
+            .join("10")
+            .join("16")
+            .join("rollout-tail.jsonl");
+        let initial = format!(
+            "{}\n{}\n{}\n",
+            r#"{"type":"session_meta","payload":{"id":"s1","cwd":"D:\\work\\app"}}"#,
+            r#"{"type":"turn_context","payload":{"model":"gpt-5.6-sol"}}"#,
+            usage_line("2026-10-16T08:00:00Z", 10)
+        );
+        std::fs::write(&path, initial).unwrap();
+        let db = StatsDb::open(Path::new(":memory:")).unwrap();
+        assert_eq!(ingest(&base, &db).unwrap(), 1);
+        let key = path.to_string_lossy();
+        let complete_offset = db.cc_file_state(&key).unwrap().unwrap().byte_offset;
+
+        let mut file = std::fs::OpenOptions::new()
+            .append(true)
+            .open(&path)
+            .unwrap();
+        write!(file, "{}", usage_line("2026-10-16T09:00:00Z", 20)).unwrap();
+        drop(file);
+        assert_eq!(ingest(&base, &db).unwrap(), 0);
+        assert_eq!(
+            db.cc_file_state(&key).unwrap().unwrap().byte_offset,
+            complete_offset
+        );
+
+        let mut file = std::fs::OpenOptions::new()
+            .append(true)
+            .open(&path)
+            .unwrap();
+        writeln!(file).unwrap();
+        drop(file);
+        assert_eq!(ingest(&base, &db).unwrap(), 1);
+        let state = db.cc_file_state(&key).unwrap().unwrap();
+        let context: RolloutContext =
+            serde_json::from_str(state.parse_context.as_deref().unwrap()).unwrap();
+        assert_eq!(context.session_id.as_deref(), Some("s1"));
+        assert_eq!(context.project.as_deref(), Some("app"));
+        assert_eq!(context.model.as_deref(), Some("gpt-5.6-sol"));
+        assert_eq!(
+            state.byte_offset,
+            std::fs::metadata(&path).unwrap().len() as i64
+        );
+        let _ = std::fs::remove_dir_all(&base);
+    }
 
     fn limits_line(timestamp: &str, used: f64) -> String {
         format!(
@@ -430,8 +589,9 @@ mod tests {
     }
 
     #[test]
-    fn limits_cache_picks_newest_event_and_follows_appends_and_deletions() {
+    fn limits_state_picks_newest_event_and_follows_appends_and_deletions() {
         let base = limits_base("follow");
+        let db = StatsDb::open(Path::new(":memory:")).unwrap();
         let dir = base.join("sessions/2026/10/16");
         let older = dir.join("rollout-a.jsonl");
         let newer = dir.join("rollout-b.jsonl");
@@ -449,8 +609,7 @@ mod tests {
 ",
         )
         .unwrap();
-        let mut cache = LimitsCache::default();
-        assert_eq!(used(cache.refresh(&base)), Some(20.0));
+        assert_eq!(used(latest_limits(&base, &db).unwrap()), Some(20.0));
 
         let appended = limits_line("2026-10-16T08:00:00Z", 10.0)
             + "
@@ -458,18 +617,18 @@ mod tests {
             + "
 ";
         std::fs::write(&older, appended).unwrap();
-        assert_eq!(used(cache.refresh(&base)), Some(30.0));
+        assert_eq!(used(latest_limits(&base, &db).unwrap()), Some(30.0));
 
         std::fs::remove_file(&older).unwrap();
-        assert_eq!(used(cache.refresh(&base)), Some(20.0));
-        assert_eq!(cache.files.len(), 1);
+        assert_eq!(used(latest_limits(&base, &db).unwrap()), Some(20.0));
         let _ = std::fs::remove_dir_all(&base);
     }
 
     #[test]
-    fn limits_cache_reuses_unchanged_file_without_rereading() {
+    fn limits_state_persists_and_waits_for_a_complete_appended_line() {
         let base = limits_base("reuse");
         let path = base.join("sessions/2026/10/16/rollout-a.jsonl");
+        let db_path = base.join("stats.db");
         std::fs::write(
             &path,
             limits_line("2026-10-16T08:00:00Z", 10.0)
@@ -477,19 +636,27 @@ mod tests {
 ",
         )
         .unwrap();
-        let mut cache = LimitsCache::default();
-        assert_eq!(used(cache.refresh(&base)), Some(10.0));
-        let entry = cache.files.get_mut(&path).unwrap();
-        entry
-            .latest
-            .as_mut()
-            .unwrap()
-            .1
-            .primary
-            .as_mut()
-            .unwrap()
-            .used_percent = 99.0;
-        assert_eq!(used(cache.refresh(&base)), Some(99.0));
+        {
+            let db = StatsDb::open(&db_path).unwrap();
+            assert_eq!(used(latest_limits(&base, &db).unwrap()), Some(10.0));
+        }
+        let partial = limits_line("2026-10-16T10:00:00Z", 30.0);
+        use std::io::Write;
+        let mut file = std::fs::OpenOptions::new()
+            .append(true)
+            .open(&path)
+            .unwrap();
+        write!(file, "{partial}").unwrap();
+        drop(file);
+        let db = StatsDb::open(&db_path).unwrap();
+        assert_eq!(used(latest_limits(&base, &db).unwrap()), Some(10.0));
+        let mut file = std::fs::OpenOptions::new()
+            .append(true)
+            .open(&path)
+            .unwrap();
+        writeln!(file).unwrap();
+        drop(file);
+        assert_eq!(used(latest_limits(&base, &db).unwrap()), Some(30.0));
         let _ = std::fs::remove_dir_all(&base);
     }
 

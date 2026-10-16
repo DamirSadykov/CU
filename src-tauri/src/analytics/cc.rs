@@ -7,7 +7,7 @@
 //! Ingestion is opt-in (off by default) and gated by the caller.
 
 use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 
 use chrono::{DateTime, Utc};
@@ -415,11 +415,14 @@ pub fn transcript_path(base: &Path, session: &str, agent: Option<&str>) -> Optio
 /// lines → `TurnRow`. Each line is JSON-parsed once via the typed dispatch
 /// (parse_line / parse_tool_results / parse_turn_line short-circuit on `type`).
 /// A subagent file additionally yields its manifest row (see `parse_agent_meta`).
-fn parse_file(path: &Path) -> ParsedFile {
-    let file = match File::open(path) {
+fn parse_file_from(path: &Path, start_offset: u64) -> (ParsedFile, u64) {
+    let mut file = match File::open(path) {
         Ok(f) => f,
-        Err(_) => return ParsedFile::default(),
+        Err(_) => return (ParsedFile::default(), start_offset),
     };
+    if file.seek(SeekFrom::Start(start_offset)).is_err() {
+        return (ParsedFile::default(), start_offset);
+    }
     // Files named `agent-<uuid>.jsonl` only hold subagent turns. Use that as a
     // fallback when individual lines lack the `isSidechain` / `agentName` flags
     // (older Claude Code transcripts).
@@ -428,16 +431,27 @@ fn parse_file(path: &Path) -> ParsedFile {
         .and_then(|n| n.to_str())
         .map(|n| n.starts_with("agent-"))
         .unwrap_or(false);
-    let reader = BufReader::new(file);
+    let mut reader = BufReader::new(file);
     let mut parsed = ParsedFile::default();
     if from_agent_file {
         parsed.agents.extend(parse_agent_meta(path));
     }
-    for line in reader.lines().map_while(Result::ok) {
+    let mut line = String::new();
+    let mut byte_offset = start_offset;
+    loop {
+        line.clear();
+        let bytes = match reader.read_line(&mut line) {
+            Ok(0) | Err(_) => break,
+            Ok(bytes) => bytes,
+        };
+        if !line.ends_with('\n') {
+            break;
+        }
+        byte_offset += bytes as u64;
         if line.is_empty() {
             continue;
         }
-        if let Some(mut row) = parse_line(&line) {
+        if let Some(mut row) = parse_line(line.trim_end_matches(['\r', '\n'])) {
             if from_agent_file {
                 row.is_subagent = true;
                 // Older subagent transcripts carry no per-line `agentId`; the file
@@ -459,7 +473,7 @@ fn parse_file(path: &Path) -> ParsedFile {
             parsed.usage.push(row);
             continue; // an assistant line can't also be a user / system line
         }
-        if let Some(mut turn) = parse_turn_line(&line) {
+        if let Some(mut turn) = parse_turn_line(line.trim_end_matches(['\r', '\n'])) {
             if from_agent_file {
                 turn.is_subagent = true;
             }
@@ -467,12 +481,17 @@ fn parse_file(path: &Path) -> ParsedFile {
             continue;
         }
         // Non-assistant, non-turn line — may be a user line carrying tool_results.
-        let results = parse_tool_results(&line);
+        let results = parse_tool_results(line.trim_end_matches(['\r', '\n']));
         if !results.is_empty() {
             parsed.tool_results.extend(results);
         }
     }
-    parsed
+    (parsed, byte_offset)
+}
+
+#[cfg(test)]
+fn parse_file(path: &Path) -> ParsedFile {
+    parse_file_from(path, 0).0
 }
 
 /// Incrementally ingest all transcripts under `base/projects`. Files whose size
@@ -486,6 +505,7 @@ pub fn ingest(base: &Path, db: &StatsDb) -> Result<usize, String> {
     let mut files = Vec::new();
     collect_jsonl(&projects, &mut files);
 
+    let mut states = db.cc_file_states().map_err(|e| e.to_string())?;
     let mut inserted = 0usize;
     for path in files {
         let meta = match std::fs::metadata(&path) {
@@ -500,13 +520,23 @@ pub fn ingest(base: &Path, db: &StatsDb) -> Result<usize, String> {
             .unwrap_or_default();
         let path_str = path.to_string_lossy().to_string();
 
-        if let Ok(Some((prev_size, prev_mtime))) = db.cc_file_state(&path_str) {
-            if prev_size == size && prev_mtime == mtime {
+        let state = states.remove(&path_str);
+        if let Some(previous) = state.as_ref() {
+            if previous.size == size && previous.mtime == mtime {
                 continue; // unchanged since last ingest
             }
         }
 
-        let parsed = parse_file(&path);
+        let start_offset = state
+            .as_ref()
+            .filter(|previous| {
+                size > previous.size
+                    && previous.byte_offset >= 0
+                    && previous.byte_offset <= previous.size
+            })
+            .map(|previous| previous.byte_offset.max(0) as u64)
+            .unwrap_or(0);
+        let (parsed, byte_offset) = parse_file_from(&path, start_offset);
         // `inserted` reports only newly-inserted usage rows (what the UI shows as
         // "ingested"); tool-results and turns are stored but not counted there.
         if !parsed.usage.is_empty() {
@@ -524,7 +554,7 @@ pub fn ingest(base: &Path, db: &StatsDb) -> Result<usize, String> {
             db.cc_agent_upsert(&parsed.agents)
                 .map_err(|e| e.to_string())?;
         }
-        db.cc_set_file_state(&path_str, size, &mtime)
+        db.cc_set_file_state(&path_str, size, &mtime, byte_offset as i64, None)
             .map_err(|e| e.to_string())?;
     }
     Ok(inserted)
@@ -533,6 +563,49 @@ pub fn ingest(base: &Path, db: &StatsDb) -> Result<usize, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn ingest_retries_an_unfinished_appended_line_from_the_last_newline() {
+        use std::io::Write;
+
+        let base = std::env::temp_dir().join(format!("cu-cc-tail-ingest-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&base);
+        let project = base.join("projects").join("p");
+        std::fs::create_dir_all(&project).unwrap();
+        let path = project.join("session.jsonl");
+        let first = r#"{"type":"assistant","timestamp":"t1","sessionId":"s1","message":{"id":"m1","model":"claude-opus-5","usage":{"input_tokens":1,"output_tokens":1}}}"#;
+        let second = r#"{"type":"assistant","timestamp":"t2","sessionId":"s1","message":{"id":"m2","model":"claude-opus-5","usage":{"input_tokens":2,"output_tokens":1}}}"#;
+        std::fs::write(&path, format!("{first}\n")).unwrap();
+        let db = StatsDb::open(Path::new(":memory:")).unwrap();
+        assert_eq!(ingest(&base, &db).unwrap(), 1);
+        let key = path.to_string_lossy();
+        let complete_offset = db.cc_file_state(&key).unwrap().unwrap().byte_offset;
+
+        let mut file = std::fs::OpenOptions::new()
+            .append(true)
+            .open(&path)
+            .unwrap();
+        write!(file, "{second}").unwrap();
+        drop(file);
+        assert_eq!(ingest(&base, &db).unwrap(), 0);
+        assert_eq!(
+            db.cc_file_state(&key).unwrap().unwrap().byte_offset,
+            complete_offset
+        );
+
+        let mut file = std::fs::OpenOptions::new()
+            .append(true)
+            .open(&path)
+            .unwrap();
+        writeln!(file).unwrap();
+        drop(file);
+        assert_eq!(ingest(&base, &db).unwrap(), 1);
+        assert_eq!(
+            db.cc_file_state(&key).unwrap().unwrap().byte_offset,
+            std::fs::metadata(&path).unwrap().len() as i64
+        );
+        let _ = std::fs::remove_dir_all(&base);
+    }
 
     #[test]
     fn pricing_by_family() {
@@ -761,7 +834,8 @@ mod tests {
         // No agentId / isSidechain on the line — the older transcript shape.
         std::fs::write(
             &jsonl,
-            br#"{"type":"assistant","timestamp":"t","sessionId":"s-7","message":{"id":"m-9","model":"claude-opus-5","usage":{"input_tokens":1,"output_tokens":1}}}"#,
+            br#"{"type":"assistant","timestamp":"t","sessionId":"s-7","message":{"id":"m-9","model":"claude-opus-5","usage":{"input_tokens":1,"output_tokens":1}}}
+"#,
         )
         .unwrap();
         let parsed = parse_file(&jsonl);

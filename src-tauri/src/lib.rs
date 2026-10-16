@@ -1092,16 +1092,20 @@ async fn ingest_cc_usage(
 }
 
 #[tauri::command]
-async fn get_codex_limits(enabled: bool) -> Result<Option<codex::CodexRateLimits>, String> {
+async fn get_codex_limits(
+    enabled: bool,
+    stats: tauri::State<'_, Arc<StatsDb>>,
+) -> Result<Option<codex::CodexRateLimits>, String> {
     if !enabled {
         return Ok(None);
     }
     let Some(base) = codex::codex_dir() else {
         return Ok(None);
     };
-    tauri::async_runtime::spawn_blocking(move || codex::latest_limits(&base))
+    let db = stats.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || codex::latest_limits(&base, &db))
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]

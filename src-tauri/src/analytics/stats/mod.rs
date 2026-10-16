@@ -6,7 +6,7 @@
 //!   - `cc_store`  — Claude Code usage rows + per-file ingest state
 //!   - `analytics` — daily/model/heatmap aggregates over CC usage
 
-use rusqlite::Connection;
+use rusqlite::{params, Connection};
 use std::path::Path;
 use std::sync::Mutex;
 
@@ -197,6 +197,18 @@ const MIGRATIONS: &[&str] = &[
      );
      CREATE INDEX IF NOT EXISTS idx_cc_agent_session ON cc_agent(session_id);
      DELETE FROM cc_files;",
+    "CREATE TABLE IF NOT EXISTS codex_limit_files (
+        path            TEXT PRIMARY KEY,
+        size            INTEGER NOT NULL,
+        mtime           TEXT NOT NULL,
+        byte_offset     INTEGER NOT NULL,
+        snapshot_json   TEXT,
+        snapshot_ts     TEXT,
+        formula_version INTEGER NOT NULL
+    );",
+    "ALTER TABLE cc_files ADD COLUMN byte_offset INTEGER NOT NULL DEFAULT 0;
+     ALTER TABLE cc_files ADD COLUMN parse_context TEXT;
+     DELETE FROM cc_files;",
 ];
 
 fn migrate(conn: &Connection) -> Result<(), rusqlite::Error> {
@@ -213,6 +225,16 @@ pub struct StatsDb {
     conn: Mutex<Connection>,
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct CodexLimitFileState {
+    pub size: i64,
+    pub mtime: String,
+    pub byte_offset: i64,
+    pub snapshot_json: Option<String>,
+    pub snapshot_ts: Option<String>,
+    pub formula_version: i64,
+}
+
 impl StatsDb {
     pub fn open(db_path: &Path) -> Result<Self, rusqlite::Error> {
         let conn = Connection::open(db_path)?;
@@ -220,6 +242,61 @@ impl StatsDb {
         Ok(Self {
             conn: Mutex::new(conn),
         })
+    }
+}
+
+impl StatsDb {
+    pub(crate) fn codex_limit_file_states(
+        &self,
+    ) -> Result<std::collections::HashMap<String, CodexLimitFileState>, rusqlite::Error> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT path, size, mtime, byte_offset, snapshot_json, snapshot_ts, formula_version
+             FROM codex_limit_files",
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                CodexLimitFileState {
+                    size: row.get(1)?,
+                    mtime: row.get(2)?,
+                    byte_offset: row.get(3)?,
+                    snapshot_json: row.get(4)?,
+                    snapshot_ts: row.get(5)?,
+                    formula_version: row.get(6)?,
+                },
+            ))
+        })?;
+        rows.collect()
+    }
+
+    pub(crate) fn set_codex_limit_file_state(
+        &self,
+        path: &str,
+        state: &CodexLimitFileState,
+    ) -> Result<(), rusqlite::Error> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO codex_limit_files
+                (path, size, mtime, byte_offset, snapshot_json, snapshot_ts, formula_version)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+             ON CONFLICT(path) DO UPDATE SET
+                size=excluded.size, mtime=excluded.mtime,
+                byte_offset=excluded.byte_offset,
+                snapshot_json=excluded.snapshot_json,
+                snapshot_ts=excluded.snapshot_ts,
+                formula_version=excluded.formula_version",
+            params![
+                path,
+                state.size,
+                state.mtime,
+                state.byte_offset,
+                state.snapshot_json,
+                state.snapshot_ts,
+                state.formula_version
+            ],
+        )?;
+        Ok(())
     }
 }
 
@@ -684,29 +761,40 @@ mod tests {
     fn cc_file_state_roundtrip() {
         let db = mem_db();
         assert!(db.cc_file_state("a.jsonl").unwrap().is_none());
-        db.cc_set_file_state("a.jsonl", 123, "2026-01-01T00:00:00Z")
-            .unwrap();
+        db.cc_set_file_state(
+            "a.jsonl",
+            123,
+            "2026-01-01T00:00:00Z",
+            100,
+            Some("{\"session_id\":\"s1\"}"),
+        )
+        .unwrap();
         assert_eq!(
             db.cc_file_state("a.jsonl").unwrap(),
-            Some((123, "2026-01-01T00:00:00Z".to_string()))
+            Some(cc_store::CcFileState {
+                size: 123,
+                mtime: "2026-01-01T00:00:00Z".to_string(),
+                byte_offset: 100,
+                parse_context: Some("{\"session_id\":\"s1\"}".to_string()),
+            })
         );
         // upsert overwrites
-        db.cc_set_file_state("a.jsonl", 456, "2026-01-02T00:00:00Z")
+        db.cc_set_file_state("a.jsonl", 456, "2026-01-02T00:00:00Z", 450, None)
             .unwrap();
-        assert_eq!(db.cc_file_state("a.jsonl").unwrap().unwrap().0, 456);
+        assert_eq!(db.cc_file_state("a.jsonl").unwrap().unwrap().size, 456);
     }
 
-    // --- migrations: v8–v14 ---
+    // --- migrations: v8–v16 ---
 
     #[test]
-    fn migration_count_advances_to_fourteen() {
+    fn migration_count_advances_to_sixteen() {
         let db = mem_db();
         let conn = db.conn.lock().unwrap();
         let v: i64 = conn
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .unwrap();
         assert_eq!(v, MIGRATIONS.len() as i64);
-        assert_eq!(MIGRATIONS.len(), 14);
+        assert_eq!(MIGRATIONS.len(), 16);
     }
 
     #[test]
