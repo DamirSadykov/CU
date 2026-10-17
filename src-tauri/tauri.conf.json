@@ -74,6 +74,8 @@
       "../scripts/cli/process/red-gate.mjs": "scripts/cli/process/red-gate.mjs",
       "../scripts/cli/process/flow-gate.mjs": "scripts/cli/process/flow-gate.mjs",
       "../scripts/cli/process/checkpoint.mjs": "scripts/cli/process/checkpoint.mjs",
+      "../scripts/cli/process/review-core.mjs": "scripts/cli/process/review-core.mjs",
+      "../scripts/cli/process/wave.mjs": "scripts/cli/process/wave.mjs",
       "../scripts/cli/process/apply.mjs": "scripts/cli/process/apply.mjs",
       "../scripts/cli/process/graph-rules.mjs": "scripts/cli/process/graph-rules.mjs",
       "../scripts/cli/process/lint.mjs": "scripts/cli/process/lint.mjs",

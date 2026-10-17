@@ -48,6 +48,7 @@ import {
 import { openAiCost } from "../models/providers.mjs";
 import { createCandidate } from "../models/candidate.mjs";
 import { snapshotTree } from "./red-gate.mjs";
+import { FILE_ANCHOR, parseFindings, priorFindingsBlock, readReviewBar, reviewBarText, verdictInstruction } from "./review-core.mjs";
 
 // Re-exported: the parsers moved to the provider seam, their callers and
 // tests did not.
@@ -744,9 +745,6 @@ function formatOutsideChanges(outsideChanges) {
 function formatRetryReviewContext(context) {
   if (!context?.previousAttempt) return "";
   const findings = Array.isArray(context.previousAttempt.findings) ? context.previousAttempt.findings : [];
-  const closed = findings.length
-    ? findings.map((f) => `- [${f.level || "medium"}] ${f.file || "(no file)"}${f.line ? `:${f.line}` : ""} — ${f.text || "(no detail)"}`).join("\n")
-    : "(the preceding review recorded no structured findings)";
   const changed = typeof context.attemptPatch === "string" && context.attemptPatch.trim()
     ? context.attemptPatch.trim()
     : Array.isArray(context.attemptDiff) && context.attemptDiff.length
@@ -760,8 +758,7 @@ function formatRetryReviewContext(context) {
     : "(no other steps in this change)";
   return [
     "── RETRY REVIEW CONTEXT ──",
-    "FIRST, re-check these findings from the preceding attempt. Do not rediscover old code as a new regression; say whether each remains.",
-    closed,
+    priorFindingsBlock(findings, { anchor: FILE_ANCHOR }),
     "DIFF OF THIS ATTEMPT (preceding snapshot → current tree):",
     changed,
     "CHANGES OUTSIDE PRECEDING FINDINGS:",
@@ -773,7 +770,7 @@ function formatRetryReviewContext(context) {
   ].join("\n");
 }
 
-export function buildReviewPrompt({ task, workerResult = "", execution, appData, ownChanges, outsideChanges, retryContext } = {}) {
+export function buildReviewPrompt({ task, workerResult = "", execution, appData, cwd, ownChanges, outsideChanges, retryContext } = {}) {
   const parts = [
     `produces: ${(Array.isArray(task?.produces) ? task.produces : []).join(", ") || "(none)"}`,
     `verify: ${task?.verify || "(none — human gate)"}`,
@@ -801,36 +798,15 @@ export function buildReviewPrompt({ task, workerResult = "", execution, appData,
     formatRetryReviewContext(retryContext),
     workerResult ? `WORKER REPORT:\n${clampOutput(workerResult, 8000)}` : "WORKER REPORT: (none)",
     "",
-    "End with exactly one decision line: `VERDICT: approve` or `VERDICT: issue`.",
-    "Before it, list every finding exactly as `- [critical|high|medium|low] file:line — substance — evidence`.",
-    "Levels: critical = the project does not build, data is lost/corrupted, or the function is unavailable; high = a step obligation is unmet or a visible regression; medium = the goal is only partly met or an edge case; low = style or a minor detail.",
-    "Critical and high findings require both file:line and evidence (a concrete scenario); without either, label them medium. An obligation absent from the files is an issue.",
+    reviewBarText({ subject: "code", anchor: FILE_ANCHOR, bar: readReviewBar(cwd) }),
+    "An obligation absent from the files is an issue.",
+    verdictInstruction(FILE_ANCHOR),
     "Report out-of-scope defects too, but do not use them to reject this step: the runner classifies each finding by produces and this attempt's diff and files out-of-scope findings separately.",
   ].filter(Boolean).join("\n");
 }
 
 export function parseReviewVerdict(text) {
-  const source = String(text || "");
-  const matches = [...source.matchAll(/^[\s*_`]*VERDICT:[\s*_`]*(approve|issue)[\s*_`]*$/gim)];
-  const verdict = matches.at(-1)?.[1]?.toLowerCase() || "issue";
-  const findings = [];
-  for (const match of source.matchAll(/^\s*-\s*\[(critical|high|medium|low)\]\s*(?:(\S+):(\d+)\s*)?(?:—|--)\s*(.*)\s*$/gim)) {
-    let [, level, file, line, detail] = match;
-    const pieces = detail.split(/\s+(?:—|--)\s+/);
-    let text = pieces.shift();
-    let evidence = pieces.join(" — ");
-    file = file || null;
-    line = line ? Number(line) : null;
-    text = (text || "").trim();
-    evidence = (evidence || "").trim() || null;
-    if ((level === "critical" || level === "high") && (!file || !line || !evidence)) level = "medium";
-    findings.push({ level, file, line, text, evidence });
-  }
-  if (!findings.length && verdict === "issue") {
-    const legacy = source.replace(/^[\s*_`]*VERDICT:[\s*_`]*(approve|issue)[\s*_`]*$/gim, "").trim();
-    findings.push({ level: "high", file: null, line: null, text: legacy, evidence: null });
-  }
-  return { approved: verdict === "approve", verdict, findings };
+  return parseFindings(text, FILE_ANCHOR);
 }
 
 // ── the step ────────────────────────────────────────────────────────────────
@@ -1130,7 +1106,7 @@ async function executeReviewCandidate({
   catch (e) { return { approved: false, ok: false, error: `routing: ${e?.message || e}` }; }
   if (!execution.enabled || !execution.model)
     return { approved: true, ok: true, skipped: true, duty: "review", costUsd: 0, route: execution.route || null };
-  const prompt = buildReviewPrompt({ task, workerResult, execution, appData, ownChanges, outsideChanges, retryContext });
+  const prompt = buildReviewPrompt({ task, workerResult, execution, appData, cwd, ownChanges, outsideChanges, retryContext });
   const candidate = createCandidate(execution);
 
   if (execution.provider === "openai") {
