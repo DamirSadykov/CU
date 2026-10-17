@@ -74,6 +74,38 @@ describe("the YAML subset apply reads", () => {
     ].join("\n")));
     expect(errors).toEqual(expect.arrayContaining(["out[1]: why is required", "measure[1]: how is required"]));
   });
+
+  it("reads measure ok as a boolean, since the board schema rejects a string", () => {
+    const doc = readDocument([
+      "measure:",
+      "  - what: Доля", "    how: замер", "    ok: true",
+      "  - what: Время", "    how: замер", "    ok: false",
+      "  - what: Память", "    how: замер", "    ok: да",
+      "steps:", "  1: Работа",
+    ].join("\n"));
+    expect(doc.measure.map((item) => item.ok)).toEqual([true, false, "да"]);
+    expect(validate(doc).errors).toContain("measure[3]: ok must be true or false");
+  });
+
+  it("reads measure ok regardless of case and surrounding spaces", () => {
+    const doc = readDocument([
+      "measure:",
+      "  - what: Доля", "    how: замер", "    ok: True",
+      "  - what: Время", "    how: замер", "    ok: \"FALSE \"",
+      "steps:", "  1: Работа",
+    ].join("\n"));
+    expect(doc.measure.map((item) => item.ok)).toEqual([true, false]);
+    expect(validate(doc).errors).toEqual([]);
+  });
+
+  it("leaves measure items without ok untouched", () => {
+    const doc = readDocument([
+      "measure:", "  - what: Доля", "    how: замер",
+      "steps:", "  1: Работа",
+    ].join("\n"));
+    expect(doc.measure).toEqual([{ what: "Доля", how: "замер" }]);
+    expect("ok" in doc.measure[0]).toBe(false);
+  });
 });
 
 describe("change brief fields in apply", () => {
@@ -101,6 +133,67 @@ describe("change brief fields in apply", () => {
       expect(change.measure.find((item) => item.what === "Ручной замер")).toBeTruthy();
       expect(change.out[0].why).toBe("обновлённый повод");
       expect(change.measure[0].how).toBe("обновлённый способ");
+    } finally {
+      rmSync(path.dirname(file), { recursive: true, force: true });
+    }
+  });
+
+  it("writes a planned measure ok to the board file as a boolean", () => {
+    const file = path.join(mkdtempSync(path.join(os.tmpdir(), "cut-measure-ok-")), "todos.json");
+    try {
+      const data = { version: 1, todos: [], changes: [] };
+      const doc = readDocument([
+        "change: Агрегаты при записи",
+        "measure:",
+        "  - what: backfill_first", "    how: io_bench compare", "    actual: 185 с → 0.24 с", "    ok: true",
+        "  - what: limits_cold", "    how: io_bench compare", "    ok: false",
+        "steps:", "  1:", "    title: Работа", "    size: M",
+      ].join("\n"));
+      expect(applyDocument(doc, { go: true, project: "fixture", board: { data, file } }).ok).toBe(true);
+      const saved = JSON.parse(readFileSync(file, "utf8")).changes[0].measure;
+      expect(saved.map((item) => item.ok)).toEqual([true, false]);
+    } finally {
+      rmSync(path.dirname(file), { recursive: true, force: true });
+    }
+  });
+
+  it("replaces a boolean ok on re-apply with a boolean, not the plan's text", () => {
+    const file = path.join(mkdtempSync(path.join(os.tmpdir(), "cut-measure-ok-merge-")), "todos.json");
+    try {
+      const data = {
+        version: 1,
+        todos: [],
+        changes: [{
+          id: "ch-113", number: 113, title: "Агрегаты при записи", delta: "", project: "fixture", out: [],
+          measure: [{ what: "backfill_first", how: "io_bench compare", ok: false }],
+        }],
+      };
+      const doc = readDocument([
+        "change: c#113",
+        "measure:",
+        "  - what: backfill_first", "    how: io_bench compare", "    actual: 0.24 с", "    ok: true",
+        "steps:", "  1:", "    title: Работа", "    size: M",
+      ].join("\n"));
+      expect(applyDocument(doc, { go: true, project: "fixture", board: { data, file } }).ok).toBe(true);
+      const saved = JSON.parse(readFileSync(file, "utf8")).changes[0].measure;
+      expect(saved).toEqual([{ what: "backfill_first", how: "io_bench compare", actual: "0.24 с", ok: true }]);
+    } finally {
+      rmSync(path.dirname(file), { recursive: true, force: true });
+    }
+  });
+
+  it("refuses to apply a plan whose measure ok is neither true nor false", () => {
+    const file = path.join(mkdtempSync(path.join(os.tmpdir(), "cut-measure-ok-bad-")), "todos.json");
+    try {
+      const data = { version: 1, todos: [], changes: [] };
+      const doc = readDocument([
+        "change: Агрегаты при записи",
+        "measure:", "  - what: backfill_first", "    how: io_bench compare", "    ok: да",
+        "steps:", "  1:", "    title: Работа", "    size: M",
+      ].join("\n"));
+      const result = applyDocument(doc, { go: true, project: "fixture", board: { data, file } });
+      expect(result.ok).toBe(false);
+      expect(data.changes).toEqual([]);
     } finally {
       rmSync(path.dirname(file), { recursive: true, force: true });
     }
