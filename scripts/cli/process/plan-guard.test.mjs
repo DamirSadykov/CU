@@ -31,12 +31,15 @@ import {
   decide,
   architectDecision,
   architectGateState,
+  planReviewStore,
+  parallelismBlock,
   planFormatDoc,
   planFormatIssuesDoc,
   planFormatCuttingDoc,
 } from "./plan-guard.mjs";
 import { readDocument, validate } from "./apply.mjs";
 import { emptyAgentConfig } from "../agents/agents.mjs";
+import { WAVE_RULES } from "./wave.mjs";
 
 const CLI = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "cli.mjs");
 
@@ -453,6 +456,200 @@ describe("architectDecision · configured lifecycle hook", () => {
     );
     expect(seen).toBeNull();
     expect(calls).toBe(0);
+  });
+});
+
+describe("architectDecision · the review bar and the preceding round", () => {
+  const AVAILABLE = {
+    mode: "agent",
+    available: true,
+    candidate: { label: "anthropic/claude-opus-5-5" },
+    candidates: [],
+  };
+  const memory = () => {
+    const states = new Map();
+    return {
+      states,
+      read: (s) => (states.has(s) ? states.get(s) : (() => { throw new Error("ENOENT"); })()),
+      write: (s, v) => states.set(s, JSON.parse(JSON.stringify(v))),
+      clear: (s) => states.delete(s),
+    };
+  };
+  const withSession = (plan, session = "s-1") => ({ ...exitPlan(plan), session_id: session, cwd: os.tmpdir() });
+  const answer = (text) => () => ({ ok: true, text });
+
+  it("builds the prompt from the shared bar, without the old adversarial wording", () => {
+    let prompt = "";
+    architectDecision(withSession(VALID), (_d, p) => { prompt = p; return { ok: true, text: "VERDICT: approve" }; }, { gate: AVAILABLE, store: memory() });
+    expect(prompt).toContain("BAR. A finding is critical or high only");
+    expect(prompt).toContain("- [critical|high|medium|low] step N — substance — evidence");
+    expect(prompt).not.toMatch(/unsafe or incomplete|adversarial/i);
+    expect(prompt).not.toContain("PRECEDING ROUND");
+  });
+
+  it("lets medium and low through as notes and clears the stored round", () => {
+    const store = memory();
+    store.states.set("s-1", { plan: "old", steps: {}, findings: [] });
+    const seen = architectDecision(withSession(VALID), answer([
+      "- [medium] step 2 — retry 3 is generous — two would do",
+      "- [high] step 1 — no scenario given",
+      "VERDICT: issue",
+    ].join("\n")), { gate: AVAILABLE, store });
+    expect(seen).not.toHaveProperty("permissionDecision");
+    expect(seen.additionalContext).toContain("ARCHITECT NOTES");
+    expect(seen.additionalContext).toContain("[medium] step 2 — retry 3 is generous");
+    expect(store.states.has("s-1")).toBe(false);
+  });
+
+  it("denies on a blocking finding and stores the round for the next call", () => {
+    const store = memory();
+    const seen = architectDecision(withSession(VALID), answer([
+      "- [high] step 2 — verify does not cover idempotency — a duplicate delivery passes the gate",
+      "Fix: verify: npm run test:queue -- --dup",
+      "VERDICT: issue",
+    ].join("\n")), { gate: AVAILABLE, store });
+    expect(seen.permissionDecision).toBe("deny");
+    expect(seen.permissionDecisionReason).toContain("1 blocking finding(s)");
+    expect(seen.permissionDecisionReason).toContain("Fix: verify: npm run test:queue -- --dup");
+    expect(store.states.get("s-1").findings[0]).toMatchObject({ level: "high", step: "2" });
+    expect(Object.keys(store.states.get("s-1").steps)).toEqual(["1", "2"]);
+  });
+
+  it("re-checks the preceding findings first and downgrades a new high on an unchanged step", () => {
+    const store = memory();
+    architectDecision(withSession(VALID), answer("- [high] step 2 — verify misses duplicates — dup passes\nVERDICT: issue"), { gate: AVAILABLE, store });
+    const revised = VALID.replace("verify: npm run test:queue", "verify: npm run test:queue -- --dup");
+    let prompt = "";
+    const seen = architectDecision(withSession(revised), (_d, p) => {
+      prompt = p;
+      return { ok: true, text: "- [high] step 1 — table has no index — slow lookups on replay\nVERDICT: issue" };
+    }, { gate: AVAILABLE, store });
+    expect(prompt).toContain("FIRST, re-check these findings from the preceding round of this plan");
+    expect(prompt).toContain("- [high] step 2 — verify misses duplicates");
+    expect(prompt).toContain("STEPS CHANGED SINCE THEN: 2");
+    expect(seen).not.toHaveProperty("permissionDecision");
+    expect(seen.additionalContext).toContain("[medium] step 1 — table has no index");
+  });
+
+  it("keeps a new high on a changed step blocking", () => {
+    const store = memory();
+    architectDecision(withSession(VALID), answer("- [high] step 2 — verify misses duplicates — dup passes\nVERDICT: issue"), { gate: AVAILABLE, store });
+    const revised = VALID.replace("verify: npm run test:queue", "verify: npm run test:queue -- --dup");
+    const seen = architectDecision(withSession(revised), answer("- [high] step 2 — dup flag does not exist — npm passes it to a runner that ignores it\nVERDICT: issue"), { gate: AVAILABLE, store });
+    expect(seen.permissionDecision).toBe("deny");
+  });
+
+  it("drops a medium the author rejected in the step's why, never a high", () => {
+    const store = memory();
+    architectDecision(withSession(VALID), answer("- [high] step 2 — verify misses duplicates — dup passes\nVERDICT: issue"), { gate: AVAILABLE, store });
+    const revised = VALID
+      .replace("verify: npm run test:queue", "verify: npm run test:queue -- --dup")
+      .replace("обработчик идемпотентен.\n", "обработчик идемпотентен.\n      отклонено: retry 3 is generous — повтор дешёвый\n");
+    let prompt = "";
+    const seen = architectDecision(withSession(revised), (_d, p) => {
+      prompt = p;
+      return { ok: true, text: "- [medium] step 2 — retry 3 is generous — two would do\nVERDICT: approve" };
+    }, { gate: AVAILABLE, store });
+    expect(prompt).toContain("REJECTED BY THE AUTHOR");
+    expect(prompt).toContain("step 2: retry 3 is generous — повтор дешёвый");
+    expect(seen).toBeNull();
+  });
+
+  it("runs a full round when the stored state cannot be read", () => {
+    const store = memory();
+    store.states.set("s-1", { broken: true });
+    let prompt = "";
+    const seen = architectDecision(withSession(VALID), (_d, p) => {
+      prompt = p;
+      return { ok: true, text: "- [high] step 1 — table lacks a key — duplicate rows on replay\nVERDICT: issue" };
+    }, { gate: AVAILABLE, store });
+    expect(prompt).not.toContain("PRECEDING ROUND");
+    expect(seen.permissionDecision).toBe("deny");
+  });
+
+  it("still denies when the round cannot be stored", () => {
+    const store = { read: () => null, write: () => { throw new Error("EACCES"); }, clear: () => {} };
+    const seen = architectDecision(withSession(VALID), answer("- [high] step 1 — table lacks a key — duplicate rows\nVERDICT: issue"), { gate: AVAILABLE, store });
+    expect(seen.permissionDecision).toBe("deny");
+  });
+
+  it("stores rounds per session under the data directory", () => {
+    const appData = mkdtempSync(path.join(os.tmpdir(), "plan-reviews-"));
+    try {
+      const store = planReviewStore(appData);
+      expect(() => store.read("a/b")).toThrow();
+      store.write("a/b", { steps: {}, findings: [] });
+      expect(store.read("a/b")).toEqual({ steps: {}, findings: [] });
+      store.clear("a/b");
+      expect(() => store.read("a/b")).toThrow();
+    } finally { rmSync(appData, { recursive: true, force: true }); }
+  });
+
+  const COLON = "- [high] step 2: verify misses duplicates — dup passes\nVERDICT: issue";
+
+  it("returns an answer with lines out of format to the model once, and judges the rewrite", () => {
+    const prompts = [];
+    const replies = [COLON, "- [high] step 2 — verify misses duplicates — dup passes\nVERDICT: issue"];
+    const seen = architectDecision(withSession(VALID), (_d, p) => { prompts.push(p); return { ok: true, text: replies.shift() }; }, { gate: AVAILABLE, store: memory() });
+    expect(prompts).toHaveLength(2);
+    expect(prompts[1]).toContain("LINES NOT IN THE FORMAT:");
+    expect(prompts[1]).toContain("- [high] step 2: verify misses duplicates");
+    expect(seen.permissionDecision).toBe("deny");
+    expect(seen.permissionDecisionReason).toContain("1 blocking finding(s) (critical/high): step 2.");
+  });
+
+  it("denies at once when a parsed blocking finding sits next to a line out of format", () => {
+    const prompts = [];
+    const seen = architectDecision(withSession(VALID), (_d, p) => {
+      prompts.push(p);
+      return { ok: true, text: "- [high] step 1 — table lacks a key — duplicate rows\n- [low] step 2: wording\nVERDICT: issue" };
+    }, { gate: AVAILABLE, store: memory() });
+    expect(prompts).toHaveLength(1);
+    expect(seen.permissionDecision).toBe("deny");
+    expect(seen.permissionDecisionReason).toContain("- [low] step 2: wording");
+  });
+
+  it("fails open with a format-retry label when the rewrite call fails", () => {
+    const replies = [{ ok: true, text: COLON }, { ok: false, error: "timed out" }];
+    const seen = architectDecision(withSession(VALID), () => replies.shift(), { gate: AVAILABLE, store: memory() });
+    expect(seen).not.toHaveProperty("permissionDecision");
+    expect(seen.additionalContext).toContain("ARCHITECT CHECK FAILED OPEN (format retry)");
+  });
+
+  it("passes the raw answer to the session when the rewrite is still out of format", () => {
+    const seen = architectDecision(withSession(VALID), answer(COLON), { gate: AVAILABLE, store: memory() });
+    expect(seen).not.toHaveProperty("permissionDecision");
+    expect(seen.additionalContext).toContain("ARCHITECT ANSWER NOT IN FORMAT");
+    expect(seen.additionalContext).toContain("- [high] step 2: verify misses duplicates");
+  });
+
+  it("asks for the strict format with an example in the first prompt", () => {
+    let prompt = "";
+    architectDecision(withSession(VALID), (_d, p) => { prompt = p; return { ok: true, text: "VERDICT: approve" }; }, { gate: AVAILABLE, store: memory() });
+    expect(prompt).toContain("never by a colon");
+    expect(prompt).toContain("Example: - [high] step 2 — verify does not run the new test");
+    expect(prompt).toContain("returned for rewriting");
+  });
+
+  it("passes a plan whose architect answer has no verdict line", () => {
+    expect(architectDecision(withSession(VALID), answer("looks fine"), { gate: AVAILABLE, store: memory() })).toBeNull();
+  });
+});
+
+describe("parallelismBlock · the rules the runner actually keeps", () => {
+  it.each(WAVE_RULES.map((r) => [r.rule, r]))("%s", (_rule, r) => {
+    expect(r.example()).toEqual(r.expect);
+  });
+
+  it("puts every wave rule into the architect prompt", () => {
+    const block = parallelismBlock();
+    for (const r of WAVE_RULES) expect(block).toContain(`- ${r.rule}`);
+    expect(block).toContain("a missing `needs`");
+    let prompt = "";
+    architectDecision(exitPlan(VALID), (_d, p) => { prompt = p; return { ok: true, text: "VERDICT: approve" }; }, {
+      gate: { mode: "agent", available: true, candidate: { label: "x" }, candidates: [] },
+    });
+    expect(prompt).toContain("PARALLELISM — the runner builds each wave");
   });
 });
 

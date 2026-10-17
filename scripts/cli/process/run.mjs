@@ -96,16 +96,19 @@ import {
   recoverMarkers,
 } from "./red-gate.mjs";
 import { restoreCheckpoint } from "./checkpoint.mjs";
+import { FILE_ANCHOR, downgradeUnchanged } from "./review-core.mjs";
+import { DEFAULT_PARALLEL_LIMIT, buildWave, declaredRed, resolveParallelLimit } from "./wave.mjs";
 import { appendRunEvent, createVerifyLog, runEventsPath, verifyLogPath, watchRunEvents, writeVerifyLog } from "./run-events.mjs";
 import { pathMatches } from "./outcome.mjs";
 import { runFlowGate } from "./flow-gate.mjs";
 import { flowDeclared } from "./graph-rules.mjs";
 import { flowcheckExe, parkedStepExpiryHours } from "../kernel/settings.mjs";
 
+export { DEFAULT_PARALLEL_LIMIT, buildWave, resolveParallelLimit };
+
 const PLAN_ISSUES_DOC = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "docs", "plan-format-issues.md");
 const PLAN_CUTTING_DOC = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "docs", "plan-format-cutting.md");
 
-export const DEFAULT_PARALLEL_LIMIT = 1;
 export const MIN_HISTORICAL_BUDGET_USD = 0.5;
 export const MIN_SIMILAR_BUDGET_SAMPLES = 3;
 export const MIN_SIZE_BUDGET_SAMPLES = 5;
@@ -224,7 +227,6 @@ function touchesFinding(ranges, line) {
 }
 const num = (t) => (t && t.number != null ? `#${t.number}` : t ? t.id : "?");
 const declaredVerify = (t) => (t && t.verify && String(t.verify).trim()) || "";
-const declaredRed = (t) => (t && t.red && String(t.red).trim()) || "";
 const declaredFlow = (t) => flowDeclared(t?.flow);
 const isSensitive = (t) => String(t?.risk || "").trim().toLowerCase() === "sensitive";
 
@@ -1632,13 +1634,11 @@ async function retryReviewContext(ctx, task, ownChanges) {
 
 function downgradeUntouchedRetryFindings(review, context) {
   if (!review || !Array.isArray(review.findings) || !Array.isArray(context?.attemptDiff)) return review;
-  const prior = new Set((context.previousAttempt?.findings || []).map(findingKey));
-  const touched = new Set(context.attemptDiff.map((c) => String(c?.path || "").replace(/\\/g, "/")));
-  const findings = review.findings.map((f) => {
-    const file = String(f?.file || "").replace(/\\/g, "/");
-    if ((f?.level === "critical" || f?.level === "high") && !prior.has(findingKey(f)) && file && !touched.has(file))
-      return { ...f, level: "medium", evidence: `${f.evidence || ""}${f.evidence ? "; " : ""}outside this retry's diff` };
-    return f;
+  const findings = downgradeUnchanged(review.findings, {
+    prior: context.previousAttempt?.findings || [],
+    changed: new Set(context.attemptDiff.map((c) => FILE_ANCHOR.place({ file: c?.path }))),
+    anchor: FILE_ANCHOR,
+    note: "outside this retry's diff",
   });
   return { ...review, findings };
 }
@@ -1944,32 +1944,6 @@ const budgetExhaustedReason = (spent, budget, notStarted) =>
 
 const retryExhaustedReason = (attempt, limit) =>
   `attempt ${attempt + 1} would be past the declared limit — ${attempt}/<=${limit}; attempt M+1 never starts`;
-
-export function buildWave(ready, limit) {
-  if (!ready.length) return [];
-  if (declaredRed(ready[0])) return [ready[0]];
-  const wave = [];
-  const produced = new Set();
-  for (const t of ready) {
-    if (wave.length >= limit || declaredRed(t)) break;
-    const paths = (Array.isArray(t.produces) ? t.produces : [])
-      .filter(Boolean)
-      .map((p) => String(p).replace(/\\/g, "/"));
-    if (paths.some((p) => produced.has(p))) continue;
-    wave.push(t);
-    for (const p of paths) produced.add(p);
-  }
-  return wave;
-}
-
-export function resolveParallelLimit(root, override) {
-  return (
-    (typeof override === "number" && override > 0 && Math.floor(override)) ||
-    (typeof root.parallel_limit === "number" && root.parallel_limit > 0
-      ? Math.floor(root.parallel_limit)
-      : DEFAULT_PARALLEL_LIMIT)
-  );
-}
 
 export async function applyResult(ctx, r, { dry, log }) {
   ctx.endingAttempt = ATTEMPT_END_KINDS.has(r.kind) ? r : null;

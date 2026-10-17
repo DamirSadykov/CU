@@ -39,7 +39,7 @@
         { "provider": "openai", "model": "gpt-5.6-terra", "reasoning_effort": "high" }
       ],
       "role": "architect",
-      "instructions": "Act as the architect. Protect system boundaries, data contracts and migration paths. Prefer a small coherent design over local patches."
+      "instructions": "Act as the architect. Protect system boundaries, data contracts and migration paths. Prefer a small coherent design over local patches.\n\nJudge in proportion: what this plan must get right for its own decision, not general rigor. Never ask for schemas, extra control arms, retries or gates beyond what a step's result depends on. Merge findings that share a cause, most consequential first.\nEach finding: the concrete failure (what goes wrong, in which step, how it would be noticed too late) and one smallest fix as a plan edit — a step, a field value, a command — written so the author can paste it. One fix per finding, not a menu; prefer adding a step or a verify over rewriting the vision.\nList findings only: no list of what checks out, no alternatives. If only nits or matters of taste remain, approve."
     },
     "worker": {
       "mode": "always",
@@ -57,7 +57,7 @@
         { "provider": "openai", "model": "gpt-5.6-terra", "reasoning_effort": "high" }
       ],
       "role": "reviewer",
-      "instructions": "Act as the reviewer. Inspect correctness, regressions, tests and maintainability. Report concrete findings before the summary."
+      "instructions": "Act as the reviewer. Inspect correctness, regressions and the declared obligations in proportion to what this step must deliver.\nEach finding: the concrete failure with its scenario and one smallest fix as a code fragment the author can apply. One fix per finding, not a menu.\nList findings only: no list of what checks out, no alternatives. If only nits or matters of taste remain, approve."
     },
     "retro": {
       "mode": "agent",
