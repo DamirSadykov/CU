@@ -140,14 +140,14 @@ export function buildWorkflowContext(state = workflowState(), host = "claude") {
     "runner → worker" +
     (state.worker ? ` (${state.worker})` : "") +
     (state.review ? ` → review (${state.reviewModel || "configured"})` : "") +
-    " → verify+reconcile → next ready step; issue → retry inside the node's budget → parked for the user.";
+    " → verify+reconcile → next ready task; issue → retry inside the node's budget → parked for the user.";
   const runnerOn = state.runner !== false;
   const choose = runnerOn
-    ? "2 choose — all steps S or M, files known, no open branch → no plan: implement in this session or with agents; use a graph via `<cli> todos apply` only when the auto runner is needed."
-    : "2 choose — all steps S or M, files known, no open branch → no plan: implement in this session or with agents.";
+    ? "2 choose — all tasks S or M, files known, no open branch → no plan: implement in this session or with agents; use a graph via `<cli> todos apply` only when the auto runner is needed."
+    : "2 choose — all tasks S or M, files known, no open branch → no plan: implement in this session or with agents.";
   const runnerLines = runnerOn
     ? [
-        `Auto runner — \`<cli> todos run <c#N> --go\`, its own background process, NOT this session: ${runner}`,
+        `Auto runner — \`<cli> todos run <p#N> --go\`, its own background process, NOT this session: ${runner}`,
         "   Start it with background execution (`run_in_background: true` in Claude Code) and do not observe it from this session. On a stop the process exits; its final stdout lines are the decision card and restart command.",
       ]
     : ["Auto runner — off in the tracker's work mode; this session implements the plan itself."];
@@ -159,11 +159,11 @@ export function buildWorkflowContext(state = workflowState(), host = "claude") {
         : "1 critic — goal, assumptions, risks, alternatives. YOU do this pass.";
     return [
       "──────── WORKFLOW · this Codex session ────────",
-      "0 scout — locate the files and mark every step S/M/L before choosing the workflow.",
+      "0 scout — locate the files and mark every task S/M/L before choosing the workflow.",
       critic,
       "   question still open → ask the user, then back to 1.",
       choose,
-      "   Any L step or open branch → plan; keep it current as evidence changes.",
+      "   Any L task or open branch → draft plan; keep it current as evidence changes.",
       "   No tracker ExitPlanMode gate is wired for Codex; this session owns plan quality and review.",
       "3 implement → verify. Check fails → fix and re-verify. The PLAN was wrong → back to 2. Out of moves → ask the user.",
       ...runnerLines,
@@ -171,11 +171,11 @@ export function buildWorkflowContext(state = workflowState(), host = "claude") {
   }
   return [
     "──────── WORKFLOW · this session ────────",
-    "0 scout — locate the files and mark every step S/M/L before choosing the workflow.",
+    "0 scout — locate the files and mark every task S/M/L before choosing the workflow.",
     criticLine(state),
     "   question still open → ask the user, then back to 1.",
     choose,
-    "   Any L step or open branch → plan mode → ExitPlanMode.",
+    "   Any L task or open branch → draft plan in plan mode → ExitPlanMode.",
     architectLine(state),
     "3 implement → verify. Check fails → fix and re-verify. The PLAN was wrong → back to 2. Out of moves → ask the user.",
     ...runnerLines,
@@ -472,7 +472,7 @@ function main(args = []) {
     for (const r of changeRoots.values()) {
       lines.push(
         block(
-          `  ★ vision — change ${r.address ?? `t#${r.number}`} "${clip(r.subject)}" (north star for the in_progress task(s) above; keep them true to it — if one pulls away, stop and flag it):`,
+          `  ★ vision — plan ${r.address ?? `t#${r.number}`} "${clip(r.subject)}" (north star for the in_progress task(s) above; keep them true to it — if one pulls away, stop and flag it):`,
           r.description,
         ),
       );

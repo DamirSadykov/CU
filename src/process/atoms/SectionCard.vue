@@ -51,7 +51,7 @@ withDefaults(
 }
 .section-card-address {
     font-family: var(--mono);
-    font-size: 12.5px;
+    font-size: var(--fs-xs);
     line-height: 1.3;
 }
 .section-card.tone-spec .section-card-address {
@@ -62,7 +62,7 @@ withDefaults(
 }
 .section-card-title {
     margin-top: 5px;
-    font-size: 14px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     line-height: 1.3;
     color: var(--text);
@@ -73,7 +73,7 @@ withDefaults(
     gap: 8px;
     margin-top: 6px;
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
 }
 .section-card-part .warn {
@@ -81,7 +81,7 @@ withDefaults(
 }
 .section-card-prose {
     margin-top: 10px;
-    font-size: 11.8px;
+    font-size: var(--fs-xs);
     line-height: 1.5;
     color: var(--text-3);
 }

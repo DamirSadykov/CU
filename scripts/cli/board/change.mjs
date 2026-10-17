@@ -1,17 +1,17 @@
 import { randomUUID } from "node:crypto";
 import { boardPath, loadBoard, loadBoardForWrite, saveBoard, findChange, changeAddress } from "../kernel/board-io.mjs";
 import { withBoardLock, withDataDir } from "../kernel/board-lock.mjs";
+import { parseRef } from "../kernel/terms.mjs";
 
 export { findChange, changeAddress } from "../kernel/board-io.mjs";
 
-export const CHANGE_REF = /^c\s*#?\s*(\d+)$/i;
+export const CHANGE_REF = { test: (value) => parseRef(value) !== null };
 
 export function parseChangeRef(ref) {
   const s = String(ref ?? "").trim();
   if (!s) return null;
-  const m = s.match(CHANGE_REF);
-  if (m) return { number: Number(m[1]) };
-  if (/^\d+$/.test(s)) return { number: Number(s) };
+  const number = parseRef(s);
+  if (number !== null) return { number };
   return { id: s };
 }
 
@@ -30,7 +30,7 @@ export function nextChangeNumber(data) {
 export function createChange(data, fields = {}) {
   if (!Array.isArray(data.changes)) data.changes = [];
   const title = String(fields.title ?? "").trim();
-  if (!title) throw new Error("a change needs a title");
+  if (!title) throw new Error("a plan needs a title");
   const now = new Date().toISOString();
   const change = {
     id: randomUUID(),
@@ -178,23 +178,23 @@ export function allChanges(data) {
 }
 
 const USAGE =
-  'usage: cli change new "<title>" [--project <name> | --global] [--delta "<text>"]\n' +
+  'usage: cli plan new "<title>" [--project <name> | --global] [--delta "<text>"]\n' +
   "                    [--spec <домен#слаг>[,<…>]] [--budget <usd>] [--parallel <N>]\n" +
-  "       cli change list [--project <name> | --all] [--json]\n" +
-  "       cli change show <c#N> [--json]\n" +
-  "       cli change close <c#N>\n" +
-  "       cli change retro-facts <c#N> [--json]\n" +
-  "       cli change proposal list [--json]\n" +
-  "       cli change proposal set <c#N> <id> accepted|rejected --reason \"<why>\"\n" +
-  "       cli change out add <c#N> \"<what>\" --why \"<why>\" [--ref <c#M|t#N|path>]\n" +
-  "       cli change out rm <c#N> \"<what>\"\n" +
-  "       cli change measure add <c#N> \"<what>\" --how \"<how>\" [--target \"<target>\"]\n" +
-  "       cli change measure rm <c#N> \"<what>\"\n" +
-  "       cli change measure set <c#N> \"<what>\" [--actual \"<actual>\"] [--ok | --off] [--note \"<note>\"]\n" +
-  "       cli change set title|delta|spec|budget|parallel <c#N> <value>\n" +
-  "       cli change migrate [--go]        root tasks -> records; dry run by default\n\n" +
-  "A change is a RECORD, not a task: it holds the delta, the spec sections and the\n" +
-  "group's ceilings, while a task points at it through `todos set change <task> c#N`.\n" +
+  "       cli plan list [--project <name> | --all] [--json]\n" +
+  "       cli plan show <p#N> [--json]\n" +
+  "       cli plan close <p#N>\n" +
+  "       cli plan retro-facts <p#N> [--json]\n" +
+  "       cli plan proposal list [--json]\n" +
+  "       cli plan proposal set <p#N> <id> accepted|rejected --reason \"<why>\"\n" +
+  "       cli plan out add <p#N> \"<what>\" --why \"<why>\" [--ref <p#M|t#N|path>]\n" +
+  "       cli plan out rm <p#N> \"<what>\"\n" +
+  "       cli plan measure add <p#N> \"<what>\" --how \"<how>\" [--target \"<target>\"]\n" +
+  "       cli plan measure rm <p#N> \"<what>\"\n" +
+  "       cli plan measure set <p#N> \"<what>\" [--actual \"<actual>\"] [--ok | --off] [--note \"<note>\"]\n" +
+  "       cli plan set title|delta|spec|budget|parallel <p#N> <value>\n" +
+  "       cli plan migrate [--go]          root tasks -> records; dry run by default\n\n" +
+  "A plan is a RECORD, not a task: it holds the delta, the spec sections and the\n" +
+  "group's ceilings, while a task points at it through `todos set change <task> p#N`.\n" +
   "Its status is derived — open while any of its tasks is open — and never stored.\n" +
   "Roots not migrated yet are listed under their old address t#N.";
 
@@ -298,7 +298,7 @@ function cmdList(args) {
     return;
   }
   if (!list.length) {
-    process.stdout.write("нет ни одного change'а на этой доске\n");
+    process.stdout.write("нет ни одного плана на этой доске\n");
     return;
   }
   for (const c of list) process.stdout.write(formatChangeLine(data, c) + "\n");
@@ -306,7 +306,7 @@ function cmdList(args) {
 
 function resolveOrFail(data, ref) {
   const hit = findChange(data, ref) ?? allChanges(data).find((c) => changeAddress(c) === String(ref).trim());
-  if (!hit) fail(`refusing: no change ${ref} — see them all: cli change list --all`);
+  if (!hit) fail(`refusing: no plan ${ref} — see them all: cli plan list --all`);
   return hit;
 }
 
@@ -356,7 +356,7 @@ function cmdShow(args) {
     }
   } else process.stdout.write("  (пусто)\n");
   if (!members.length) {
-    process.stdout.write("\nни одной задачи не смотрит на этот change\n");
+    process.stdout.write("\nни одна задача не входит в этот план\n");
     return;
   }
   process.stdout.write("\nзадачи:\n");
@@ -378,7 +378,7 @@ export function cmdClose(args, { collectFacts = null } = {}) {
   if (snapshotProgress.done < snapshotProgress.total)
     fail(
       `refusing: ${changeAddress(snapshotChange)} still has ${snapshotProgress.total - snapshotProgress.done} open task(s).\n` +
-        `  its status is derived, so closing it means closing them: cli change show ${changeAddress(snapshotChange)}`,
+        `  its status is derived, so closing it means closing them: cli plan show ${changeAddress(snapshotChange)}`,
     );
   const retro = snapshotChange.ext?.retro?.facts || !collectFacts
     ? null
@@ -397,7 +397,7 @@ export function cmdClose(args, { collectFacts = null } = {}) {
     if (done < t)
       fail(
         `refusing: ${changeAddress(c)} still has ${t - done} open task(s).\n` +
-          `  its status is derived, so closing it means closing them: cli change show ${changeAddress(c)}`,
+          `  its status is derived, so closing it means closing them: cli plan show ${changeAddress(c)}`,
       );
     const already = !!c.closed_at;
     if (retro && !c.ext?.retro?.facts) {
@@ -429,7 +429,7 @@ function printMeasureReminder(change) {
     process.stdout.write("measurements without actual:\n");
     for (const item of pending) {
       process.stdout.write(`  - ${item.what}\n`);
-      process.stdout.write(`    cli change measure set ${changeAddress(change)} ${JSON.stringify(item.what)} --actual \"<actual>\"\n`);
+      process.stdout.write(`    cli plan measure set ${changeAddress(change)} ${JSON.stringify(item.what)} --actual \"<actual>\"\n`);
     }
   }
 }
@@ -573,7 +573,7 @@ function cmdProposalSet(args) {
   const { positional, flags } = parseArgs(args);
   const [ref, id, status] = positional;
   if (!ref || !id || !["accepted", "rejected"].includes(status) || flags.reason === undefined)
-    fail('usage: cli change proposal set <c#N> <id> accepted|rejected --reason "<why>"');
+    fail('usage: cli plan proposal set <p#N> <id> accepted|rejected --reason "<why>"');
   const reason = requiredText(flags.reason, "reason");
   const file = boardPath();
   const result = withBoardLock(file, () => {
@@ -601,7 +601,7 @@ function cmdProposal(args) {
 const SET_FIELDS = {
   title: (change, value) => {
     const title = String(value).trim();
-    if (!title) fail("refusing: a change needs a title");
+    if (!title) fail("refusing: a plan needs a title");
     change.title = title;
     return title;
   },
@@ -644,8 +644,8 @@ function cmdSet(args) {
   const [field, ref] = positional;
   const value = flags.text !== undefined ? flags.text : positional.slice(2).join(" ");
   if (!field || !SET_FIELDS[field])
-    fail(`usage: cli change set <${Object.keys(SET_FIELDS).join("|")}> <c#N> <value>`);
-  if (!ref) fail(`usage: cli change set ${field} <c#N> <value>`);
+    fail(`usage: cli plan set <${Object.keys(SET_FIELDS).join("|")}> <p#N> <value>`);
+  if (!ref) fail(`usage: cli plan set ${field} <p#N> <value>`);
   const file = boardPath();
   const { change, shown } = withBoardLock(file, () => {
     const data = loadBoardForWrite(file);

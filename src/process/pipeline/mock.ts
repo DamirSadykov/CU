@@ -26,7 +26,7 @@ export type RunDetail = Partial<RunGraphNode> &
 export const lanes: Lane[] = [
     {
         id: "t337",
-        kicker: "тема · change #337",
+        kicker: "p#337",
         title: "Спека как носитель состояния",
         note: "от жанра руками — к механике трекера",
         progress: 0.42,
@@ -41,7 +41,7 @@ export const lanes: Lane[] = [
     },
     {
         id: "t354",
-        kicker: "тема · change #354",
+        kicker: "p#354",
         title: "Дельта спеки самим change'ем",
         progress: 0.12,
         progressLabel: "1 / 8 готово · заблокирована",
@@ -56,7 +56,7 @@ export const lanes: Lane[] = [
     },
     {
         id: "t320",
-        kicker: "тема · change #320",
+        kicker: "p#320",
         title: "Ночной триаж доски",
         note: "разбор просрочек по расписанию",
         progress: 1,
@@ -68,11 +68,11 @@ export const lanes: Lane[] = [
     },
     {
         id: "free",
-        kicker: "без темы",
+        kicker: "без плана",
         title: "Свободные задачи",
-        note: "не привязаны к change'у",
+        note: "не привязаны к плану",
         tone: "plain",
-        more: { text: "+ ещё 62 задачи без темы ·", action: "сгруппировать" },
+        more: { text: "+ ещё 62 задачи без плана ·", action: "сгруппировать" },
     },
 ];
 
@@ -672,9 +672,9 @@ export const specLanes: SpecLane[] = [
             "Адрес раздела — <домен>#<слаг>. Поле spec задачи — структурная замена текстовой пометки внутри description.",
         lintLabel: "lint чист · 112 / 120 строк",
         lintTone: "ok",
-        metrics: ["11 ссылок", "4 change'а"],
+        metrics: ["11 ссылок", "4 плана"],
         chips: [
-            { text: "4 change'а", tone: "theme" },
+            { text: "4 плана", tone: "theme" },
             { text: "lint чист", tone: "ok" },
         ],
         tone: "spec",
@@ -708,9 +708,9 @@ export const specLanes: SpecLane[] = [
         note: "Инварианты закрытия",
         part: "часть: инварианты",
         partWarn: "за потолком прозы",
-        lintLabel: "128 / 120 строк · 2 change'а",
+        lintLabel: "128 / 120 строк · 2 плана",
         lintTone: "warn",
-        metrics: ["6 ссылок", "2 change'а"],
+        metrics: ["6 ссылок", "2 плана"],
         tone: "warn",
         incoming: [
             { id: "#341", title: "stop-hook требует дельту спеки", state: "в работе" },
@@ -749,7 +749,7 @@ export const orphanMiddle = {
 
 export const ringFocus: RingNode = {
     id: "#337",
-    label: "тема · change #337",
+    label: "p#337",
     title: "Спека как носитель состояния",
     ring: 0,
     angle: 0,

@@ -19,6 +19,7 @@ import path from "node:path";
 
 const AREAS = {
   todos: "./cli/board/todos.mjs",
+  plan: "./cli/board/change.mjs",
   change: "./cli/board/change.mjs",
   corrections: "./cli/analytics/corrections.mjs",
   "task-cost": "./cli/analytics/task-cost.mjs",
@@ -50,6 +51,8 @@ const SUBCOMMANDS = {
     retro: "./cli/analytics/retro.mjs",
   },
 };
+
+SUBCOMMANDS.plan = SUBCOMMANDS.change;
 
 // Hook areas run inside Claude Code's session lifecycle: a crash there must never
 // break the session, so an unexpected throw exits clean instead of surfacing.
@@ -87,7 +90,8 @@ function usage(code) {
   process.stdout.write(
     "cli - CU\n\n" +
       "  todos   <…>   mutate the todo list (add / set / comment / list / …)\n" +
-      "  change  <…>   changes as records (new / list / show / close); a task points at one\n" +
+      "  plan    <…>   plans (new / list / show / close); a task points at one\n" +
+      "  change  <…>   alias for plan (kept for existing hooks and recipes)\n" +
       "  corrections <…> user-corrections outcome metric, layer 1 (scan / label-template / eval)\n" +
       "  task-cost <…> session->task attribution for tokens-per-task (scan / publish)\n" +
       "  trace     <…> restart-point reports and restart calibration\n" +

@@ -4,6 +4,7 @@ import CuSeg from "../kernel/ui/CuSeg.vue";
 import CuToggle from "../kernel/ui/CuToggle.vue";
 import type { CuSegOption } from "../kernel/ui/types";
 import { THEME_IDS, applyTheme, readCachedTheme, type ThemeId } from "../kernel/theme";
+import { formatRef } from "../../scripts/cli/kernel/terms.mjs";
 
 const THEME_LABELS: Record<ThemeId, string> = {
   light: "Светлая",
@@ -38,7 +39,7 @@ const statuses = [
   { cls: "blocked", label: "блок" },
 ];
 const tree = [
-  { kind: "change", id: "c#66", name: "Дерево работы сессий", d: 0, st: "running", cost: "9.59", agent: "claude" },
+  { kind: "change", id: formatRef(66), name: "Дерево работы сессий", d: 0, st: "running", cost: "9.59", agent: "claude" },
   { kind: "done", id: "#803", name: "Разбор транскрипта Claude Code", d: 1, st: "done", cost: "0.86" },
   { kind: "done", id: "#805", name: "get_task_work_tree с кэшем", d: 1, st: "done", cost: "1.59" },
   { kind: "sel", id: "#812", name: "Контекст старта сессий", d: 1, st: "running", cost: "1.23", tag: "route" },
@@ -64,7 +65,7 @@ const tree = [
         <span class="cu-tag">data-theme = {{ theme }}</span>
       </div>
       <div class="wll">
-        <span class="cu-t-cap">WLL · рабочая нагрузка change</span>
+        <span class="cu-t-cap">WLL · рабочая нагрузка плана</span>
         <div class="cu-scale">
           <div class="trk"></div>
           <div class="fill" style="width: 80%; --c: var(--hemp)"></div>
@@ -143,7 +144,7 @@ const tree = [
           <div>
             <div class="lbl">Поля</div>
             <div class="row">
-              <label class="cu-field" style="width: 240px"><span class="pfx">⌕</span><input placeholder="#, c#, текст" /></label>
+              <label class="cu-field" style="width: 240px"><span class="pfx">⌕</span><input placeholder="#, p#, текст" /></label>
               <label class="cu-field" style="width: 120px"><span class="pfx">WLL $</span><input value="12.00" /></label>
             </div>
           </div>
@@ -166,7 +167,7 @@ const tree = [
           <span v-for="s in statuses" :key="s.cls" class="cu-st" :class="s.cls"><i></i><span>{{ s.label }}</span></span>
         </div>
         <div class="row">
-          <span class="cu-id">c#66</span>
+          <span class="cu-id">{{ formatRef(66) }}</span>
           <span class="cu-id">#808</span>
           <span class="cu-cost">1.94</span>
           <span class="cu-tag route">путь</span>
@@ -224,7 +225,7 @@ const tree = [
   gap: 24px;
   color: var(--paper);
   font-family: var(--sans);
-  font-size: 13px;
+  font-size: var(--fs-xs);
 }
 .hero {
   padding: 24px;
@@ -270,7 +271,7 @@ const tree = [
 }
 .lbl {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -296,7 +297,7 @@ const tree = [
 .swatch .n {
   padding: 7px 9px;
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: var(--fs-xs);
   font-weight: 600;
 }
 .type-row {

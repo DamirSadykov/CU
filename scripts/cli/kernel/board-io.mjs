@@ -2,6 +2,7 @@ import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { renameWithRetry, withDataDir } from "./board-lock.mjs";
 import { appDataFile, appDataLocation } from "./appdata.mjs";
+import { formatRef, parseRef } from "./terms.mjs";
 import {
   CURRENT,
   BoardUnreadableError,
@@ -157,7 +158,7 @@ export function changeAsRoot(record, data) {
   const members = (data?.todos ?? []).filter((todo) => todo && todo.change_id === record.id);
   const closed = members.length > 0 && members.every((todo) => isDone(todo));
   return {
-    id: record.id, number: record.number, address: `c#${record.number}`,
+    id: record.id, number: record.number, address: formatRef(record),
     subject: record.title, description: record.delta ?? "", plan: record.plan ?? "",
     spec: Array.isArray(record.spec) ? [...record.spec] : [], status: closed ? "done" : "queue",
     budget_usd: record.budget_usd, parallel_limit: record.parallel_limit, record: true,
@@ -203,15 +204,14 @@ export const specAddressesForManual = (todo, roots) => resolveSpecAddresses(todo
 
 export function changeAddress(change) {
   if (!change) return "";
-  return change.legacy ? `t#${change.number}` : `c#${change.number}`;
+  return change.legacy ? `t#${change.number}` : formatRef(change);
 }
 
 export function findChange(data, ref) {
   const text = String(ref ?? "").trim();
   if (!text) return null;
-  const match = text.match(/^c\s*#?\s*(\d+)$/i);
-  const number = match ? Number(match[1]) : /^\d+$/.test(text) ? Number(text) : undefined;
+  const number = parseRef(text);
   const changes = Array.isArray(data?.changes) ? data.changes.filter(Boolean) : [];
-  if (number !== undefined) return changes.find((change) => change.number === number) ?? null;
+  if (number !== null) return changes.find((change) => change.number === number) ?? null;
   return changes.find((change) => change.id === text) ?? null;
 }

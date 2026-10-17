@@ -58,7 +58,7 @@ const fill = computed(() => {
     background: var(--theme-bg-2);
 }
 .rail-kicker {
-    font-size: 10px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.13em;
@@ -73,7 +73,7 @@ const fill = computed(() => {
     -webkit-line-clamp: 2;
     overflow: hidden;
     overflow-wrap: anywhere;
-    font-size: 13px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     line-height: 1.32;
     color: var(--text);
@@ -84,7 +84,7 @@ const fill = computed(() => {
     -webkit-line-clamp: 2;
     overflow: hidden;
     overflow-wrap: anywhere;
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     line-height: 1.4;
     color: var(--text-4);
 }
@@ -103,7 +103,7 @@ const fill = computed(() => {
     background: var(--accent);
 }
 .rail-meta {
-    font-size: 11px;
+    font-size: var(--fs-xs);
     line-height: 1.4;
     color: var(--text-4);
 }
@@ -112,7 +112,7 @@ const fill = computed(() => {
     align-items: center;
     gap: 8px;
     font-family: var(--mono);
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     color: var(--high);
 }
 .rail-cost span {

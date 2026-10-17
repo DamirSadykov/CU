@@ -610,7 +610,7 @@ describe("runChange — gates", () => {
     expect(skipped).toEqual([expect.objectContaining({ reason: expect.stringMatching(/nothing for a human to approve/) })]);
     expect(events.filter((event) => event.run === skipped[0].run && event.task === "t#3")
       .map((event) => event.kind)).toEqual(["gate_skipped"]);
-    expect(formatRunEvent(skipped[0])).toMatch(/^c#1 t#3: gate skipped/);
+    expect(formatRunEvent(skipped[0])).toMatch(/^p#1 t#3: gate skipped/);
   });
 
   it("a manual node with produces still goes to the executor and the reviewer", async () => {
@@ -851,19 +851,19 @@ describe("runChange — issue, transition and the retry limit", () => {
     expect(r.card).toContain("verify line 6");
     expect(r.card).not.toContain("verify line 5");
     expect(r.card).toContain("todos set retry t#2 3");
-    expect(r.card).toContain("todos run c#1 --go");
+    expect(r.card).toContain("todos run p#1 --go");
     expect(comments.at(-1).body).toContain("Decision card — retry");
   });
 
-  it("labels the run header with c# for a change", async () => {
+  it("labels the run header with p# for a plan", async () => {
     const r = await runChange({ data: board(changeRoot(1, [2]), auto(2)), change: "1", dry: true });
-    expect(formatRunReport(r)).toMatch(/^change c#1 /);
+    expect(formatRunReport(r)).toMatch(/^plan p#1 /);
   });
 
   it("tells the architect to launch a dry run in the background without watching it", async () => {
     const r = await runChange({ data: board(changeRoot(1, [2]), auto(2)), change: "1", dry: true });
     const text = formatRunReport(r);
-    expect(text).toContain("todos run c#1 --go");
+    expect(text).toContain("todos run p#1 --go");
     expect(text).toContain("run_in_background: true");
     expect(text).toContain("do not observe or narrate");
     expect(text).not.toContain("todos run watch");
@@ -889,7 +889,7 @@ describe("runChange — issue, transition and the retry limit", () => {
       },
       complete: false,
     });
-    expect(text).toMatch(/Decision card — gate[\s\S]*restart: todos run c#1 --go\n$/);
+    expect(text).toMatch(/Decision card — gate[\s\S]*restart: todos run p#1 --go\n$/);
   });
 
   it("never starts attempt M+1", async () => {
@@ -1516,8 +1516,8 @@ describe("runChange — budget", () => {
       expect.objectContaining({ spent: 0.8, ceiling: 0.6, attempt: 1, source: "historical" }),
     ]);
     expect(warnings.map(formatRunEvent)).toEqual([
-      "c#123201 t#123202 attempt 1/-: budget warn attempt — $0.8 spent of $0.6",
-      "c#123201 t#123202 attempt 1/-: budget warn historical — $0.8 spent of $0.6",
+      "p#123201 t#123202 attempt 1/-: budget warn attempt — $0.8 spent of $0.6",
+      "p#123201 t#123202 attempt 1/-: budget warn historical — $0.8 spent of $0.6",
     ]);
   });
 
@@ -1726,7 +1726,7 @@ describe("liveEffects — the board seam", () => {
 });
 
 describe("run change references", () => {
-  it("suggests c#N when #N names an existing change but no task graph", () => {
+  it("accepts #N as a plan reference when that plan exists", () => {
     const cli = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "cli.mjs");
     const dir = mkdtempSync(path.join(os.tmpdir(), "cut-run-change-ref-"));
     const appDir = path.join(dir, "com.claude-usage-tracker.app");
@@ -1740,8 +1740,8 @@ describe("run change references", () => {
       const result = spawnSync(process.execPath, [cli, "todos", "run", "#8"], {
         encoding: "utf8", env: { ...process.env, APPDATA: dir }, windowsHide: true,
       });
-      expect(result.status).toBe(1);
-      expect(result.stderr).toContain("did you mean c#8?");
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain("p#8");
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -1857,13 +1857,13 @@ describe("finishStep", () => {
     expect(t.status).toBe("review");
   });
 
-  it("produces the issue result for a failed step", async () => {
+  it("produces the issue result for a failed task", async () => {
     const t = auto(4);
     const ctx = finishCtx(t);
     const out = await finishStep(ctx, t, { result: { ok: false, error: "boom" }, review: null });
 
     expect(out.kind).toBe("issue");
-    expect(out.reason).toMatch(/step failed: boom/);
+    expect(out.reason).toMatch(/task failed: boom/);
     expect(t.status).toBe("queue");
   });
 
@@ -2348,7 +2348,7 @@ describe("the runs journal", () => {
       },
     ];
     const text = formatRunHistory(records, summarizeRuns(records));
-    expect(text).toMatch(/c#24/);
+    expect(text).toMatch(/p#24/);
     expect(text).toMatch(/one pass/);
     expect(text).toMatch(/\$0\.26/);
     expect(text).toMatch(/\(inherit\)/);

@@ -77,7 +77,7 @@ describe("retro facts", () => {
         review: { cost_usd: 0.2, findings: [{ level: "high", scope: "out", text: "neighbour defect" }] },
       }] }],
       transcripts: new Map([["session-1", transcript]]),
-      commits: [{ sha: "abc", date: "2026-01-01T00:00:30Z", subject: "finish c#3" }],
+      commits: [{ sha: "abc", date: "2026-01-01T00:00:30Z", subject: "finish p#3" }],
     };
     const facts = buildRetroFacts(input);
     expect(buildRetroFacts(input)).toEqual(facts);

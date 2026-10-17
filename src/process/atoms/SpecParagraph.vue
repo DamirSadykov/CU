@@ -63,7 +63,7 @@ withDefaults(
 }
 .spec-para-mark {
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
 }
 .spec-para-task {
@@ -72,13 +72,13 @@ withDefaults(
     background: color-mix(in srgb, var(--next) 12%, transparent);
     color: var(--accent);
     font-family: var(--mono);
-    font-size: 10.5px;
+    font-size: var(--fs-xs);
 }
 .spec-para-body {
     min-width: 0;
 }
 .spec-para-text {
-    font-size: 13.2px;
+    font-size: var(--fs-xs);
     line-height: 1.68;
     color: var(--text-2);
 }
@@ -99,7 +99,7 @@ withDefaults(
     background: color-mix(in srgb, var(--next) 12%, transparent);
     color: var(--accent);
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: var(--fs-xs);
     font-weight: 600;
 }
 .spec-para.tone-conflict .spec-para-badge {
@@ -109,7 +109,7 @@ withDefaults(
 .spec-para-caption {
     min-width: 0;
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
     white-space: nowrap;
     overflow: hidden;

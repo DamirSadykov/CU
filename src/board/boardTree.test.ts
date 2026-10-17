@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { BoardChange } from "../contracts/board";
 import type { BoardRow } from "./boardStore";
-import { boardTreeSummary, buildBoardTree, visibleBoardTreeRows, type BoardTreeRow } from "./boardTree";
+import { boardTreeSummary, buildBoardTree, buildTaskFeed, visibleBoardTreeRows, type BoardTreeRow } from "./boardTree";
 import { defaultTodoFilters } from "./todoFilter";
 
 const row = (overrides: Partial<BoardTreeRow> = {}): BoardTreeRow => ({
@@ -15,17 +15,17 @@ const change = (overrides: Partial<BoardChange> = {}): BoardChange => ({
 });
 
 describe("buildBoardTree", () => {
-  it("puts active changes first by activity and totals their visible tasks", () => {
+  it("orders plans by their freshest task and keeps done tasks of an open plan visible", () => {
     const tree = buildBoardTree([
       row({ id: "a", number: 2, subject: "Done", status: "done", change_id: "c-1", cost: 1.25 }),
       row({ id: "b", number: 1, subject: "Open", change_id: "c-1", cost: 2 }),
-      row({ id: "c", number: 3, change_id: "c-2" }),
-    ], [change(), change({ id: "c-2", number: 2, title: "Newest", updated_at: "2026-09-03" })], defaultTodoFilters());
+      row({ id: "c", number: 3, change_id: "c-2", updated_at: "2026-09-03" }),
+    ], [change(), change({ id: "c-2", number: 2, title: "Newest" })], defaultTodoFilters());
     expect(tree.map((node) => node.id)).toEqual(["project:app"]);
     const changes = tree[0].children;
     expect(changes.map((node) => node.title)).toEqual(["Newest", "Modern change"]);
     expect(changes[1]).toMatchObject({ kind: "change", progress: { done: 1, total: 2 }, cost: 3.25, closed: false });
-    expect(changes[1].children.map((node) => node.number)).toEqual([1, 2]);
+    expect(changes[1].children.map((node) => node.number)).toEqual([2, 1]);
   });
 
   it("represents old change roots and puts unassigned tasks in canonical project groups", () => {
@@ -45,7 +45,7 @@ describe("buildBoardTree", () => {
 
   it("filters tasks through projectTodos while retaining their non-empty parent", () => {
     const filters = defaultTodoFilters();
-    filters.status = "queue";
+    filters.status = ["queue"];
     const tree = buildBoardTree([
       row({ id: "queue", change_id: "c-1", status: "queue" }),
       row({ id: "done", change_id: "c-1", status: "done" }),
@@ -60,7 +60,7 @@ describe("buildBoardTree", () => {
     const allDone = buildBoardTree([
       row({ id: "done-a", change_id: "c-1", status: "done" }),
       row({ id: "done-b", change_id: "c-1", status: "done" }),
-    ], [change()], { ...defaultTodoFilters(), showDone: true });
+    ], [change()], { ...defaultTodoFilters(), view: "all" as const });
     const explicitlyClosed = buildBoardTree([
       row({ id: "open", change_id: "c-1" }),
     ], [change({ closed_at: "2026-09-03" })], defaultTodoFilters());
@@ -70,7 +70,7 @@ describe("buildBoardTree", () => {
   });
 
   it("does not mark a partially done change complete when a status filter hides its open task", () => {
-    const filters = { ...defaultTodoFilters(), status: "done" };
+    const filters = { ...defaultTodoFilters(), view: "all" as const, status: ["done"] };
     const tree = buildBoardTree([
       row({ id: "done", change_id: "c-1", status: "done" }),
       row({ id: "open", change_id: "c-1", status: "queue" }),
@@ -82,52 +82,77 @@ describe("buildBoardTree", () => {
     });
   });
 
-  it("builds a flat, newest-first change list with the project on each change", () => {
-    const tree = buildBoardTree([
-      row({ id: "old", change_id: "c-1", project: "first" }),
-      row({ id: "new", change_id: "c-2", project: "second" }),
-      row({ id: "legacy", number: 3, subject: "Legacy", change: true, created_at: "2026-09-04", project: "third" }),
-      row({ id: "closed", change_id: "c-3", project: "fourth" }),
-    ], [
-      change({ id: "c-1", number: 1, created_at: "2026-09-01", updated_at: "2026-09-30" }),
-      change({ id: "c-2", number: 2, created_at: "2026-09-03", updated_at: "2026-09-01" }),
-      change({ id: "c-3", number: 4, created_at: "2026-09-05", closed_at: "2026-09-06" }),
-    ], defaultTodoFilters(), undefined, { flat: true });
+  it("orders tasks, plans and projects by the chosen sort through their best task", () => {
+    const source = [
+      row({ id: "old-plan-task", number: 1, change_id: "c-1", updated_at: "2026-09-01", project: "first" }),
+      row({ id: "fresh-plan-task", number: 2, change_id: "c-2", updated_at: "2026-09-20", project: "first" }),
+      row({ id: "fresh-plan-older", number: 3, change_id: "c-2", updated_at: "2026-09-10", project: "first" }),
+      row({ id: "other-project", number: 4, updated_at: "2026-09-15", project: "second" }),
+    ];
+    const plans = [change({ id: "c-1", number: 1 }), change({ id: "c-2", number: 2 })];
+    const fresh = buildBoardTree(source, plans, defaultTodoFilters(), { sort: "updated" });
+    expect(fresh.map((node) => node.id)).toEqual(["project:first", "project:second"]);
+    expect(fresh[0].children.map((node) => node.id)).toEqual(["c-2", "c-1"]);
+    expect(fresh[0].children[0].children.map((node) => node.id)).toEqual(["fresh-plan-task", "fresh-plan-older"]);
+    expect(fresh[0].children[0].time).toBe("2026-09-20");
 
-    expect(tree.map((node) => [node.id, node.project])).toEqual([
-      ["legacy", "third"], ["c-2", "second"], ["c-1", "first"], ["c-3", "fourth"],
-    ]);
-    expect(tree.every((node) => node.kind === "change" || node.kind === "legacy")).toBe(true);
+    const byNumber = buildBoardTree(source, plans, defaultTodoFilters(), { sort: "number" });
+    expect(byNumber[0].children.map((node) => node.id)).toEqual(["c-1", "c-2"]);
+    expect(byNumber[0].children[1].children.map((node) => node.number)).toEqual([2, 3]);
+
+    const oldest = buildBoardTree(source, plans, defaultTodoFilters(), { sort: "oldest" });
+    expect(oldest.map((node) => node.id)).toEqual(["project:first", "project:second"]);
+    expect(oldest[0].children.map((node) => node.id)).toEqual(["c-1", "c-2"]);
   });
 
-  it("finds flat changes by title and c-number, revealing all members on a change match", () => {
-    const filters = { ...defaultTodoFilters(), query: "release notes" };
-    const tree = buildBoardTree([
-      row({ id: "matching-title-member", subject: "Unrelated task", change_id: "c-1" }),
-      row({ id: "other-change-member", subject: "release notes task", change_id: "c-2" }),
+  it("finds every task of a plan by p#N and by the plan's title", () => {
+    const source = [
+      row({ id: "member", subject: "Unrelated task", change_id: "c-1" }),
+      row({ id: "other", subject: "release notes task", change_id: "c-2" }),
       row({ id: "hidden", change_id: "c-3" }),
-    ], [
+    ];
+    const plans = [
       change({ id: "c-1", number: 71, title: "Release notes" }),
       change({ id: "c-2", number: 72, title: "Other change" }),
       change({ id: "c-3", number: 73, title: "Hidden change" }),
-    ], filters, undefined, { flat: true });
-
-    expect(tree.map((node) => node.id)).toEqual(["c-2", "c-1"]);
-    expect(tree.find((node) => node.id === "c-1")?.children.map((node) => node.id)).toEqual(["matching-title-member"]);
-
-    const byNumber = buildBoardTree([
-      row({ id: "number-member", subject: "Unrelated", change_id: "c-1" }),
-    ], [change({ id: "c-1", number: 71, title: "Other change" })],
-    { ...defaultTodoFilters(), query: "c#71" }, undefined, { flat: true });
-    expect(byNumber.map((node) => node.id)).toEqual(["c-1"]);
+    ];
+    const byTitle = buildBoardTree(source, plans, { ...defaultTodoFilters(), query: "release notes" });
+    expect(byTitle[0].children.map((node) => node.id).sort()).toEqual(["c-1", "c-2"]);
+    const byRef = buildBoardTree(source, plans, { ...defaultTodoFilters(), query: "p#71" });
+    expect(byRef[0].children.map((node) => node.id)).toEqual(["c-1"]);
   });
 
-  it("keeps the project filter when a flat change matches only by title", () => {
-    const tree = buildBoardTree([
-      row({ id: "foreign", subject: "Unrelated", change_id: "c-1", project: "other" }),
-    ], [change({ id: "c-1", number: 71, title: "Release notes", project: "other" })],
-    { ...defaultTodoFilters(), query: "release", project: "mine" }, undefined, { flat: true });
-    expect(tree).toEqual([]);
+  it("flags attention on the task and on every branch above it", () => {
+    const tree = buildBoardTree([row({ id: "late", change_id: "c-1", status: "queue", scheduled_for: "2026-09-01" })], [change()], defaultTodoFilters(), { today: "2026-10-01" });
+    expect(tree[0].attention).toBe(true);
+    expect(tree[0].children[0].attention).toBe(true);
+    expect(tree[0].children[0].children[0].attention).toBe(true);
+  });
+});
+
+describe("buildTaskFeed", () => {
+  const now = new Date(2026, 9, 17, 15, 0).getTime();
+  const at = (hoursAgo: number) => new Date(now - hoursAgo * 3_600_000).toISOString();
+  const source = [
+    row({ id: "today", number: 5, change_id: "c-1", updated_at: at(1) }),
+    row({ id: "yesterday", number: 3, updated_at: at(20) }),
+    row({ id: "today-older", number: 4, updated_at: at(3) }),
+    row({ id: "root", number: 9, change: true, updated_at: at(0.5) }),
+  ];
+
+  it("lists tasks flat, newest first, under day groups with the plan number", () => {
+    const feed = buildTaskFeed(source, [change({ number: 115 })], defaultTodoFilters(), { sort: "updated", now });
+    expect(feed.map((group) => [group.bucket, group.nodes.map((node) => node.id)])).toEqual([
+      ["today", ["today", "today-older"]], ["yesterday", ["yesterday"]],
+    ]);
+    expect(feed[0].nodes[0].plan).toBe(115);
+  });
+
+  it("drops the day groups for the number and cost sorts", () => {
+    const feed = buildTaskFeed(source, [change()], defaultTodoFilters(), { sort: "number", now });
+    expect(feed).toHaveLength(1);
+    expect(feed[0].bucket).toBeNull();
+    expect(feed[0].nodes.map((node) => node.number)).toEqual([3, 4, 5]);
   });
 });
 
@@ -136,7 +161,7 @@ describe("boardTreeSummary", () => {
     const tree = buildBoardTree([
       row({ id: "open", change_id: "c-1", cost: 1.25 }),
       row({ id: "done", status: "done", cost: 2.5 }),
-    ], [change()], { ...defaultTodoFilters(), showDone: true });
+    ], [change()], { ...defaultTodoFilters(), view: "all" as const });
     expect(boardTreeSummary(tree)).toEqual({ active: 1, total: 2, cost: 3.75 });
   });
 });
@@ -146,5 +171,6 @@ describe("visibleBoardTreeRows", () => {
     const tree = buildBoardTree([row({ id: "a", change_id: "c-1" })], [change()], defaultTodoFilters());
     expect(visibleBoardTreeRows(tree, new Set()).map(({ node, depth }) => [node.id, depth])).toEqual([["project:app", 0], ["c-1", 1], ["a", 2]]);
     expect(visibleBoardTreeRows(tree, new Set(["c-1"])).map(({ node }) => node.id)).toEqual(["project:app", "c-1"]);
+    expect(visibleBoardTreeRows(tree, new Set(), { plansOnly: true }).map(({ node }) => node.id)).toEqual(["project:app", "c-1"]);
   });
 });

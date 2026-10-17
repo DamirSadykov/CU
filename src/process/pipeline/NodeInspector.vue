@@ -223,7 +223,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
 .ni-id {
     flex: 1;
     font-family: var(--mono);
-    font-size: 12.5px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--text);
 }
@@ -233,7 +233,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
     background: none;
     color: var(--text-4);
     font: inherit;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     line-height: 1;
     cursor: pointer;
 }
@@ -242,7 +242,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
 }
 .ni-title {
     margin-top: 5px;
-    font-size: 11.8px;
+    font-size: var(--fs-xs);
     line-height: 1.4;
     color: var(--text-3);
 }
@@ -253,12 +253,12 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
     gap: 4px 10px;
     margin-top: 10px;
     font-family: var(--mono);
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     color: var(--text-2);
 }
 .ni-sum.dim {
     margin-top: 5px;
-    font-size: 11px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
 }
 .ni-money {
@@ -273,7 +273,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
 }
 .ni-reason {
     margin-top: 4px;
-    font-size: 11px;
+    font-size: var(--fs-xs);
     line-height: 1.4;
     color: var(--text-4);
 }
@@ -286,15 +286,15 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
 }
 .ni-count {
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
 }
 .ni-empty {
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
 }
 .ni-line {
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     color: var(--text-2);
 }
 .ni-agent {
@@ -316,7 +316,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
 .ni-who {
     flex: 1;
     min-width: 0;
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     color: var(--text-3);
     white-space: nowrap;
     overflow: hidden;
@@ -325,7 +325,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
 .ni-num {
     flex: none;
     font-family: var(--mono);
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     color: var(--text-2);
 }
 .ni-num.dim {
@@ -344,7 +344,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
     border-radius: var(--r-pill);
     background: color-mix(in srgb, var(--paper) 6%, transparent);
     font-family: var(--mono);
-    font-size: 10px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
 }
 .ni-dir.write {
@@ -359,7 +359,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
 .ni-addr {
     min-width: 0;
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: var(--fs-xs);
     color: var(--text-3);
     white-space: nowrap;
     overflow: hidden;

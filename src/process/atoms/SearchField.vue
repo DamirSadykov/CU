@@ -59,7 +59,7 @@ function onInput(event: Event) {
     border: 1px solid var(--stroke-strong);
     border-radius: var(--r-ctl);
     color: var(--text-4);
-    font-size: 12.5px;
+    font-size: var(--fs-xs);
 }
 .search-icon {
     flex: none;

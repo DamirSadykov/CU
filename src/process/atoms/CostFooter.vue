@@ -32,7 +32,7 @@ const fill = computed(() => {
     background: color-mix(in srgb, var(--hard) 28%, transparent);
     border-radius: 0 0 8px 8px;
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: var(--fs-xs);
     line-height: 1.4;
     color: var(--high);
 }

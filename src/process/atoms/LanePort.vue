@@ -54,12 +54,12 @@ defineEmits<{ (e: "click", value: MouseEvent): void }>();
     border: 1px solid var(--stroke-strong);
     background: var(--layer);
     color: var(--text-3);
-    font-size: 9px;
+    font-size: var(--fs-xs);
     line-height: 1;
 }
 .lane-port-label {
     min-width: 0;
-    font-size: 10.5px;
+    font-size: var(--fs-xs);
     line-height: 1.3;
     color: var(--text-4);
     white-space: nowrap;
@@ -69,7 +69,7 @@ defineEmits<{ (e: "click", value: MouseEvent): void }>();
 .lane-port-label b {
     display: block;
     font-family: var(--mono);
-    font-size: 10.5px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--text-2);
 }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
+import { formatRef } from "../../scripts/cli/kernel/terms.mjs";
 
 export interface BoardCrumbPath {
   project: string | null;
@@ -17,7 +18,7 @@ const { t } = useI18n();
     <button type="button" class="crumb" :class="{ current: !props.path.change && props.path.task === null }" @click="emit('project')">{{ props.path.project || t('todoNoProject') }}</button>
     <template v-if="props.path.change">
       <span class="sep">›</span>
-      <button type="button" class="crumb change" :class="{ current: props.path.task === null }" @click="emit('change')">c#{{ props.path.change.number }} {{ props.path.change.title }}</button>
+      <button type="button" class="crumb change" :class="{ current: props.path.task === null }" @click="emit('change')">{{ props.path.change.number === null ? "" : formatRef(props.path.change.number) }} {{ props.path.change.title }}</button>
     </template>
     <template v-if="props.path.task !== null">
       <span class="sep">›</span>
@@ -29,7 +30,7 @@ const { t } = useI18n();
 
 <style scoped>
 .crumbs { align-items: center; border-bottom: 1px solid var(--stroke); display: flex; flex: 0 0 30px; gap: 6px; min-height: 30px; min-width: 0; }
-.crumb { background: transparent; border: 0; color: var(--text-3); cursor: pointer; font-family: var(--mono); font-size: 12px; overflow: hidden; padding: 3px 0; text-overflow: ellipsis; white-space: nowrap; }
+.crumb { background: transparent; border: 0; color: var(--text-3); cursor: pointer; font-family: var(--mono); font-size: var(--fs-xs); overflow: hidden; padding: 3px 0; text-overflow: ellipsis; white-space: nowrap; }
 .crumb:hover { background: var(--layer); color: var(--text); }
 .crumb.change { color: var(--theme); max-width: 45%; }
 .crumb.current { color: var(--text); }

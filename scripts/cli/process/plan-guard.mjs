@@ -359,9 +359,9 @@ export function buildFormatRefusal() {
     "PLAN REFUSED — it is not written in the process language, so it never reached",
     "the user. A plan is recorded as the tracker's graph file, not as prose about it.",
     "",
-    "Rewrite the plan itself as the file: `change`, `vision`, `steps` with `title`",
+    "Rewrite the draft plan itself as the file: `change`, `vision`, `steps` with `title`",
     "(or `task: <N>` for work already on the board), `why`, `needs`, `produces`,",
-    "`verify`, `kind`. A one-step plan is a file too. The shape, the rules and a",
+    "`verify`, `kind`. A one-task draft plan is a file too. The shape, the rules and a",
     "worked example:",
     `  §1 and §2: ${FORMAT_DOC}`,
     "",
@@ -402,10 +402,10 @@ export function buildBlankDiscussionRefusal() {
 // resolved. Exported for the unit tests.
 export function buildContradictionRefusal(steps) {
   return [
-    `PLAN REFUSED — it declares \`${DISCUSSION_KEY}:\` and yet carries ${steps} step(s), so it`,
+    `DRAFT PLAN REFUSED — it declares \`${DISCUSSION_KEY}:\` and yet carries ${steps} task(s), so it`,
     "never reached the user. Those are two different plans:",
     "",
-    `  • a discussion records NOTHING — the steps would be dropped in silence;`,
+    `  • a discussion records NOTHING — the tasks would be dropped in silence;`,
     "  • a graph file opens the tasks it declares.",
     "",
     "Drop whichever half is not this plan. If the discussion has already settled on",
@@ -545,9 +545,9 @@ export function buildArchitectPrompt(plan, { prior = null, changed = [], rejecti
       priorFindingsBlock(prior.findings, {
         anchor: STEP_ANCHOR,
         round: "preceding round of this plan",
-        rejections: rejections.map((r) => `step ${r.step}: ${r.text}`),
+        rejections: rejections.map((r) => `task ${r.step}: ${r.text}`),
       }),
-      `STEPS CHANGED SINCE THEN: ${changed.length ? changed.join(", ") : "(none)"}`,
+      `TASKS CHANGED SINCE THEN: ${changed.length ? changed.join(", ") : "(none)"}`,
     );
   }
   lines.push("", "PLAN:", plan);
@@ -642,7 +642,7 @@ export function architectDecision(input, invoke, options = {}) {
         prior: prior.findings,
         changed: new Set(changed),
         anchor: STEP_ANCHOR,
-        note: "step unchanged since the preceding round",
+        note: "task unchanged since the preceding round",
       })
       : parsed.findings;
     const bad = malformedLines(text, STEP_ANCHOR);
@@ -673,7 +673,7 @@ export function architectDecision(input, invoke, options = {}) {
       answer || "The architect returned an issue without details.",
       "",
       "Revise the plan and call ExitPlanMode again; the next round re-checks these findings first.",
-      "medium/low do not block. To reject one, add a line `отклонено: <finding> — <why>` to that step's why.",
+      "medium/low do not block. To reject one, add a line `отклонено: <finding> — <why>` to that task's why.",
     ].join("\n"));
   }
   if (session) {
@@ -692,7 +692,7 @@ export function architectDecision(input, invoke, options = {}) {
     "ARCHITECT NOTES — medium/low, not blocking; the plan goes on to the user.",
     "",
     answer,
-    ...(adjusted.length ? ["", "Lowered to medium by the gate (step unchanged since the preceding round):", ...adjusted.map(formatFinding)] : []),
+    ...(adjusted.length ? ["", "Lowered to medium by the gate (task unchanged since the preceding round):", ...adjusted.map(formatFinding)] : []),
   ].join("\n"));
 }
 

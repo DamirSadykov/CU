@@ -88,9 +88,9 @@ const projectMeta = computed(() =>
     live.value
         ? [
               `${totalSections.value ?? 0} раздел(ов)`,
-              `${totalOpenChanges.value ?? 0} открытых change'а`,
+              `Открытые планы: ${totalOpenChanges.value ?? 0}`,
           ]
-        : ["14 разделов", "4 открытых change'а"],
+        : ["14 разделов", "Открытые планы: 4"],
 );
 
 const orphanWires: LaneWire[] = [
@@ -374,7 +374,7 @@ function reset() {
 <style scoped>
 .spec-lanes-empty {
     padding: 12px 28px;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     line-height: 1.5;
     color: var(--text-4);
 }
@@ -405,7 +405,7 @@ function reset() {
 }
 .rail-address {
     font-family: var(--mono);
-    font-size: 13px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     line-height: 1.3;
     color: var(--accent);
@@ -414,13 +414,13 @@ function reset() {
     color: var(--warn);
 }
 .rail-title {
-    font-size: 13px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     line-height: 1.32;
     color: var(--text);
 }
 .rail-note {
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     line-height: 1.4;
     color: var(--text-4);
 }
@@ -428,7 +428,7 @@ function reset() {
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     line-height: 1.4;
     color: var(--ok);
 }
@@ -444,7 +444,7 @@ function reset() {
 }
 .rail-tri {
     flex: none;
-    font-size: 9px;
+    font-size: var(--fs-xs);
     line-height: 1;
 }
 .rail-metrics {
@@ -452,7 +452,7 @@ function reset() {
     align-items: center;
     gap: 6px;
     font-family: var(--mono);
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
 }
 .rail-metrics .accent {
@@ -464,7 +464,7 @@ function reset() {
 .orphan-more {
     align-self: center;
     padding-top: 4px;
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     line-height: 1.4;
     color: var(--text-4);
 }

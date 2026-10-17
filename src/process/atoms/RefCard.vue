@@ -54,7 +54,7 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
 }
 .ref-card-id {
     font-family: var(--mono);
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--text);
 }
@@ -65,15 +65,15 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
     color: var(--text-2);
 }
 .ref-card-sep {
-    font-size: 11px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
 }
 .ref-card-state {
-    font-size: 11px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
 }
 .ref-card-title {
-    font-size: 11.6px;
+    font-size: var(--fs-xs);
     line-height: 1.35;
     color: var(--text-3);
 }

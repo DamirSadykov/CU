@@ -1,6 +1,7 @@
 import type { RunGraphNode } from "../../board/graphModel";
 export type { BoardChange } from "../../contracts/board";
 import type { BoardChange } from "../../contracts/board";
+import { formatRef } from "../../../scripts/cli/kernel/terms.mjs";
 import type {
     Artifact,
     Lane,
@@ -347,7 +348,7 @@ export function toLanes(
             const unknownNote = totals.unknown ? ` · ${totals.unknown} без замера` : "";
             return {
                 id: record.id,
-                kicker: `тема · change c#${record.number}`,
+                kicker: formatRef(record),
                 title: record.title,
                 note: (record.delta ?? "").split("\n")[0] || undefined,
                 progress: ids.length ? done / ids.length : 0,
@@ -370,7 +371,7 @@ export function toLanes(
         const unknownNote = totals.unknown ? ` · ${totals.unknown} без замера` : "";
         return {
             id: root.id,
-            kicker: `тема · change #${root.number ?? ""}`.trim(),
+            kicker: root.number == null ? "план" : formatRef(root.number),
             title: root.subject,
             note: (root.description ?? "").split("\n")[0] || undefined,
             progress: ids.length ? done / ids.length : 0,
@@ -386,9 +387,9 @@ export function toLanes(
         if (!isFreeLane(id) || !ids.length) continue;
         lanes.push({
             id,
-            kicker: "без темы",
+            kicker: "без плана",
             title: "Свободные задачи",
-            note: "не привязаны к change'у",
+            note: "не привязаны к плану",
             tone: "plain",
             progressLabel: plural(ids.length, "задача", "задачи", "задач"),
         });
@@ -613,7 +614,7 @@ export function toSpecLanes(
             lintTone: overCeiling ? "warn" : "ok",
             metrics: [
                 `${incoming.length + outgoing.length} ссылок`,
-                `${changeCount} change'а`,
+                plural(changeCount, "план", "плана", "планов"),
             ],
             tone: overCeiling ? "warn" : "spec",
             incoming,
@@ -757,7 +758,7 @@ export function specTree(board: BoardTodo[], changes: BoardChange[] = []): SpecT
         put({
             id: record.id,
             kind: "theme",
-            label: `c#${record.number}`,
+            label: formatRef(record),
             title: record.title,
             parent: home,
             project: record.project ?? null,

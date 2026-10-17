@@ -1046,7 +1046,7 @@ onUnmounted(() => {
             >
                 <CodexUsageCards v-if="codexLimits" :limits="codexLimits" />
                 <div style="padding: 22px 4px; text-align: center">
-                    <p style="color: var(--text-3); font-size: 13px">
+                    <p style="color: var(--text-3); font-size: var(--fs-xs)">
                         {{ t("configureClaude") }}
                     </p>
                     <button
@@ -1067,7 +1067,7 @@ onUnmounted(() => {
                 >
                     <p
                         style="
-                            font-size: 12px;
+                            font-size: var(--fs-xs);
                             color: var(--crit);
                             word-break: break-all;
                         "
@@ -1140,7 +1140,7 @@ onUnmounted(() => {
                     <p
                         style="
                             color: var(--text-3);
-                            font-size: 13px;
+                            font-size: var(--fs-xs);
                             margin-top: 12px;
                         "
                     >
@@ -1167,7 +1167,7 @@ onUnmounted(() => {
 }
 
 .update-text {
-    font-size: 12px;
+    font-size: var(--fs-xs);
     color: var(--text-2);
 }
 
@@ -1182,7 +1182,7 @@ onUnmounted(() => {
     border-radius: 4px;
     background: var(--accent);
     color: var(--on-accent);
-    font-size: 12px;
+    font-size: var(--fs-xs);
     font-weight: 500;
     font-family: var(--segoe);
     cursor: pointer;
@@ -1228,7 +1228,7 @@ onUnmounted(() => {
 }
 
 .diag-text {
-    font-size: 12px;
+    font-size: var(--fs-xs);
     color: var(--text-2);
 }
 
@@ -1244,7 +1244,7 @@ onUnmounted(() => {
     border-radius: 4px;
     background: var(--crit);
     color: var(--on-close);
-    font-size: 12px;
+    font-size: var(--fs-xs);
     font-weight: 500;
     font-family: var(--segoe);
     cursor: pointer;
@@ -1266,7 +1266,7 @@ onUnmounted(() => {
     background: transparent;
     border: none;
     color: var(--text-3);
-    font-size: 11px;
+    font-size: var(--fs-xs);
     text-decoration: underline;
     cursor: pointer;
     font-family: var(--segoe);
@@ -1281,7 +1281,7 @@ onUnmounted(() => {
     margin-left: 6px;
     padding: 1px 5px;
     border-radius: 4px;
-    font-size: 9px;
+    font-size: var(--fs-xs);
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;

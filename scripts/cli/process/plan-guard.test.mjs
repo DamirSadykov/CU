@@ -92,8 +92,8 @@ describe("the plan-format document", () => {
   it("keeps every former issue/cutting heading in its routed document", () => {
     for (const file of [planFormatDoc(), planFormatIssuesDoc(), planFormatCuttingDoc()])
       expect(existsSync(file)).toBe(true);
-    expect(readFileSync(planFormatIssuesDoc(), "utf8")).toMatch(/^## 5\. When a runner step does not converge$/m);
-    expect(readFileSync(planFormatCuttingDoc(), "utf8")).toMatch(/^## 6\. Cutting the plan$/m);
+    expect(readFileSync(planFormatIssuesDoc(), "utf8")).toMatch(/^## 5\. When a runner task does not converge$/m);
+    expect(readFileSync(planFormatCuttingDoc(), "utf8")).toMatch(/^## 6\. Cutting the draft plan$/m);
   });
 });
 
@@ -229,7 +229,7 @@ describe("discussion · the one declared way past the demand", () => {
     const both = DISCUSSION + "\n\n" + fenced(VALID);
     const seen = decide(exitPlan(both));
     expect(seen.permissionDecision).toBe("deny");
-    expect(seen.permissionDecisionReason).toMatch(/2 step/);
+    expect(seen.permissionDecisionReason).toMatch(/2 task/);
     expect(seen.permissionDecisionReason).toMatch(/dropped in silence/);
   });
 
@@ -332,7 +332,7 @@ describe("buildRefusal · one wording, owned by the validator", () => {
 
   it("names both halves of the contradiction and what each one does", () => {
     const reason = buildContradictionRefusal(3);
-    expect(reason).toContain("3 step(s)");
+    expect(reason).toContain("3 task(s)");
     expect(reason).toMatch(/records NOTHING/);
     expect(reason).toMatch(/opens the tasks/);
     expect(reason).toContain("§3");
@@ -526,7 +526,7 @@ describe("architectDecision · the review bar and the preceding round", () => {
     }, { gate: AVAILABLE, store });
     expect(prompt).toContain("FIRST, re-check these findings from the preceding round of this plan");
     expect(prompt).toContain("- [high] step 2 — verify misses duplicates");
-    expect(prompt).toContain("STEPS CHANGED SINCE THEN: 2");
+    expect(prompt).toContain("TASKS CHANGED SINCE THEN: 2");
     expect(seen).not.toHaveProperty("permissionDecision");
     expect(seen.additionalContext).toContain("[medium] step 1 — table has no index");
   });
@@ -551,7 +551,7 @@ describe("architectDecision · the review bar and the preceding round", () => {
       return { ok: true, text: "- [medium] step 2 — retry 3 is generous — two would do\nVERDICT: approve" };
     }, { gate: AVAILABLE, store });
     expect(prompt).toContain("REJECTED BY THE AUTHOR");
-    expect(prompt).toContain("step 2: retry 3 is generous — повтор дешёвый");
+    expect(prompt).toContain("task 2: retry 3 is generous — повтор дешёвый");
     expect(seen).toBeNull();
   });
 

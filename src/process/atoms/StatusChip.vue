@@ -39,7 +39,7 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
     border-radius: var(--r-ctl);
     color: var(--text-2);
     font: inherit;
-    font-size: 12.5px;
+    font-size: var(--fs-xs);
     white-space: nowrap;
     cursor: pointer;
 }

@@ -124,7 +124,7 @@ body,
     gap: 6px;
     border-radius: 4px;
     cursor: default;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     transition: background 120ms;
     position: relative;
 }
@@ -141,7 +141,7 @@ body,
 .tb-clock {
     text-align: right;
     line-height: 1.15;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     color: var(--text);
     padding: 0 12px 0 6px;
     cursor: default;
@@ -156,7 +156,7 @@ body,
 }
 .tb-clock .d {
     color: var(--text-2);
-    font-size: 12px;
+    font-size: var(--fs-xs);
 }
 
 /* ─── Flyout ──────────────────────────────────────────────── */
@@ -219,7 +219,7 @@ body,
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-size: 15px;
+    font-size: var(--fs-sm);
     font-weight: 600;
     letter-spacing: -0.01em;
     color: var(--text);
@@ -323,7 +323,7 @@ body,
     gap: 10px;
 }
 .card-title {
-    font-size: 14px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     letter-spacing: -0.005em;
     color: var(--text);
@@ -333,13 +333,13 @@ body,
     gap: 6px;
 }
 .card-sub {
-    font-size: 13px;
+    font-size: var(--fs-xs);
     color: var(--text-3);
     margin-top: 2px;
     line-height: 1.35;
 }
 .pct {
-    font-size: 18px;
+    font-size: var(--fs-lg);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     line-height: 1;
@@ -417,7 +417,7 @@ body,
 }
 .pace-row {
     margin-top: 6px;
-    font-size: 12px;
+    font-size: var(--fs-xs);
 }
 .pace-ok {
     color: var(--success);
@@ -433,7 +433,7 @@ body,
     justify-content: space-between;
     align-items: center;
     margin-top: 10px;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     color: var(--text-3);
     font-variant-numeric: tabular-nums;
 }
@@ -442,7 +442,7 @@ body,
 }
 
 .badge {
-    font-size: 12px;
+    font-size: var(--fs-xs);
     font-weight: 500;
     color: var(--text-2);
     background: color-mix(in srgb, var(--paper) 8%, transparent);
@@ -485,7 +485,7 @@ body,
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
     font-variant-numeric: tabular-nums;
 }
@@ -521,7 +521,7 @@ body,
     grid-template-columns: repeat(10, 1fr);
     gap: 4px;
     padding: 0 2px;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
     text-align: center;
     font-variant-numeric: tabular-nums;
@@ -531,7 +531,7 @@ body,
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     color: var(--text-3);
 }
 .chart-foot .right {
@@ -545,7 +545,7 @@ body,
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
     letter-spacing: 0;
 }
@@ -583,7 +583,7 @@ body,
     background: var(--ink-1);
     border: 1px solid color-mix(in srgb, var(--paper) 8%, transparent);
     color: var(--text);
-    font-size: 12px;
+    font-size: var(--fs-xs);
     padding: 6px 10px;
     border-radius: 4px;
     white-space: nowrap;
@@ -637,10 +637,10 @@ body,
     padding: 8px;
 }
 .density-compact .pct {
-    font-size: 16px;
+    font-size: var(--fs-md);
 }
 .density-compact .card-title {
-    font-size: 13px;
+    font-size: var(--fs-xs);
 }
 
 .density-comfy .card {
@@ -679,7 +679,7 @@ body,
     left: 18px;
     bottom: 60px;
     color: color-mix(in srgb, var(--paper) 50%, transparent);
-    font-size: 12px;
+    font-size: var(--fs-xs);
     letter-spacing: 0.02em;
     display: flex;
     align-items: center;
@@ -692,7 +692,7 @@ body,
 }
 .kbd {
     font-family: var(--segoe);
-    font-size: 12px;
+    font-size: var(--fs-xs);
     padding: 1px 5px;
     border: 1px solid color-mix(in srgb, var(--paper) 18%, transparent);
     border-bottom-width: 2px;
@@ -708,7 +708,7 @@ body,
     border-radius: var(--card-radius);
     background: var(--accent);
     color: var(--on-accent);
-    font-size: 13px;
+    font-size: var(--fs-xs);
     font-weight: 500;
     font-family: var(--segoe);
     cursor: pointer;
@@ -728,7 +728,7 @@ body,
     border-radius: var(--card-radius);
     background: transparent;
     color: var(--text-2);
-    font-size: 12px;
+    font-size: var(--fs-xs);
     font-family: var(--segoe);
     cursor: pointer;
     transition: background 120ms;

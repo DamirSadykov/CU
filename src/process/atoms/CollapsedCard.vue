@@ -37,7 +37,7 @@ const style = computed(() => ({ width: `${props.width}px` }));
     background: color-mix(in srgb, var(--paper) 1.2%, transparent);
     color: var(--text-4);
     font: inherit;
-    font-size: 11px;
+    font-size: var(--fs-xs);
     line-height: 1.45;
     text-align: left;
     cursor: pointer;
@@ -50,7 +50,7 @@ const style = computed(() => ({ width: `${props.width}px` }));
     margin-bottom: 4px;
     color: var(--text-3);
     font-weight: 500;
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
 }
 .collapsed-caret {
     color: var(--text-4);

@@ -1,7 +1,8 @@
 import type { BoardChange } from "../contracts/board";
 import { wavesOf } from "./waves";
 import type { BoardTreeRow } from "./boardTree";
-import { defaultTodoFilters, projectTodos } from "./todoFilter";
+import { attentionKinds, defaultTodoFilters, projectTodos } from "./todoFilter";
+import { formatRef, parseRef } from "../../scripts/cli/kernel/terms.mjs";
 
 export type OverviewPeriod = "7d" | "30d" | "all";
 export type OverviewStatus = "done" | "running" | "review" | "blocked" | "queued";
@@ -173,13 +174,13 @@ function attentionItems(
     if (change.closed || !change.over || change.budget === null) continue;
     items.push({ kind: "over_budget", changeId: change.id, number: change.number, title: change.title, cost: change.cost, budget: change.budget });
   }
-  const base = { ...defaultTodoFilters(), project };
-  for (const row of projectTodos(rows, { ...base, attention: "overdue" }, undefined, today).visible) {
+  const projectRows = projectTodos(rows, { ...defaultTodoFilters(), project: [project] }, { today }).visible;
+  for (const row of projectRows.filter((item) => attentionKinds(item, today).includes("overdue"))) {
     if (seen.has(row.id)) continue;
     seen.add(row.id);
     items.push({ kind: "overdue", taskId: row.id, number: row.number, title: row.subject, change: changeOf(row), since: (row.scheduled_for ?? "").slice(0, 10) });
   }
-  for (const row of projectTodos(rows, { ...base, attention: "stale" }, undefined, today).visible) {
+  for (const row of projectRows.filter((item) => attentionKinds(item, today).includes("stale"))) {
     if (seen.has(row.id)) continue;
     seen.add(row.id);
     items.push({ kind: "stale", taskId: row.id, number: row.number, title: row.subject, change: changeOf(row), days: daysBetween(row.updated_at.slice(0, 10), today) });
@@ -225,12 +226,12 @@ export function projectOverview(
 
 export function filterChangeRows(rows: readonly ChangeOverviewRow[], closed: boolean, query: string): ChangeOverviewRow[] {
   const normalized = query.trim().toLocaleLowerCase();
-  const numeric = normalized.match(/^(?:c#|#)?(\d+)$/)?.[1];
+  const numeric = parseRef(normalized);
   return rows.filter((row) => {
     if (row.closed !== closed) return false;
     if (!normalized) return true;
-    if (numeric) return String(row.number).includes(numeric);
-    return row.title.toLocaleLowerCase().includes(normalized) || `c#${row.number}`.includes(normalized);
+    if (numeric !== null) return String(row.number).includes(String(numeric));
+    return row.title.toLocaleLowerCase().includes(normalized) || formatRef(row).includes(normalized);
   });
 }
 

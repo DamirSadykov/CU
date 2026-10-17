@@ -287,12 +287,12 @@ onUnmounted(() => {
 }
 
 .svc-label {
-    font-size: 12px;
+    font-size: var(--fs-xs);
     color: var(--text-2);
 }
 
 .svc-count {
-    font-size: 11px;
+    font-size: var(--fs-xs);
     font-variant-numeric: tabular-nums;
     color: var(--text-3);
     background: color-mix(in srgb, var(--paper) 8%, transparent);
@@ -353,7 +353,7 @@ onUnmounted(() => {
 }
 
 .svc-inc-badge {
-    font-size: 10px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -362,13 +362,13 @@ onUnmounted(() => {
 }
 
 .svc-inc-name {
-    font-size: 12px;
+    font-size: var(--fs-xs);
     color: var(--text-2);
     line-height: 1.3;
 }
 
 .svc-inc-meta {
-    font-size: 11px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
     margin-top: 2px;
 }
@@ -380,7 +380,7 @@ onUnmounted(() => {
     border: none;
     background: transparent;
     color: var(--accent);
-    font-size: 12px;
+    font-size: var(--fs-xs);
     font-family: var(--segoe);
     cursor: pointer;
 }

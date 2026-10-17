@@ -9,6 +9,7 @@ import {
     type ChangeTask,
 } from "./changeAdapt";
 import type { SpecLane } from "./types";
+import { formatRef } from "../../../scripts/cli/kernel/terms.mjs";
 
 export interface SectionEntry {
     slug: string;
@@ -255,7 +256,7 @@ export function useSpecs() {
             out.push({
                 id: c.id,
                 number: c.number,
-                address: `c#${c.number}`,
+                address: formatRef(c),
                 record: true,
                 title: c.title,
                 open: isOpenChange(c),

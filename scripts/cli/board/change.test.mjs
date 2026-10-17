@@ -65,7 +65,8 @@ const legacyBoard = () => {
 };
 
 describe("parseChangeRef", () => {
-  it("takes c#N, cN and a bare number", () => {
+  it("takes p#N, legacy c#N/cN and a bare number", () => {
+    expect(parseChangeRef("p#12")).toEqual({ number: 12 });
     expect(parseChangeRef("c#12")).toEqual({ number: 12 });
     expect(parseChangeRef("C#12")).toEqual({ number: 12 });
     expect(parseChangeRef("c12")).toEqual({ number: 12 });
@@ -153,9 +154,9 @@ describe("findChange", () => {
 });
 
 describe("changeAddress", () => {
-  it("addresses a record as c#N and an unmigrated root as t#N", () => {
+  it("addresses a plan as p#N and an unmigrated root as t#N", () => {
     const { change } = boardWithRecord();
-    expect(changeAddress(change)).toBe("c#1");
+    expect(changeAddress(change)).toBe("p#1");
     const data = legacyBoard();
     expect(changeAddress(legacyChange(data.todos[0]))).toBe("t#10");
   });
@@ -242,7 +243,7 @@ describe("legacyRootsOf", () => {
   });
 });
 
-describe("cli change", () => {
+describe("cli plan (with change as a compatibility alias)", () => {
   const cli = path.join(fileURLToPath(new URL(".", import.meta.url)), "..", "..", "cli.mjs");
   let dir;
   let appDir;
@@ -288,11 +289,17 @@ describe("cli change", () => {
 
   it("заводит запись со своим номером и потолками группы", () => {
     const out = run(["change", "new", "Перевод на записи", "--project", "board", "--budget", "12", "--parallel", "2"]);
-    expect(out).toContain("ok: c#1");
+    expect(out).toContain("ok: p#1");
     const rec = read().changes[0];
     expect(rec.number).toBe(1);
     expect(rec.budget_usd).toBe(12);
     expect(rec.parallel_limit).toBe(2);
+  });
+
+  it("uses plan as the primary group and keeps change as the same command alias", () => {
+    expect(run(["plan", "new", "Общий маршрут", "--project", "board"])).toContain("ok: p#1");
+    expect(run(["change", "show", "c#1"])).toContain("p#1 [open] Общий маршрут");
+    expect(run(["plan", "show", "p#1"])).toBe(run(["change", "show", "c#1"]));
   });
 
   it("отказывает второй записи с тем же заголовком на одной доске", () => {
@@ -302,22 +309,22 @@ describe("cli change", () => {
 
   it("привязывает задачу к записи и снимает привязку", () => {
     run(["change", "new", "Перевод на записи", "--project", "board"]);
-    expect(run(["todos", "set", "change", "1", "c#1"])).toContain("change -> c#1");
+    expect(run(["todos", "set", "change", "1", "c#1"])).toContain("plan -> p#1");
     expect(read().todos[0].change_id).toBe(read().changes[0].id);
-    expect(run(["todos", "set", "change", "1", "none"])).toContain("change -> none");
+    expect(run(["todos", "set", "change", "1", "none"])).toContain("plan -> none");
     expect(read().todos[0].change_id).toBeUndefined();
   });
 
   it("отказывает привязке к несуществующему change'у, называя новую форму", () => {
     const err = refuse(["todos", "set", "change", "1", "c#9"]);
-    expect(err).toContain("valid: <c#N> | none");
-    expect(err).toContain("cli change list");
+    expect(err).toContain("valid: <p#N> | <c#N> | none");
+    expect(err).toContain("cli plan list");
   });
 
   it("отказывает старой булевой форме, называя новую", () => {
     const err = refuse(["todos", "set", "change", "1", "on"]);
     expect(err).toContain("is the OLD root-task form");
-    expect(err).toContain("cli change new");
+    expect(err).toContain("cli plan new");
   });
 
   it("показывает состав и производный статус", () => {
@@ -325,7 +332,7 @@ describe("cli change", () => {
     run(["todos", "set", "change", "1", "c#1"]);
     run(["todos", "set", "change", "2", "c#1"]);
     const out = run(["change", "show", "c#1"]);
-    expect(out).toContain("c#1 [open]");
+    expect(out).toContain("p#1 [open]");
     expect(out).toContain("1/2 готово");
     expect(out).toContain("#1 [backlog] первая");
   });
@@ -368,7 +375,7 @@ describe("cli change", () => {
     expect(read().changes[0].measure).toEqual([{ what: "доля заполненных", how: "считаем через месяц" }]);
     const closed = run(["change", "close", "c#1"]);
     expect(closed).toContain("measurements without actual:");
-    expect(closed).toContain('cli change measure set c#1 "доля заполненных" --actual');
+    expect(closed).toContain('cli plan measure set p#1 "доля заполненных" --actual');
     run(["change", "measure", "set", "c#1", "доля заполненных", "--actual", "57%"]);
     expect(read().changes[0].measure[0].actual).toBe("57%");
     expect(run(["change", "show", "c#1"])).toContain("факт: 57%");
@@ -452,9 +459,9 @@ describe("cli change", () => {
     writeFileSync(board, JSON.stringify(data));
 
     const out = run(["change", "proposal", "list"]);
-    expect(out).toContain("c#1 retro-p1 [proposed]");
-    expect(out).toContain("повтор: c#1, c#2");
-    expect(changeProposals(read())[0].repeated_in).toEqual(["c#1", "c#2"]);
+    expect(out).toContain("p#1 retro-p1 [proposed]");
+    expect(out).toContain("повтор: p#1, p#2");
+    expect(changeProposals(read())[0].repeated_in).toEqual(["p#1", "p#2"]);
   });
 
   it("перечисляет немигрированные корни под адресом t#N", () => {
@@ -509,14 +516,14 @@ describe("потребители читают запись, а не корень
     return { data, change };
   };
 
-  it("vision наследуется от записи и адресуется c#N", async () => {
+  it("vision наследуется от плана и адресуется p#N", async () => {
     const { changeRootsFor, formatChangeVision } = await import("./todos.mjs");
     const { data, change } = withRecord();
     const roots = changeRootsFor(data, data.todos[1]);
-    expect(roots.map((r) => r.address)).toEqual(["c#1"]);
+    expect(roots.map((r) => r.address)).toEqual(["p#1"]);
     expect(roots[0].subject).toBe(change.title);
     const out = formatChangeVision(data.todos[1], roots);
-    expect(out).toContain("── change c#1");
+    expect(out).toContain("── plan p#1");
     expect(out).toContain("что меняем в этом заходе");
   });
 

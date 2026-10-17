@@ -1,27 +1,27 @@
 # Plan graph format
 
-Write recordable YAML: one task/work session per step. Omitted runner fields
+Write a recordable draft plan in YAML: one task/work session per task. Omitted runner fields
 are inferred; explicit values win.
 
-## 0. When to write a plan
+## 0. When to write a draft plan
 
-Scout: locate files and size each step S/M/L. Any L step or open branch requires
-plan mode; use `<cli> todos apply` only for auto-runner work. Otherwise a plan
-is optional. Keep graphs current. Decide after scouting, not by edit count.
+Scout: locate files and size each task S/M/L. Any L task or open branch requires
+plan mode; use `<cli> todos apply` only for auto-runner work. Otherwise a draft
+plan is optional. Keep its graph current. Decide after scouting, not by edit count.
 
 ## 1. Field legend
 
 Document fields:
 
-`change` — creates/selects the root; use when the plan opens tasks.
-`vision` — WHAT & WHY in 2–5 labelled blocks; use when creating/revising a change.
+`change` — legacy key: creates/selects the plan record; use when the plan opens tasks.
+`vision` — WHAT & WHY in 2–5 labelled blocks; use when creating/revising a plan.
 `out` — decided non-goals (`what`, `why`, optional `ref`).
 `measure` — outcomes (`what`, `how`, optional `target`, `actual`, `ok`, `note`).
 `parallel` — justified group concurrency limit.
 `budget` — justified group spend ceiling.
-`steps` — graph nodes; required when the plan records work.
+`steps` — legacy key for task nodes; required when the plan records work.
 
-Step fields:
+Task fields:
 
 `title` — new task subject, verbatim; declare for a new task.
 `task` — binds an existing task (`N`, `#N`, `t#N`, or uuid); use instead of `title` when continuing it.
@@ -31,7 +31,7 @@ Step fields:
 `retry` — attempt limit; omit for runner default `2`, or declare only when `why` explains the exception.
 `on-issue` — corrective target; declare only a decided target (omitted `retry` still becomes `2`).
 `kind` — closing authority; omit for `auto` with `verify`, otherwise `manual`; an explicit value wins.
-`size` — required for a new `auto` step: S = point edit, M = multi-file feature, L = connected rework with tests and a document.
+`size` — required for a new `auto` task: S = point edit, M = multi-file feature, L = connected rework with tests and a document.
 `budget` — exceptional node spend ceiling; declare only with the reason in `why`, otherwise history translates `size` into dollars.
 `red` — command that must fail on the base state; include the regression-test path in the command.
 `red-tests` — regression-test paths protected during the red gate; omit to extract them from `red`, or declare explicitly.
@@ -44,7 +44,7 @@ invalid `out` and `measure` items.
 ## 2. Graph skeleton
 
 ```yaml
-change: "CHANGE: webhook delivery is observable"
+change: "PLAN: webhook delivery is observable"
 vision: Delivery failures leave durable evidence for operators.
 steps:
   1:
@@ -68,7 +68,7 @@ steps:
 Bug-fix gate (the test path in `red` makes `red-tests` inferable):
 
 ```yaml
-change: "CHANGE: duplicate webhook regression"
+change: "PLAN: duplicate webhook regression"
 steps:
   fix:
     title: Duplicate delivery has a regression test
@@ -87,19 +87,19 @@ it could not read the plan:
 ```
 <cli> todos apply <plan>.yaml
 <cli> todos apply <plan>.yaml --go
-<cli> todos lint [<change>] [--json]
+<cli> todos lint [<plan>] [--json]
 ```
 
 `apply` prints every inferred value as `выведено` and writes that value to the
 board. Re-applying explicit old graphs leaves their declarations explicit.
-An automatic step explicitly declared without `verify` remains a gate.
+An automatic task explicitly declared without `verify` remains a gate.
 
-For a plan that settles a question and records no work, start with:
+For a draft plan that settles a question and records no work, start with:
 
 ```
 discussion: <what is being settled, and why it opens no task>
 ```
 
-Open [`plan-format-issues.md`](plan-format-issues.md) only when a step parks.
-Open [`plan-format-cutting.md`](plan-format-cutting.md) only when a plan or step
+Open [`plan-format-issues.md`](plan-format-issues.md) only when a task parks.
+Open [`plan-format-cutting.md`](plan-format-cutting.md) only when a plan or task
 must be split.
