@@ -40,6 +40,7 @@ import { boardPath, loadBoard, resolveTask } from "../board/todos.mjs";
 import { resolveDuty } from "../agents/agents.mjs";
 import { resolveSpawn } from "../models/engine.mjs";
 import { appDataDir, writeJsonAtomic } from "../kernel/appdata.mjs";
+import { WAVE_RULES } from "./wave.mjs";
 import {
   STEP_ANCHOR,
   downgradeUnchanged,
@@ -520,12 +521,21 @@ function dropRejected(findings, rejections) {
 const formatFinding = (f) =>
   `- [${f.level}] ${STEP_ANCHOR.format(f)} — ${f.text || "(no detail)"}${f.evidence ? ` — ${f.evidence}` : ""}`;
 
+export function parallelismBlock() {
+  return [
+    "PARALLELISM — the runner builds each wave of a change by these rules:",
+    ...WAVE_RULES.map((r) => `- ${r.rule}`),
+    "A plan that counts on parallelism these rules will not give (for example `parallel` together with `red` steps, or parallel steps sharing a `produces` path), or that lets a step start before the step it builds on (a missing `needs`), is a finding of kind (a) or (b).",
+  ].join("\n");
+}
+
 export function buildArchitectPrompt(plan, { prior = null, changed = [], rejections = [], bar = null } = {}) {
   const lines = [
     "You are the architect hook reviewing a plan before it reaches the user.",
     "Judge the declared obligations: boundaries, dependency order, produces, verify, retries and review gates.",
     "Do not edit files.",
     reviewBarText({ subject: "plan", anchor: STEP_ANCHOR, bar }),
+    parallelismBlock(),
     verdictInstruction(STEP_ANCHOR, { repair: true }),
   ];
   if (prior) {

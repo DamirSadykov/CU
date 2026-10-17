@@ -32,12 +32,14 @@ import {
   architectDecision,
   architectGateState,
   planReviewStore,
+  parallelismBlock,
   planFormatDoc,
   planFormatIssuesDoc,
   planFormatCuttingDoc,
 } from "./plan-guard.mjs";
 import { readDocument, validate } from "./apply.mjs";
 import { emptyAgentConfig } from "../agents/agents.mjs";
+import { WAVE_RULES } from "./wave.mjs";
 
 const CLI = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "cli.mjs");
 
@@ -631,6 +633,23 @@ describe("architectDecision · the review bar and the preceding round", () => {
 
   it("passes a plan whose architect answer has no verdict line", () => {
     expect(architectDecision(withSession(VALID), answer("looks fine"), { gate: AVAILABLE, store: memory() })).toBeNull();
+  });
+});
+
+describe("parallelismBlock · the rules the runner actually keeps", () => {
+  it.each(WAVE_RULES.map((r) => [r.rule, r]))("%s", (_rule, r) => {
+    expect(r.example()).toEqual(r.expect);
+  });
+
+  it("puts every wave rule into the architect prompt", () => {
+    const block = parallelismBlock();
+    for (const r of WAVE_RULES) expect(block).toContain(`- ${r.rule}`);
+    expect(block).toContain("a missing `needs`");
+    let prompt = "";
+    architectDecision(exitPlan(VALID), (_d, p) => { prompt = p; return { ok: true, text: "VERDICT: approve" }; }, {
+      gate: { mode: "agent", available: true, candidate: { label: "x" }, candidates: [] },
+    });
+    expect(prompt).toContain("PARALLELISM — the runner builds each wave");
   });
 });
 
