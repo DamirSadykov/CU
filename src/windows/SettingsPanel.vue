@@ -1217,6 +1217,22 @@ function handleSave() {
         <div class="field-hint">{{ t('orgIdHint') }}</div>
       </div>
 
+      <!-- Refresh interval -->
+      <div class="card">
+        <div class="card-row" style="align-items: center">
+          <div class="field-label" style="margin-bottom: 0">{{ t('refreshInterval') }}</div>
+          <span class="pct muted" style="font-size: 14px">{{ localInterval }}s</span>
+        </div>
+        <input
+          v-model.number="localInterval"
+          type="range"
+          class="field-range"
+          min="60"
+          max="300"
+          step="5"
+        />
+      </div>
+
       <!-- Install the cc-todos CLI + the SessionStart/Stop hooks into ~/.claude/settings.json -->
       <div class="card" style="display: flex; align-items: center; gap: 12px">
         <div style="flex: 1; min-width: 0">
@@ -1668,22 +1684,6 @@ function handleSave() {
 
       <!-- ===== Updates ===== -->
       <template v-if="tab === 'updates'">
-      <!-- Refresh interval -->
-      <div class="card">
-        <div class="card-row" style="align-items: center">
-          <div class="field-label" style="margin-bottom: 0">{{ t('refreshInterval') }}</div>
-          <span class="pct muted" style="font-size: 14px">{{ localInterval }}s</span>
-        </div>
-        <input
-          v-model.number="localInterval"
-          type="range"
-          class="field-range"
-          min="60"
-          max="300"
-          step="5"
-        />
-      </div>
-
       <!-- Updates -->
       <div class="card">
         <div class="card-row" style="align-items: center">
