@@ -412,7 +412,7 @@ const failOpen = (reason) => ({
   additionalContext: reason,
 });
 
-function invokeAvailableArchitect(gate, prompt, { cwd = process.cwd(), timeoutMs = 90_000 } = {}) {
+function invokeAvailableArchitect(gate, prompt, { cwd = process.cwd(), timeoutMs = 180_000 } = {}) {
   const candidate = gate.candidate?.source;
   if (!candidate) return { ok: false, error: "available candidate details are missing", text: "" };
   const { file, args } = candidate.argv({ bin: gate.candidate.bin, sandbox: "read-only" });
