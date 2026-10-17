@@ -96,6 +96,7 @@ import {
   recoverMarkers,
 } from "./red-gate.mjs";
 import { restoreCheckpoint } from "./checkpoint.mjs";
+import { FILE_ANCHOR, downgradeUnchanged } from "./review-core.mjs";
 import { appendRunEvent, createVerifyLog, runEventsPath, verifyLogPath, watchRunEvents, writeVerifyLog } from "./run-events.mjs";
 import { pathMatches } from "./outcome.mjs";
 import { runFlowGate } from "./flow-gate.mjs";
@@ -1632,13 +1633,11 @@ async function retryReviewContext(ctx, task, ownChanges) {
 
 function downgradeUntouchedRetryFindings(review, context) {
   if (!review || !Array.isArray(review.findings) || !Array.isArray(context?.attemptDiff)) return review;
-  const prior = new Set((context.previousAttempt?.findings || []).map(findingKey));
-  const touched = new Set(context.attemptDiff.map((c) => String(c?.path || "").replace(/\\/g, "/")));
-  const findings = review.findings.map((f) => {
-    const file = String(f?.file || "").replace(/\\/g, "/");
-    if ((f?.level === "critical" || f?.level === "high") && !prior.has(findingKey(f)) && file && !touched.has(file))
-      return { ...f, level: "medium", evidence: `${f.evidence || ""}${f.evidence ? "; " : ""}outside this retry's diff` };
-    return f;
+  const findings = downgradeUnchanged(review.findings, {
+    prior: context.previousAttempt?.findings || [],
+    changed: new Set(context.attemptDiff.map((c) => FILE_ANCHOR.place({ file: c?.path }))),
+    anchor: FILE_ANCHOR,
+    note: "outside this retry's diff",
   });
   return { ...review, findings };
 }
