@@ -247,14 +247,14 @@ onMounted(async () => {
 
 <style scoped>
 .intro {
-  font-size: 13px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
   margin-bottom: 4px;
 }
 
 /* Field styling mirrored from SettingsPanel (its rules are scoped, not global). */
 .field-label {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--text-3);
   text-transform: uppercase;
@@ -268,7 +268,7 @@ onMounted(async () => {
   border-radius: 4px;
   background: color-mix(in srgb, var(--paper) 4%, transparent);
   color: var(--text);
-  font-size: 13px;
+  font-size: var(--fs-xs);
   font-family: var(--segoe);
   outline: none;
   transition: border-color 120ms, background 120ms;
@@ -281,7 +281,7 @@ onMounted(async () => {
   color: var(--text-4);
 }
 .field-hint {
-  font-size: 13px;
+  font-size: var(--fs-xs);
   color: var(--text-4);
   margin-top: 6px;
 }
@@ -304,7 +304,7 @@ onMounted(async () => {
   background: var(--text-4);
 }
 .status-text {
-  font-size: 13px;
+  font-size: var(--fs-xs);
   color: var(--text-2);
 }
 
@@ -316,7 +316,7 @@ onMounted(async () => {
   justify-content: space-between;
   gap: 12px;
   padding: 3px 0;
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
 }
 .meta-key {
   color: var(--text-4);
@@ -338,7 +338,7 @@ onMounted(async () => {
   border-radius: var(--card-radius);
   background: var(--accent);
   color: var(--on-accent);
-  font-size: 13px;
+  font-size: var(--fs-xs);
   font-weight: 500;
   font-family: var(--segoe);
   cursor: pointer;
@@ -362,7 +362,7 @@ onMounted(async () => {
   border-radius: 6px;
   background: transparent;
   color: var(--text-2);
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
   font-family: var(--segoe);
   cursor: pointer;
   transition: background 120ms, color 120ms;
@@ -373,14 +373,14 @@ onMounted(async () => {
 }
 
 .err {
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
   color: var(--crit);
   padding: 4px 2px;
 }
 
 /* Status mapper */
 .map-empty {
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
   color: var(--text-4);
   padding: 6px 0 2px;
 }
@@ -398,7 +398,7 @@ onMounted(async () => {
 .map-status {
   flex: 1;
   min-width: 0;
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
   color: var(--text-2);
   font-family: var(--mono, monospace);
   overflow: hidden;

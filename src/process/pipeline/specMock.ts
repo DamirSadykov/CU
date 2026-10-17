@@ -474,11 +474,11 @@ export interface PanelLine {
 export const sectionState: PanelLine[] = [
     { icon: "✓", text: "lint чист", meta: "6 правил", tone: "ok" },
     { icon: "◷", text: "112 строк прозы", meta: "потолок 120", tone: "muted" },
-    { icon: "⚡", text: "2 change'а на §5", meta: "предупр.", tone: "warn" },
+    { icon: "⚡", text: "2 плана на §5", meta: "предупр.", tone: "warn" },
 ];
 
 export const mergeSummary: PanelLine[] = [
-    { icon: "✓", text: "2 готовых change'а", meta: "§1–3, §6", tone: "ok" },
+    { icon: "✓", text: "2 готовых плана", meta: "§1–3, §6", tone: "ok" },
     { icon: "!", text: "1 конфликт", meta: "§5", tone: "warn" },
     { icon: "◷", text: "1 на ревью", meta: "§4", tone: "muted" },
 ];

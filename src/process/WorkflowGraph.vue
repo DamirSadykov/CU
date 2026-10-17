@@ -147,7 +147,7 @@ const runnerNodes = computed<FlowNode[]>(() => [
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -167,7 +167,7 @@ const runnerNodes = computed<FlowNode[]>(() => [
   background: var(--text-3);
 }
 .wf-lane-tag {
-  font-size: 10px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   text-transform: none;
   letter-spacing: 0;
@@ -197,26 +197,26 @@ const runnerNodes = computed<FlowNode[]>(() => [
   text-align: center;
 }
 .wf-node-label {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--text);
   line-height: 1.25;
 }
 .wf-node-sub {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
   margin-top: 3px;
   line-height: 1.25;
   word-break: break-word;
 }
 .wf-node-note {
-  font-size: 10.5px;
+  font-size: var(--fs-xs);
   color: var(--text-4);
   margin-top: 3px;
   line-height: 1.3;
 }
 .wf-node-warn {
-  font-size: 10.5px;
+  font-size: var(--fs-xs);
   color: var(--warning);
   margin-top: 4px;
   line-height: 1.3;
@@ -245,7 +245,7 @@ const runnerNodes = computed<FlowNode[]>(() => [
   margin-top: 14px;
   padding-top: 10px;
   border-top: 1px solid var(--stroke);
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--text-4);
 }
 .wf-legend-item {

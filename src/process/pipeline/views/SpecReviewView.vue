@@ -12,6 +12,7 @@ import ChangeQueueCard from "../../atoms/ChangeQueueCard.vue";
 import SpecTreeItem from "../../atoms/SpecTreeItem.vue";
 import SpecParagraph from "../../atoms/SpecParagraph.vue";
 import { diffLines } from "../../../kernel/specDiff";
+import { formatRef } from "../../../../scripts/cli/kernel/terms.mjs";
 import { useSpecs } from "../useSpecs";
 import {
     domains as mockDomains,
@@ -224,7 +225,7 @@ const changeQueue = computed(() => {
         if (!specs.isOpenChange(c)) continue;
         const conflict = (c.spec ?? []).some((a) => specs.concurrentAt(a));
         out.push({
-            id: `c#${c.number}`,
+            id: formatRef(c.number),
             title: c.title,
             meta: (c.spec ?? []).join(", ") || "без раздела",
             tone: conflict ? "warn" : "ok",
@@ -251,7 +252,7 @@ const mergeSummary = computed(() => {
     const lines: { icon: string; text: string; meta: string; tone: "ok" | "warn" | "muted" | "accent" | "crit" }[] = [
         {
             icon: total ? "⚡" : "✓",
-            text: total ? `${total} открытых change'ов` : "нет открытых change'ов",
+            text: total ? `Открытые планы: ${total}` : "нет открытых планов",
             meta: "",
             tone: total ? "accent" : "ok",
         },
@@ -352,7 +353,7 @@ const mergeSummary = computed(() => {
 
                 <template v-if="live">
                     <HintBar v-if="view === 'edits'" icon="⚡">
-                        {{ openDeltas.length }} открыт{{ openDeltas.length === 1 ? "ый change" : "ых change'а" }}
+                        Открытые планы: {{ openDeltas.length }}
                         меняют этот раздел. Показан текст с наложенными правками.
                     </HintBar>
                     <HintBar v-else-if="view === 'accepted'" icon="✓" tone="muted">
@@ -365,7 +366,7 @@ const mergeSummary = computed(() => {
                 </template>
                 <template v-else>
                     <HintBar v-if="view === 'edits'" icon="⚡">
-                        4 открытых change'а меняют этот раздел. Показан текст с
+                        Открытые планы меняют этот раздел: 4. Показан текст с
                         наложенными правками — принятые попадут в v6 при слиянии.
                     </HintBar>
                     <HintBar v-else-if="view === 'accepted'" icon="✓" tone="muted">
@@ -374,7 +375,7 @@ const mergeSummary = computed(() => {
                     </HintBar>
                     <HintBar v-else icon="±" tone="muted">
                         Сплошной diff раздела: слева база v5, справа то, что предлагают
-                        открытые change'и.
+                        открытые планы.
                     </HintBar>
                 </template>
 
@@ -524,7 +525,7 @@ const mergeSummary = computed(() => {
 
         <aside class="spec-panel">
             <section class="panel-group">
-                <Kicker>Очередь change'ов</Kicker>
+                <Kicker>Очередь планов</Kicker>
                 <div class="panel-queue">
                     <ChangeQueueCard
                         v-for="card in changeQueue"
@@ -537,7 +538,7 @@ const mergeSummary = computed(() => {
                         @click="picked = card.id"
                     />
                     <div v-if="!changeQueue.length" class="spec-empty">
-                        Нет открытых change'ов
+                        Нет открытых планов
                     </div>
                 </div>
             </section>
@@ -565,7 +566,7 @@ const mergeSummary = computed(() => {
 <style scoped>
 .spec-scope {
     margin-left: 4px;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
 }
 .pipe-canvas.spec-shell {
@@ -602,12 +603,12 @@ const mergeSummary = computed(() => {
 }
 .rail-domain-id {
     font-family: var(--mono);
-    font-size: 12.5px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--text-2);
 }
 .rail-domain-meta {
-    font-size: 10.5px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
 }
 .spec-doc {
@@ -623,7 +624,7 @@ const mergeSummary = computed(() => {
 }
 .crumb-path {
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
 }
 .crumb-sep {
@@ -631,13 +632,13 @@ const mergeSummary = computed(() => {
 }
 .crumb-addr {
     font-family: var(--mono);
-    font-size: 12.5px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--accent);
 }
 .doc-title {
     margin: 10px 0 14px;
-    font-size: 26px;
+    font-size: var(--fs-3xl);
     font-weight: 600;
     letter-spacing: -0.01em;
     color: var(--text);
@@ -648,7 +649,7 @@ const mergeSummary = computed(() => {
 }
 .doc-text {
     display: block;
-    font-size: 13.2px;
+    font-size: var(--fs-xs);
     line-height: 1.68;
 }
 .doc-text.cut {
@@ -660,7 +661,7 @@ const mergeSummary = computed(() => {
     border-radius: 4px;
     background: color-mix(in srgb, var(--paper) 6%, transparent);
     font-family: var(--mono);
-    font-size: 0.88em;
+    font-size: var(--fs-xs);
     color: var(--text-2);
 }
 .doc-text :deep(.sp-path) {
@@ -694,7 +695,7 @@ const mergeSummary = computed(() => {
     gap: 8px;
     padding: 2px 12px;
     font-family: var(--mono);
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     line-height: 1.6;
     color: var(--text-3);
 }
@@ -748,7 +749,7 @@ const mergeSummary = computed(() => {
 }
 .spec-empty {
     padding: 6px 4px;
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     line-height: 1.5;
     color: var(--text-4);
 }

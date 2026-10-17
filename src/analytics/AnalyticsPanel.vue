@@ -476,14 +476,14 @@ function renderCharts() {
           x: {
             stacked: !isCost,
             grid: { display: false },
-            ticks: { color: tickColor, font: { size: 12 } },
+            ticks: { color: tickColor, font: { size: 14 } },
           },
           y: {
             stacked: !isCost,
             grid: { color: gridColor },
             ticks: {
               color: tickColor,
-              font: { size: 12 },
+              font: { size: 14 },
               callback: (v) => (isCost ? "$" + v : fmtTokens(Number(v))),
             },
           },
@@ -772,7 +772,7 @@ onUnmounted(() => {
   border-radius: 6px;
   background: transparent;
   color: var(--text-3);
-  font-size: 13px;
+  font-size: var(--fs-xs);
   font-family: var(--segoe);
   cursor: pointer;
   transition: background 120ms, color 120ms, border-color 120ms;
@@ -794,7 +794,7 @@ onUnmounted(() => {
   border: none;
   background: transparent;
   color: var(--text-3);
-  font-size: 14px;
+  font-size: var(--fs-xs);
   font-family: var(--segoe);
   cursor: pointer;
   transition: background 120ms, color 120ms;
@@ -820,7 +820,7 @@ onUnmounted(() => {
   text-align: center;
 }
 .stat-val {
-  font-size: 19px;
+  font-size: var(--fs-xl);
   font-weight: 600;
   color: var(--text);
   font-variant-numeric: tabular-nums;
@@ -828,7 +828,7 @@ onUnmounted(() => {
 .stat-val.up { color: var(--crit); }
 .stat-val.down { color: var(--ok); }
 .stat-lbl {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-4);
   margin-top: 3px;
   text-transform: uppercase;
@@ -841,7 +841,7 @@ onUnmounted(() => {
   gap: 8px;
 }
 .block-title {
-  font-size: 13px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--text-3);
   text-transform: uppercase;
@@ -855,7 +855,7 @@ onUnmounted(() => {
 }
 .seg-sm button {
   padding: 4px 10px;
-  font-size: 12px;
+  font-size: var(--fs-xs);
 }
 .chart-wrap {
   height: 160px;
@@ -882,7 +882,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 9px;
-  font-size: 14px;
+  font-size: var(--fs-xs);
 }
 .legend-item .dot {
   width: 11px;
@@ -901,7 +901,7 @@ onUnmounted(() => {
 
 /* Clickable token-type chips that toggle their layer in the daily chart. */
 .tok-hint {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-4);
 }
 .tok-filters {
@@ -918,7 +918,7 @@ onUnmounted(() => {
   border-radius: 8px;
   background: var(--card-bg, color-mix(in srgb, var(--paper) 3%, transparent));
   font-family: var(--segoe);
-  font-size: 13px;
+  font-size: var(--fs-xs);
   cursor: pointer;
   transition: background 120ms, border-color 120ms, opacity 120ms;
 }
@@ -952,7 +952,7 @@ onUnmounted(() => {
 }
 
 .tok-note {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   line-height: 1.45;
   color: var(--text-4);
   margin-top: 2px;
@@ -970,7 +970,7 @@ onUnmounted(() => {
 }
 .heat-day {
   width: 30px;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-4);
   flex-shrink: 0;
 }
@@ -988,7 +988,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   margin-left: 36px;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-4);
 }
 
@@ -1006,7 +1006,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--crit);
 }
@@ -1021,7 +1021,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 13px;
+  font-size: var(--fs-xs);
 }
 .anomaly-list {
   display: flex;
@@ -1032,7 +1032,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 13px;
+  font-size: var(--fs-xs);
 }
 .anomaly-when {
   color: var(--text-4);
@@ -1070,7 +1070,7 @@ onUnmounted(() => {
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
-  font-size: 14px;
+  font-size: var(--fs-xs);
   margin-bottom: 3px;
 }
 .pbar-name {
@@ -1105,7 +1105,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   color: var(--text-4);
-  font-size: 15px;
+  font-size: var(--fs-sm);
   padding: 40px 0;
 }
 </style>

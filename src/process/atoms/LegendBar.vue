@@ -42,7 +42,7 @@ function markOf(item: LegendItem) {
     align-items: center;
     gap: 14px;
     padding: 0 16px;
-    font-size: 11px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
     border-bottom: 1px solid var(--stroke);
 }

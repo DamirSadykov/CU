@@ -1009,7 +1009,7 @@ describe("apply requires a change for new work", () => {
     );
   });
 
-  it("takes a one-step plan bound to an existing task — it opens nothing", () => {
+  it("takes a one-task plan bound to an existing task — it opens nothing", () => {
     todos("add", "Уже на доске");
     const n = board().todos[0].number;
     const out = todos("apply", write("bound.yaml", "steps:", "  1:", `    task: ${n}`, "    verify: npm test"), "--go");

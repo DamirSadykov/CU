@@ -405,7 +405,7 @@ const prepaidBalance = computed(() => props.usage.prepaid_balance);
 }
 
 .auto-status {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
   display: inline-flex;
   align-items: center;
@@ -419,7 +419,7 @@ const prepaidBalance = computed(() => props.usage.prepaid_balance);
   border-radius: var(--card-radius);
   background: color-mix(in srgb, var(--paper) 4%, transparent);
   color: var(--text-2);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   cursor: pointer;
   transition: background 120ms;
 }

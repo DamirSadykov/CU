@@ -1,6 +1,7 @@
 import type { RunGraphNode } from "../../board/graphModel";
 import { isDone, laneTotals, moneyOf, type Money } from "./adapt";
 import { diffLines, diffStat } from "../../kernel/specDiff";
+import { formatRef } from "../../../scripts/cli/kernel/terms.mjs";
 
 export interface ChangeSpecAnswer {
     address: string;
@@ -60,7 +61,7 @@ export interface ChangeRecord {
 }
 
 export function changeAddress(change: ChangeRecord): string {
-    return `c#${change.number}`;
+    return formatRef(change);
 }
 
 export function changeMembers(board: ChangeTask[], change: ChangeRecord): ChangeTask[] {
@@ -147,7 +148,7 @@ export function blockersFor(
         out.push({
             id: `concurrent-change:${address}`,
             rule: "concurrent-change",
-            title: `${address}: ${open.length} открытых change'а сразу`,
+            title: `${address}: открытых планов одновременно — ${open.length}`,
             detail: others.map((c) => `${changeAddress(c)} "${c.title}"`).join(", "),
             address,
         });
@@ -183,8 +184,8 @@ export function blockersFor(
         out.push({
             id: `spec-silently-behind:${change.id}`,
             rule: "spec-silently-behind",
-            title: "change открыт без ссылки на спеку",
-            detail: `${members.filter((t) => isDone(t.status)).length} задач(и) уже закрыты, а раздел спеки не указан ни на change'е, ни на его задачах`,
+            title: "план открыт без ссылки на спеку",
+            detail: `${members.filter((t) => isDone(t.status)).length} задач(и) уже закрыты, а раздел спеки не указан ни в плане, ни в его задачах`,
         });
     }
 
@@ -228,7 +229,7 @@ export function passedFor(
         out.push({ id: "spec-answered", label: "все ссылки на спеку отвечены" });
     }
     if (addresses.length && !blockers.some((b) => b.rule === "concurrent-change")) {
-        out.push({ id: "no-concurrent", label: "ни один раздел не делят два открытых change'а" });
+        out.push({ id: "no-concurrent", label: "ни один раздел не делят два открытых плана" });
     }
     if (
         members.length &&

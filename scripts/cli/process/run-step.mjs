@@ -430,7 +430,7 @@ export function formatRecords(records) {
     (r) => `  t#${r.task.number} "${r.task.subject}"\n    ${r.file}\n`,
   );
   out.push(
-    "The baton is what that step SAID; this file is what it DID — its tool calls,\n" +
+    "The baton is what that task SAID; this file is what it DID — its tool calls,\n" +
       "their results, their exit codes. Read or grep it when the baton makes a claim\n" +
       "your work depends on: a number, a name, a path, a command that supposedly\n" +
       "passed. Prefer the record over the claim where they disagree, and say so in\n" +
@@ -531,7 +531,7 @@ function formatPreviousAttempt(task, attempt, limit) {
     "findings below — do not start over, and do not work around a finding (no weakening a test,\n" +
     "no raising a timeout to make it pass). These findings never override the rule against touching\n" +
     "changes that were already in the working tree before this node's first attempt — a finding\n" +
-    "that reads that way is about someone else's step, not yours.\n\n" +
+    "that reads that way is about someone else's task, not yours.\n\n" +
     `${body}\n`
   );
 }
@@ -540,7 +540,7 @@ function formatPriorChanges(priorChanges) {
   if (!Array.isArray(priorChanges) || !priorChanges.length) return "";
   const paths = priorChanges.slice(0, 50).map((c) => `   - ${c.status} ${c.path}`).join("\n");
   const more = priorChanges.length > 50 ? `\n   … and ${priorChanges.length - 50} more` : "";
-  return `   Already in the working tree when this step started:\n${paths}${more}\n`;
+  return `   Already in the working tree when this task started:\n${paths}${more}\n`;
 }
 
 // Everything a step is told, and nothing more (§14.2): the WORK (this node's own
@@ -561,7 +561,7 @@ export function buildStepPrompt({ task, board, cwd, alongside = [], execution, a
   const index = new Map(all.map((t) => [t.id, t]));
 
   let out =
-    "You are executing ONE step of an autonomous run over a task graph.\n" +
+    "You are executing ONE task of an autonomous run over a plan graph.\n" +
     "Everything you need is below; there is no earlier conversation to recall.\n\n";
 
   if (execution?.role || execution?.instructions) {
@@ -582,20 +582,20 @@ export function buildStepPrompt({ task, board, cwd, alongside = [], execution, a
 
   const vision = changeVision(task, all, Array.isArray(board?.changes) ? board.changes : []);
   out +=
-    "\n── VISION — the change this step serves ──\n" +
+    "\n── VISION — the plan this task serves ──\n" +
     (vision
       ? vision + "\n"
-      : "(no change root above this node — there is no vision to inherit)\n");
+      : "(no plan above this task — there is no vision to inherit)\n");
 
   const baton = inheritedBaton(task, { cwd });
   out +=
-    "\n── BATON — what the steps before you left ──\n" +
+    "\n── BATON — what the tasks before you left ──\n" +
     (baton
       ? baton + "\n"
       : "(the baton could not be read — proceed on the declarations alone, and do not invent what upstream did)\n");
 
   out +=
-    "\n── RECORD — where the steps before you left their own transcripts ──\n" +
+    "\n── RECORD — where the tasks before you left their own transcripts ──\n" +
     formatRecords(ancestorRecords(task, all, cwd));
 
   out +=
@@ -607,7 +607,7 @@ export function buildStepPrompt({ task, board, cwd, alongside = [], execution, a
   );
   if (peers.length)
     out +=
-      "\n── ALONGSIDE — steps of the same wave working RIGHT NOW ──\n" +
+      "\n── ALONGSIDE — tasks of the same wave working RIGHT NOW ──\n" +
       peers.map((t) => `t#${t.number} ${t.subject}`).join("\n") +
       "\nThey are editing files at the same time as you: stay inside your own promise.\n";
 
@@ -640,12 +640,12 @@ export function buildStepPrompt({ task, board, cwd, alongside = [], execution, a
     toolRule +
     "2. Do not touch the task board, the task status or the graph. The runner closes\n" +
     "   the node after the check passes; claiming it done yourself does not close it.\n" +
-    "3. Stay inside this node. Work the next step is meant to do is not yours to start.\n" +
+    "3. Stay inside this node. Work the next task is meant to do is not yours to start.\n" +
     "4. Finish with a `## HANDOFF` section: what you produced (paths), the gotcha the\n" +
-    "   next step would otherwise hit, and where you stopped. That text is the baton\n" +
-    "   the next step reads — it is the only thing that survives you.\n" +
+    "   next task would otherwise hit, and where you stopped. That text is the baton\n" +
+    "   the next task reads — it is the only thing that survives you.\n" +
     "5. Do not revert, rewrite or delete changes that were already in the working tree\n" +
-    "   when this step started; they belong to earlier steps.\n" +
+    "   when this task started; they belong to earlier tasks.\n" +
     formatPriorChanges(priorChanges);
 
   return out;
@@ -710,16 +710,16 @@ export function bindSession({ session, task, event = "start", ts, execution }) {
 }
 
 const CHANGES_RULE =
-  "Changes already present in the working tree when this step started belong to earlier steps of the run. " +
-  "They are not findings of this step — never ask to revert or remove them.";
+  "Changes already present in the working tree when this task started belong to earlier tasks of the run. " +
+  "They are not findings of this task — never ask to revert or remove them.";
 
 function formatChangesOfThisStep(ownChanges) {
   if (!Array.isArray(ownChanges)) {
     return (
       "CHANGES OF THIS STEP:\n" +
-      "(unknown — no step base was recorded for this step)\n" +
-      "Some of what is in the working tree may already have been there when this step started, left by " +
-      `an earlier step of the run. ${CHANGES_RULE}`
+      "(unknown — no task base was recorded for this task)\n" +
+      "Some of what is in the working tree may already have been there when this task started, left by " +
+      `an earlier task of the run. ${CHANGES_RULE}`
     );
   }
   const lines = ownChanges.slice(0, 100).map((c) => `${c.status} ${c.path}`);
@@ -738,7 +738,7 @@ function formatOutsideChanges(outsideChanges) {
     "CHANGES OUTSIDE THIS STEP:",
     ...outsideChanges.slice(0, 100).map((change) => `${change.status} ${change.path}`),
     outsideChanges.length > 100 ? `… and ${outsideChanges.length - 100} more` : "",
-    "These files changed in the tree during this step, but not by this step's executor. Do not evaluate them as this step's work.",
+    "These files changed in the tree during this task, but not by this task's executor. Do not evaluate them as this task's work.",
   ].filter(Boolean).join("\n");
 }
 
@@ -755,7 +755,7 @@ function formatRetryReviewContext(context) {
     : "(none)";
   const neighbours = Array.isArray(context.neighbours) && context.neighbours.length
     ? context.neighbours.map((t) => `- t#${t.number} ${t.subject || ""} — produces: ${(t.produces || []).join(", ") || "(none)"}`).join("\n")
-    : "(no other steps in this change)";
+    : "(no other tasks in this plan)";
   return [
     "── RETRY REVIEW CONTEXT ──",
     priorFindingsBlock(findings, { anchor: FILE_ANCHOR }),
@@ -764,9 +764,9 @@ function formatRetryReviewContext(context) {
     "CHANGES OUTSIDE PRECEDING FINDINGS:",
     outside,
     "These are not automatically wrong, but inspect and call them out if they are unrelated to the repair.",
-    "NEIGHBOURING STEPS IN THIS CHANGE:",
+    "NEIGHBOURING TASKS IN THIS PLAN:",
     neighbours,
-    "Do not require work promised by a neighbouring step from this task.",
+    "Do not require work promised by a neighbouring task from this task.",
   ].join("\n");
 }
 
@@ -801,7 +801,7 @@ export function buildReviewPrompt({ task, workerResult = "", execution, appData,
     reviewBarText({ subject: "code", anchor: FILE_ANCHOR, bar: readReviewBar(cwd) }),
     "An obligation absent from the files is an issue.",
     verdictInstruction(FILE_ANCHOR),
-    "Report out-of-scope defects too, but do not use them to reject this step: the runner classifies each finding by produces and this attempt's diff and files out-of-scope findings separately.",
+    "Report out-of-scope defects too, but do not use them to reject this task: the runner classifies each finding by produces and this attempt's diff and files out-of-scope findings separately.",
   ].filter(Boolean).join("\n");
 }
 
@@ -904,7 +904,7 @@ async function executeStepCandidate({
     let error = run.error || "";
     if (run.code !== 0 && !run.timedOut)
       error = `codex exited ${run.code}${run.stderr.trim() ? `: ${clampOutput(run.stderr.trim(), 2000)}` : ""}`;
-    if (!run.raw && run.code === 0) error = "codex produced no parseable JSONL result — cannot confirm the step ran";
+    if (!run.raw && run.code === 0) error = "codex produced no parseable JSONL result — cannot confirm the task ran";
     if (!error && !actual) error = "codex did not report a thread id — usage cannot be attributed to the task";
     if (!error && inherit && actual === inherit)
       error = "codex fork reported the parent thread id — child usage cannot be attributed safely";
@@ -983,9 +983,9 @@ async function executeStepCandidate({
       `claude exited ${run.code}` +
       (run.stderr.trim() ? `: ${clampOutput(run.stderr.trim(), 2000)}` : "");
   else if (!parsed)
-    error = "claude produced no parseable JSON result — cannot confirm the step ran";
+    error = "claude produced no parseable JSON result — cannot confirm the task ran";
   else if (parsed.is_error)
-    error = `step reported an error: ${String(parsed.result ?? parsed.subtype ?? "").slice(0, 2000)}`;
+    error = `task reported an error: ${String(parsed.result ?? parsed.subtype ?? "").slice(0, 2000)}`;
 
   const answer = parsed && typeof parsed.result === "string" ? parsed.result : "";
   return {

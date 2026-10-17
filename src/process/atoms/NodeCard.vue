@@ -111,13 +111,13 @@ const hasIo = computed(
 }
 .node-id {
     font-family: var(--mono);
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--text);
 }
 .node-auto {
     color: var(--warn);
-    font-size: 10px;
+    font-size: var(--fs-xs);
     line-height: 1;
 }
 .node-dot {
@@ -128,7 +128,7 @@ const hasIo = computed(
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
     overflow: hidden;
-    font-size: 11.6px;
+    font-size: var(--fs-xs);
     line-height: 1.35;
     color: var(--text-3);
     overflow-wrap: anywhere;

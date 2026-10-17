@@ -186,13 +186,13 @@ function hide() {
   border-left-color: var(--text-2, color-mix(in srgb, var(--paper) 85%, transparent));
 }
 .pl-pop-lbl {
-  font-size: 10px;
+  font-size: var(--fs-xs);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
 }
 .pl-pop-items {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text);
   word-break: break-word;
 }

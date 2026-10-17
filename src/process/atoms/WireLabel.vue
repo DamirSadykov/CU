@@ -35,7 +35,7 @@ withDefaults(
     border-radius: var(--r-pill);
     background: color-mix(in srgb, var(--ink-1) 98%, transparent);
     font-family: var(--mono);
-    font-size: 10px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     line-height: 1.5;
     color: var(--text-4);

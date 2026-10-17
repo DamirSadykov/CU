@@ -82,7 +82,7 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
 .spec-tree-slug {
     min-width: 0;
     font-family: var(--mono);
-    font-size: 12.5px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--text);
     white-space: nowrap;
@@ -96,7 +96,7 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
     flex: none;
     padding: 1px 7px;
     border-radius: var(--r-pill);
-    font-size: 10.5px;
+    font-size: var(--fs-xs);
     line-height: 1.4;
     white-space: nowrap;
 }
@@ -128,7 +128,7 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
     background: color-mix(in srgb, var(--paper) 7%, transparent);
     color: var(--text-3);
     font-family: var(--mono);
-    font-size: 10.5px;
+    font-size: var(--fs-xs);
     text-align: center;
 }
 .spec-tree-item.active .spec-tree-count {
@@ -138,7 +138,7 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
 .spec-tree-title {
     display: block;
     margin-top: 2px;
-    font-size: 11px;
+    font-size: var(--fs-xs);
     line-height: 1.35;
     color: var(--text-4);
     white-space: nowrap;

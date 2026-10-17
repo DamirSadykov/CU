@@ -29,7 +29,7 @@ withDefaults(
     align-items: center;
     padding: 2px 7px;
     border-radius: var(--r-pill);
-    font-size: 10.5px;
+    font-size: var(--fs-xs);
     line-height: 1.4;
     white-space: nowrap;
 }

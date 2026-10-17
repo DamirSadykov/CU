@@ -163,8 +163,8 @@ describe("migrate", () => {
   it("сухой прогон только описывает и адресует записи по порядку", () => {
     const data = board();
     const lines = describeMigration(data);
-    expect(lines[0]).toContain("+ c#1 ← #100");
-    expect(lines[1]).toContain("+ c#2 ← #200");
+    expect(lines[0]).toContain("+ p#1 ← #100");
+    expect(lines[1]).toContain("+ p#2 ← #200");
     expect(changesOf(data)).toHaveLength(0);
     expect(data.todos).toHaveLength(7);
   });

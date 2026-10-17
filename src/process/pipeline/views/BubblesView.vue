@@ -142,7 +142,7 @@ const tree = computed(() => specTree(board.value, changes.value));
 
 const filteredIds = computed(() => {
     if (!props.filters || !live.value) return null;
-    const filters = { ...props.filters, query: "", showDone: true };
+    const filters = { ...props.filters, query: "", view: "all" as const };
     return new Set(projectTodos(board.value as unknown as FilterableTodoRow[], filters).visible.map((todo) => todo.id));
 });
 const visibleTasks = computed(() => board.value.filter((todo) => !filteredIds.value || filteredIds.value.has(todo.id)));
@@ -1211,11 +1211,11 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
     padding: 0 11px;
     border: 1px solid var(--stroke-strong);
     border-radius: var(--r-ctl);
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
 }
 .bub-hints {
-    font-size: 11px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
 }
 
@@ -1284,7 +1284,7 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
     border-radius: var(--r-pill);
     background: var(--ink-1);
     font-family: var(--mono);
-    font-size: 10.5px;
+    font-size: var(--fs-xs);
     line-height: 1.5;
     color: var(--text-3);
     text-align: center;
@@ -1352,7 +1352,7 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
 .bub-loop-text {
     fill: var(--text-3);
     font-family: var(--mono);
-    font-size: 10px;
+    font-size: var(--fs-xs);
 }
 
 .bub-head {
@@ -1372,7 +1372,7 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
 .bub-address {
     margin-top: 4px;
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: var(--fs-xs);
     line-height: 1.3;
     color: var(--accent);
     overflow-wrap: anywhere;
@@ -1382,12 +1382,12 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
 }
 .bub-counts {
     margin-top: 4px;
-    font-size: 10.5px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
 }
 .bub-fold {
     margin-top: 6px;
-    font-size: 10.5px;
+    font-size: var(--fs-xs);
     color: var(--accent);
 }
 
@@ -1418,7 +1418,7 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
     border-radius: var(--r-pill);
     background: var(--node-bg);
     font-family: var(--mono);
-    font-size: 10.5px;
+    font-size: var(--fs-xs);
     line-height: 1.4;
     color: var(--text-2);
     white-space: nowrap;
@@ -1443,7 +1443,7 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
     white-space: nowrap;
 }
 .bub-chip-ext {
-    font-size: 9px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
 }
 .bub-chip-dots {
@@ -1467,7 +1467,7 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
     border: 1px dashed var(--stroke-strong);
     border-radius: var(--r-pill);
     font-family: var(--mono);
-    font-size: 10.5px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
 }
 
@@ -1486,12 +1486,12 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
 }
 .bub-empty-title {
     margin-bottom: 6px;
-    font-size: 13px;
+    font-size: var(--fs-xs);
     font-weight: 600;
 }
 .bub-empty-text {
     margin: 0;
-    font-size: 11.8px;
+    font-size: var(--fs-xs);
     line-height: 1.5;
     color: var(--text-3);
 }
@@ -1521,7 +1521,7 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
     padding-bottom: 10px;
     border-bottom: 1px solid var(--stroke);
     font-family: var(--mono);
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     color: var(--text-2);
     overflow-wrap: anywhere;
 }
@@ -1540,11 +1540,11 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
 }
 .bub-pick-id {
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: var(--fs-xs);
     color: var(--accent);
 }
 .bub-pick-title {
-    font-size: 12.5px;
+    font-size: var(--fs-xs);
     line-height: 1.35;
     color: var(--text);
 }
@@ -1554,12 +1554,12 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
     justify-content: space-between;
     gap: 10px;
     margin-top: 8px;
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
 }
 .bub-pick-value {
     font-family: var(--mono);
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     color: var(--text-2);
     text-align: right;
     overflow-wrap: anywhere;

@@ -38,12 +38,12 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
 }
 .cluster-title {
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: var(--fs-xs);
     line-height: 1.25;
     color: var(--text-3);
 }
 .cluster-note {
-    font-size: 10px;
+    font-size: var(--fs-xs);
     line-height: 1.3;
     color: var(--text-4);
 }

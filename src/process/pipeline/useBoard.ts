@@ -9,6 +9,7 @@ import {
     type TaskCostRow,
 } from "./adapt";
 import { visibleGraph } from "./visibleGraph";
+import { formatRef } from "../../../scripts/cli/kernel/terms.mjs";
 import {
     lanes as mockLanes,
     links as mockLinks,
@@ -58,7 +59,7 @@ export function useBoard(withPorts = false, metricChanges: string[] = []) {
         const openChanges = new Set(
             board.value.filter((t) => t.status !== "done" && t.change_id).map((t) => t.change_id as string),
         );
-        for (const c of changes.value) (openChanges.has(c.id) ? open : closed).push(`c#${c.number}`);
+        for (const c of changes.value) (openChanges.has(c.id) ? open : closed).push(formatRef(c));
         for (const t of board.value) {
             if (t.change !== true || !t.number) continue;
             (t.status !== "done" ? open : closed).push(`#${t.number}`);

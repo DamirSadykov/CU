@@ -1,6 +1,7 @@
 import type { BoardChange } from "../contracts/board";
 import type { BoardIndexes, BoardRow } from "./boardStore";
-import { projectTodos, type TodoFilters } from "./todoFilter";
+import { matchesTodoFilters, needsAttention, projectTodos, localToday, type PlanLabel, type TodoFilterContext, type TodoFilters } from "./todoFilter";
+import { compareTasks, dayBucket, sortHasBuckets, taskTime, type DayBucket, type TodoSort } from "./taskSort";
 
 export type BoardTreeNodeKind = "change" | "legacy" | "group" | "ungrouped" | "task";
 
@@ -20,6 +21,9 @@ export interface BoardTreeNode {
   children: readonly BoardTreeNode[];
   closed: boolean;
   project?: string;
+  time: string;
+  attention: boolean;
+  plan?: number | null;
 }
 
 export interface BoardTreeRow extends BoardRow {
@@ -39,11 +43,16 @@ export interface BoardTreeSummary {
 }
 
 export interface BoardTreeOptions {
-  flat?: boolean;
+  indexes?: Pick<BoardIndexes, "search">;
+  sort?: TodoSort;
+  today?: string;
 }
 
-const taskSort = (left: BoardTreeRow, right: BoardTreeRow) => left.number - right.number || left.id.localeCompare(right.id);
-const activityOf = (row: Pick<BoardTreeRow, "updated_at" | "created_at">) => row.updated_at || row.created_at || "";
+export interface BoardFeedGroup {
+  bucket: DayBucket | null;
+  nodes: readonly BoardTreeNode[];
+}
+
 const closedTask = (row: BoardTreeRow) => row.status === "done";
 const costOf = (row: BoardTreeRow) => Number.isFinite(row.cost) ? row.cost as number : 0;
 
@@ -51,7 +60,13 @@ function progress(rows: readonly BoardTreeRow[]): BoardTreeProgress {
   return { done: rows.filter(closedTask).length, total: rows.length };
 }
 
-function taskNode(row: BoardTreeRow): BoardTreeNode {
+export function planLabels(rows: readonly BoardTreeRow[], changes: readonly BoardChange[]): Map<string, PlanLabel> {
+  const labels = new Map<string, PlanLabel>(changes.map((change) => [change.id, { number: change.number, title: change.title }]));
+  for (const row of rows) if (row.change) labels.set(row.id, { number: row.number, title: row.subject });
+  return labels;
+}
+
+function taskNode(row: BoardTreeRow, sort: TodoSort, today: string, plan: number | null = null): BoardTreeNode {
   return {
     kind: "task",
     id: row.id,
@@ -62,76 +77,39 @@ function taskNode(row: BoardTreeRow): BoardTreeNode {
     cost: costOf(row),
     children: [],
     closed: closedTask(row),
+    time: taskTime(row, sort),
+    attention: needsAttention(row, today),
+    plan,
   };
 }
 
-function membersNode(
-  kind: "change" | "legacy",
-  id: string,
-  number: number,
-  title: string,
-  rows: readonly BoardTreeRow[],
-  closed: boolean,
-  allMembers: readonly BoardTreeRow[] = rows,
-  project?: string,
-): BoardTreeNode {
-  const children = [...rows].sort(taskSort).map(taskNode);
-  return {
-    kind,
-    id,
-    number,
-    title,
-    status: null,
-    progress: progress(rows),
-    cost: rows.reduce((total, row) => total + costOf(row), 0),
-    children,
-    closed: closed || (allMembers.length > 0 && allMembers.every(closedTask)),
-    project,
-  };
-}
-
-function changeMatchesQuery(change: Pick<BoardChange, "number" | "title">, query: string): boolean {
-  const normalized = query.trim().toLocaleLowerCase();
-  if (!normalized) return false;
-  if (change.title.toLocaleLowerCase().includes(normalized)) return true;
-  const numberQuery = normalized.match(/^(?:c#|#)?(\d+)$/)?.[1];
-  return !!numberQuery && String(change.number).includes(numberQuery);
+interface Ranked {
+  node: BoardTreeNode;
+  best: BoardTreeRow;
+  project: string;
 }
 
 export function buildBoardTree(
   rows: readonly BoardTreeRow[],
   changes: readonly BoardChange[],
   filters: TodoFilters,
-  indexes?: Pick<BoardIndexes, "search">,
   options: BoardTreeOptions = {},
 ): readonly BoardTreeNode[] {
-  const visible = projectTodos(rows, filters, indexes).visible;
+  const sort = options.sort ?? "updated";
+  const compare = compareTasks(sort);
+  const today = options.today ?? localToday();
+  const context: TodoFilterContext = { indexes: options.indexes, plans: planLabels(rows, changes), today };
+  const visible = projectTodos(rows, filters, context).visible;
   const changeById = new Map(changes.map((change) => [change.id, change]));
   const legacyById = new Map(rows.filter((row) => row.change).map((row) => [row.id, row]));
-  const visibleIds = new Set(visible.map((row) => row.id));
+  const primaryIds = new Set(visible.map((row) => row.id));
+  const visibleIds = new Set(primaryIds);
 
-  if (!filters.showDone && !filters.status) {
-    const includingDone = projectTodos(rows, { ...filters, showDone: true }, indexes).visible;
-    for (const row of includingDone) {
+  if (filters.view === "active") {
+    for (const row of rows) {
       if (row.status !== "done" || !row.change_id) continue;
       const change = changeById.get(row.change_id);
-      if (change && !change.closed_at) visibleIds.add(row.id);
-    }
-  }
-
-  const visibleWithoutQueryIds = new Set(visibleIds);
-  if (options.flat && filters.query.trim()) {
-    const withoutQuery = { ...filters, query: "" };
-    const rowsWithoutQuery = projectTodos(rows, withoutQuery, indexes).visible;
-    visibleWithoutQueryIds.clear();
-    rowsWithoutQuery.forEach((row) => visibleWithoutQueryIds.add(row.id));
-    if (!withoutQuery.showDone && !withoutQuery.status) {
-      const includingDone = projectTodos(rows, { ...withoutQuery, showDone: true }, indexes).visible;
-      for (const row of includingDone) {
-        if (row.status !== "done" || !row.change_id) continue;
-        const change = changeById.get(row.change_id);
-        if (change && !change.closed_at) visibleWithoutQueryIds.add(row.id);
-      }
+      if (change && !change.closed_at && matchesTodoFilters(row, { ...filters, view: "all" }, context)) visibleIds.add(row.id);
     }
   }
 
@@ -159,76 +137,122 @@ export function buildBoardTree(
     groups.set(project, members);
   }
 
-  const changeNodes: Array<{ node: BoardTreeNode; activity: string; created: string; project: string }> = [];
-  for (const change of changes) {
-    const titleMatch = options.flat && changeMatchesQuery(change, filters.query);
-    const members = titleMatch
-      ? (allMemberRows.get(change.id) ?? []).filter((row) => visibleWithoutQueryIds.has(row.id))
-      : memberRows.get(change.id) ?? [];
-    const project = members[0]?.filterProject ?? change.project ?? members[0]?.project ?? "";
-    if (!members.length && (!titleMatch || (filters.project && project !== filters.project))) continue;
-    changeNodes.push({
-      node: membersNode("change", change.id, change.number, change.title, members, !!change.closed_at, allMemberRows.get(change.id), project),
-      activity: change.updated_at ?? members.reduce((latest, row) => latest > activityOf(row) ? latest : activityOf(row), ""),
-      created: change.created_at ?? "",
+  const bestOf = (members: readonly BoardTreeRow[]) => {
+    const ranked = members.filter((row) => primaryIds.has(row.id));
+    return [...(ranked.length ? ranked : members)].sort(compare)[0];
+  };
+
+  const planNode = (
+    kind: "change" | "legacy",
+    id: string,
+    number: number,
+    title: string,
+    members: readonly BoardTreeRow[],
+    closed: boolean,
+    allMembers: readonly BoardTreeRow[],
+    project: string,
+    best: BoardTreeRow,
+  ): Ranked => ({
+    node: {
+      kind,
+      id,
+      number,
+      title,
+      status: null,
+      progress: progress(members),
+      cost: members.reduce((total, row) => total + costOf(row), 0),
+      children: [...members].sort(compare).map((row) => taskNode(row, sort, today)),
+      closed: closed || (allMembers.length > 0 && allMembers.every(closedTask)),
       project,
-    });
+      time: taskTime(best, sort),
+      attention: members.some((row) => needsAttention(row, today)),
+    },
+    best,
+    project,
+  });
+
+  const planNodes: Ranked[] = [];
+  for (const change of changes) {
+    const members = memberRows.get(change.id) ?? [];
+    if (!members.length) continue;
+    const project = members[0]?.filterProject ?? change.project ?? members[0]?.project ?? "";
+    planNodes.push(planNode("change", change.id, change.number, change.title, members, !!change.closed_at, allMemberRows.get(change.id) ?? members, project, bestOf(members)));
   }
   for (const legacy of legacyById.values()) {
-    const titleMatch = options.flat && changeMatchesQuery({ number: legacy.number, title: legacy.subject }, filters.query);
-    const members = titleMatch
-      ? (allMemberRows.get(legacy.id) ?? []).filter((row) => visibleWithoutQueryIds.has(row.id))
-      : memberRows.get(legacy.id) ?? [];
+    const members = memberRows.get(legacy.id) ?? [];
+    if (!members.length && !primaryIds.has(legacy.id)) continue;
     const project = legacy.filterProject ?? legacy.project ?? "";
-    if (!members.length && !visibleIds.has(legacy.id) && (!titleMatch || (filters.project && project !== filters.project))) continue;
     const allRows = members.length ? members : [legacy];
-    changeNodes.push({
-      node: membersNode("legacy", legacy.id, legacy.number, legacy.subject, allRows, closedTask(legacy), allMemberRows.get(legacy.id), project),
-      activity: activityOf(legacy),
-      created: legacy.created_at,
-      project,
-    });
+    planNodes.push(planNode("legacy", legacy.id, legacy.number, legacy.subject, allRows, closedTask(legacy), allMemberRows.get(legacy.id) ?? allRows, project, bestOf(allRows)));
   }
-  changeNodes.sort((left, right) => Number(left.node.closed) - Number(right.node.closed)
-    || (options.flat ? right.created.localeCompare(left.created) : right.activity.localeCompare(left.activity))
-    || (right.node.number ?? 0) - (left.node.number ?? 0));
+  const byBest = (left: Ranked, right: Ranked) => compare(left.best, right.best);
+  planNodes.sort(byBest);
 
-  if (options.flat) return changeNodes.map((entry) => entry.node);
-
-  const projects = new Set<string>([...groups.keys(), ...changeNodes.map((entry) => entry.project)]);
-  const projectNodes = [...projects].map((project) => {
-    const loose = [...(groups.get(project) ?? [])].sort(taskSort);
-    const changeChildren = changeNodes.filter((entry) => entry.project === project).map((entry) => entry.node);
-    const looseChildren = loose.map(taskNode);
-    const children: BoardTreeNode[] = looseChildren.length
-      ? [...changeChildren, {
-        kind: "ungrouped" as const,
-        id: `project:${project}:ungrouped`,
-        number: null,
-        title: "",
-        status: null,
-        progress: progress(loose),
-        cost: looseChildren.reduce((sum, node) => sum + node.cost, 0),
-        children: looseChildren,
-        closed: looseChildren.every((node) => node.closed),
-      }]
-      : changeChildren;
-    const done = changeChildren.reduce((sum, node) => sum + node.progress.done, 0) + loose.filter(closedTask).length;
-    const total = changeChildren.reduce((sum, node) => sum + node.progress.total, 0) + loose.length;
-    return {
-      kind: "group" as const,
-      id: `project:${project}`,
+  const projects = new Set<string>([...groups.keys(), ...planNodes.map((entry) => entry.project)]);
+  const projectNodes: Ranked[] = [...projects].map((project) => {
+    const loose = [...(groups.get(project) ?? [])].sort(compare);
+    const plans = planNodes.filter((entry) => entry.project === project);
+    const looseChildren = loose.map((row) => taskNode(row, sort, today));
+    const looseBest = loose.length ? bestOf(loose) : null;
+    const children: BoardTreeNode[] = plans.map((entry) => entry.node);
+    if (looseChildren.length && looseBest) children.push({
+      kind: "ungrouped",
+      id: `project:${project}:ungrouped`,
       number: null,
-      title: project,
+      title: "",
       status: null,
-      progress: { done, total },
-      cost: children.reduce((sum, node) => sum + node.cost, 0),
-      children,
-      closed: children.every((node) => node.closed),
+      progress: progress(loose),
+      cost: looseChildren.reduce((sum, node) => sum + node.cost, 0),
+      children: looseChildren,
+      closed: looseChildren.every((node) => node.closed),
+      time: taskTime(looseBest, sort),
+      attention: looseChildren.some((node) => node.attention),
+    });
+    const best = [...plans.map((entry) => entry.best), ...(looseBest ? [looseBest] : [])].sort(compare)[0];
+    const done = children.reduce((sum, node) => sum + node.progress.done, 0);
+    const total = children.reduce((sum, node) => sum + node.progress.total, 0);
+    return {
+      node: {
+        kind: "group" as const,
+        id: `project:${project}`,
+        number: null,
+        title: project,
+        status: null,
+        progress: { done, total },
+        cost: children.reduce((sum, node) => sum + node.cost, 0),
+        children,
+        closed: children.every((node) => node.closed),
+        time: taskTime(best, sort),
+        attention: children.some((node) => node.attention),
+      },
+      best,
+      project,
     };
   });
-  projectNodes.sort((left, right) => Number(left.closed) - Number(right.closed) || left.title.localeCompare(right.title));
-  return projectNodes;
+  projectNodes.sort(byBest);
+  return projectNodes.map((entry) => entry.node);
+}
+
+export function buildTaskFeed(
+  rows: readonly BoardTreeRow[],
+  changes: readonly BoardChange[],
+  filters: TodoFilters,
+  options: BoardTreeOptions & { now?: number } = {},
+): readonly BoardFeedGroup[] {
+  const sort = options.sort ?? "updated";
+  const today = options.today ?? localToday();
+  const plans = planLabels(rows, changes);
+  const visible = projectTodos(rows.filter((row) => !row.change), filters, { indexes: options.indexes, plans, today }).visible;
+  const nodes = [...visible].sort(compareTasks(sort)).map((row) => taskNode(row, sort, today, row.change_id ? plans.get(row.change_id)?.number ?? null : null));
+  if (!sortHasBuckets(sort)) return nodes.length ? [{ bucket: null, nodes }] : [];
+  const groups: { bucket: DayBucket; nodes: BoardTreeNode[] }[] = [];
+  for (const node of nodes) {
+    const bucket = dayBucket(node.time, options.now);
+    const last = groups[groups.length - 1];
+    if (last?.bucket === bucket) last.nodes.push(node);
+    else groups.push({ bucket, nodes: [node] });
+  }
+  return groups;
 }
 
 export function findBoardTreeNode(tree: readonly BoardTreeNode[], id: string): BoardTreeNode | null {
@@ -243,11 +267,13 @@ export function findBoardTreeNode(tree: readonly BoardTreeNode[], id: string): B
 export function visibleBoardTreeRows(
   tree: readonly BoardTreeNode[],
   collapsed: ReadonlySet<string>,
+  options: { plansOnly?: boolean } = {},
 ): readonly VisibleBoardTreeRow[] {
   const visible: VisibleBoardTreeRow[] = [];
   const visit = (node: BoardTreeNode, depth: number) => {
     visible.push({ node, depth });
     if (collapsed.has(node.id)) return;
+    if (options.plansOnly && node.kind !== "group") return;
     for (const child of node.children) visit(child, depth + 1);
   };
   for (const node of tree) visit(node, 0);

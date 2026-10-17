@@ -28,7 +28,7 @@ const style = computed(() => ({ width: `${props.width}px` }));
 }
 .wave-head {
     margin-bottom: 2px;
-    font-size: 10px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.13em;

@@ -1243,6 +1243,14 @@ describe("a section's file claims must resolve (t#350)", () => {
     ]);
   });
 
+  it("does not walk a build cache tagged with CACHEDIR.TAG under any name", () => {
+    mkdirSync(path.join(dir, "target-runner", "debug"), { recursive: true });
+    writeFileSync(path.join(dir, "target-runner", "CACHEDIR.TAG"), "Signature: 8a477f597d28d172789f06886806bc55");
+    writeFileSync(path.join(dir, "target-runner", "debug", "cached.rs"), "x");
+    withProse("Читает `solo.mjs` и `cached.rs`.");
+    expect(claims().map((f) => f.message.match(/`([^`]+)`/)[1])).toEqual(["cached.rs"]);
+  });
+
   it("keeps the symbol after :: out of the claim", () => {
     withProse("Смотри `solo.mjs::specAddressesFor`.");
     expect(claims()).toEqual([]);

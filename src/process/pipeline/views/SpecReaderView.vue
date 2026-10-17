@@ -155,11 +155,11 @@ const sectionState = computed(() => {
     if (open)
         lines.push({
             icon: conflict ? "⚠" : "⚡",
-            text: open === 1 ? "1 открытый change" : `${open} открытых change'а`,
+            text: `Открытые планы: ${open}`,
             meta: conflict ? "конфликт" : "",
             tone: conflict ? "warn" : "accent",
         });
-    else lines.push({ icon: "✓", text: "нет открытых change'ов", meta: "", tone: "ok" });
+    else lines.push({ icon: "✓", text: "нет открытых планов", meta: "", tone: "ok" });
     return lines;
 });
 
@@ -194,7 +194,7 @@ function onTab(value: string) {
                 :model-value="scope"
                 :options="[
                     { id: 'sections', label: 'Разделы' },
-                    { id: 'changes', label: 'Change\'и' },
+                    { id: 'changes', label: 'Планы' },
                 ]"
                 @update:model-value="onScope"
             />
@@ -298,7 +298,7 @@ function onTab(value: string) {
                         </span>
                     </template>
                     <span class="doc-sep">·</span>
-                    <span>{{ changes.length }} открытых change'а</span>
+                    <span>Открытые планы: {{ changes.length }}</span>
                     <span class="doc-sep">·</span>
                     <span>{{ linkCount }} задач ссылаются</span>
                     <template v-if="!live">
@@ -341,7 +341,7 @@ function onTab(value: string) {
             </section>
 
             <section class="panel-group">
-                <Kicker>Открытые change'и</Kicker>
+                <Kicker>Открытые планы</Kicker>
                 <div class="panel-card">
                     <FocusRowItem
                         v-for="change in changes"
@@ -394,7 +394,7 @@ function onTab(value: string) {
 <style scoped>
 .spec-scope {
     margin-left: 4px;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
 }
 .pipe-canvas.spec-shell {
@@ -432,12 +432,12 @@ function onTab(value: string) {
 }
 .rail-domain-id {
     font-family: var(--mono);
-    font-size: 12.5px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--text-2);
 }
 .rail-domain-meta {
-    font-size: 10.5px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
 }
 .spec-doc {
@@ -453,7 +453,7 @@ function onTab(value: string) {
 }
 .crumb-path {
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
 }
 .crumb-sep {
@@ -461,7 +461,7 @@ function onTab(value: string) {
 }
 .crumb-addr {
     font-family: var(--mono);
-    font-size: 12.5px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--accent);
 }
@@ -470,7 +470,7 @@ function onTab(value: string) {
 }
 .doc-title {
     margin: 10px 0 8px;
-    font-size: 26px;
+    font-size: var(--fs-3xl);
     font-weight: 600;
     letter-spacing: -0.01em;
     color: var(--text);
@@ -480,7 +480,7 @@ function onTab(value: string) {
     flex-wrap: wrap;
     align-items: center;
     gap: 6px;
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
 }
 .doc-lint {
@@ -503,7 +503,7 @@ function onTab(value: string) {
     border-radius: 4px;
     background: color-mix(in srgb, var(--paper) 6%, transparent);
     font-family: var(--mono);
-    font-size: 0.88em;
+    font-size: var(--fs-xs);
     color: var(--text-2);
 }
 .doc-text :deep(.sp-path) {
@@ -547,14 +547,14 @@ function onTab(value: string) {
 }
 .spec-empty {
     padding: 6px 4px;
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     line-height: 1.5;
     color: var(--text-4);
 }
 .spec-where {
     margin-top: 4px;
     font-family: var(--mono);
-    font-size: 10.5px;
+    font-size: var(--fs-xs);
     word-break: break-all;
 }
 </style>

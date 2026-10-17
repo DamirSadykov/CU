@@ -15,7 +15,7 @@ describe("run events", () => {
     try {
       expect(appendRunEvent({ run: "r1", change: 62, task: 790, kind: "review", attempt: 2, limit: 3, counts: { high: 1, medium: 0 } }, file)).toBe(true);
       expect(JSON.parse(readFileSync(file, "utf8"))).toMatchObject({ run: "r1", change: 62, task: 790, kind: "review" });
-      expect(formatRunEvent({ change: 62, task: 790, kind: "review", attempt: 2, limit: 3, counts: { high: 1, medium: 0 } })).toBe("c#62 t#790 attempt 2/3: review high 1, medium 0");
+      expect(formatRunEvent({ change: 62, task: 790, kind: "review", attempt: 2, limit: 3, counts: { high: 1, medium: 0 } })).toBe("p#62 t#790 attempt 2/3: review high 1, medium 0");
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -30,7 +30,7 @@ describe("run events", () => {
       appendRunEvent({ change: 99, task: 1, kind: "review", counts: { high: 1 } }, file);
       appendRunEvent({ change: 62, task: 790, kind: "park", park_kind: "retry", reason: "spent" }, file);
       await watching;
-      expect(lines).toEqual(["c#62 t#790: park retry — spent"]);
+      expect(lines).toEqual(["p#62 t#790: park retry — spent"]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -49,7 +49,7 @@ describe("run events", () => {
       const watching = watchRunEvents({ change: "c#62", file, from: "start", onLine: (line) => lines.push(line) });
       appendRunEvent({ change: 62, kind: "run_end" }, file);
       await watching;
-      expect(lines).toEqual(["c#62: run start", "c#62 t#791 attempt 1/2: step start", "c#62: run end"]);
+      expect(lines).toEqual(["p#62: run start", "p#62 t#791 attempt 1/2: step start", "p#62: run end"]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -358,7 +358,7 @@ describe("worker_session contract", () => {
     const done = events.findIndex((event) => event.kind === "worker_done" && event.task === "t#1");
     const announced = events.indexOf(sessions[0]);
     expect(start < announced && announced < done).toBe(true);
-    expect(formatRunEvent(sessions[1])).toBe(`c#98 t#2 attempt 1/-: worker session codex ${CODEX_THREAD}`);
+    expect(formatRunEvent(sessions[1])).toBe(`p#98 t#2 attempt 1/-: worker session codex ${CODEX_THREAD}`);
   });
 
   it("carries the v2 fields with their types on every event that has them", async () => {
@@ -409,7 +409,7 @@ describe("worker_session contract", () => {
     expect(events.indexOf(ends[0])).toBeLessThan(at("step_start", 2));
     expect(at("verify", 2)).toBeLessThan(events.indexOf(ends[1]));
     expect(events.indexOf(ends[1]) + 1).toBe(events.findIndex((event) => event.kind === "park"));
-    expect(formatRunEvent(ends[0])).toBe(`c#98 t#2 attempt 1/2: attempt end retry (review) — ${ends[0].detail}`);
+    expect(formatRunEvent(ends[0])).toBe(`p#98 t#2 attempt 1/2: attempt end retry (review) — ${ends[0].detail}`);
     const parked = events.find((event) => event.kind === "park" && event.task === "t#2");
     expect(parked.attempts).toEqual([
       expect.objectContaining({ attempt: 1, reason: "review", cost_usd: 0.002, verify: null }),
@@ -434,7 +434,7 @@ describe("worker_session contract", () => {
       const review = events.findIndex((event) => event.kind === "review" && event.task === snapshot.task && event.attempt === snapshot.attempt);
       expect(review >= 0 && review < at).toBe(true);
     }
-    expect(formatRunEvent(snapshots[0])).toBe(`c#98 t#1 attempt 1/-: snapshot ${snapshotOf(1, 1).slice(0, 12)}`);
+    expect(formatRunEvent(snapshots[0])).toBe(`p#98 t#1 attempt 1/-: snapshot ${snapshotOf(1, 1).slice(0, 12)}`);
   });
 
   async function verifyOnce({ output = "", snapshot = null } = {}) {
@@ -609,7 +609,7 @@ describe("attempt_end causes", () => {
       [2, "park", "missing_produces", ["docs/x.md"]],
     ]);
     expect(ends[0].detail).toBe(report.transitions[0].reason);
-    expect(ends[0].detail).toBe("step reverted or deleted work of earlier steps outside its own produces: src/a.ts, src\\b.ts");
+    expect(ends[0].detail).toBe("task reverted or deleted work of earlier tasks outside its own produces: src/a.ts, src\\b.ts");
     expect(ends[1].detail).toBe("missing:docs/x.md");
     expect(events.indexOf(ends[0])).toBeLessThan(events.findIndex((event) => event.kind === "step_start" && event.attempt === 2));
     expect(events.indexOf(ends[1])).toBeLessThan(events.findIndex((event) => event.kind === "park"));
@@ -621,12 +621,12 @@ describe("attempt_end causes", () => {
       retryLimit: 1,
       attempts: [{ result: { ok: false, timedOut: true, error: "timed out after 10ms — process tree killed" } }],
     });
-    expect(timedOut.ends).toEqual([expect.objectContaining({ task: "t#7", attempt: 1, limit: 1, outcome: "park", reason: "timeout", detail: "step failed: timed out after 10ms — process tree killed" })]);
+    expect(timedOut.ends).toEqual([expect.objectContaining({ task: "t#7", attempt: 1, limit: 1, outcome: "park", reason: "timeout", detail: "task failed: timed out after 10ms — process tree killed" })]);
     rmSync(path.join(tmp, "com.cu.app", "run-events.jsonl"), { force: true });
     const crashed = await runWith({ retryLimit: 1, attempts: [{ throws: "x".repeat(5000) }] });
     expect(crashed.ends).toHaveLength(1);
     expect(crashed.ends[0]).toMatchObject({ outcome: "park", reason: "worker_error" });
-    expect(crashed.ends[0].detail).toBe(`step failed: ${"x".repeat(5000)}`.slice(0, 2000));
+    expect(crashed.ends[0].detail).toBe(`task failed: ${"x".repeat(5000)}`.slice(0, 2000));
   });
 
   it.each([

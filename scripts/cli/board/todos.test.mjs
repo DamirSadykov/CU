@@ -193,15 +193,15 @@ describe("formatChangeVision", () => {
       { number: 9, subject: "CHANGE: X", status: "queue", description: "north star text" },
     ]);
     expect(out).toContain('#7 "the subtask"');
-    expect(out).toContain("change t#9 CHANGE: X [queue]");
+    expect(out).toContain("plan t#9 CHANGE: X [queue]");
     expect(out).toContain("north star text");
   });
 
-  it("адресует запись как c#N, а немигрированный корень как t#N", () => {
+  it("адресует план как p#N, а немигрированный корень как t#N", () => {
     const record = formatChangeVision(t, [
       { number: 4, address: "c#4", subject: "CHANGE: запись", status: "queue", description: "дельта" },
     ]);
-    expect(record).toContain("── change c#4 CHANGE: запись");
+    expect(record).toContain("── plan p#4 CHANGE: запись");
   });
 
   it("nudges to fill an empty description instead of printing a blank block", () => {
@@ -737,7 +737,7 @@ describe("declaration commands", () => {
   it("add refuses the retired --change legacy-root flag and creates no task", () => {
     const out = refuse("add", "old root", "--change");
     expect(out).toContain("todos add --change");
-    expect(out).toContain('cli change new "<title>"');
+    expect(out).toContain('cli plan new "<title>"');
     expect(loadBoard(file).todos).toHaveLength(3);
   });
 
@@ -827,11 +827,11 @@ describe("declaration commands", () => {
     expect(read(1)).not.toHaveProperty("budget_usd");
   });
 
-  it("set parallel refuses a limit on a task and points at the change record", () => {
+  it("set parallel refuses a limit on a task and points at the plan record", () => {
     seed([todo(1, { change: true }), todo(2)]);
     const out = refuse("set", "parallel", "1", "2");
-    expect(out).toContain("belongs to the CHANGE");
-    expect(out).toContain("cli change set parallel <c#N> 2");
+    expect(out).toContain("belongs to the PLAN");
+    expect(out).toContain("cli plan set parallel <p#N> 2");
     expect(read(1)).not.toHaveProperty("parallel_limit");
   });
 
@@ -1264,7 +1264,7 @@ describe("todos set", () => {
     ["status", "shipped", "invalid status"],
     ["priority", "urgent", "invalid priority"],
     ["kind", "semi", "invalid kind"],
-    ["change", "maybe", "invalid change"],
+    ["change", "maybe", "invalid plan"],
     ["retry", "0", "invalid retry limit"],
     ["budget", "-1", "invalid budget"],
     ["parallel", "2.5", "invalid parallel limit"],
@@ -1472,7 +1472,7 @@ describe("rules the CLI enforces instead of explaining", () => {
     seed([todo(1), todo(2)]);
     const err = refuse("set", "change", "1", "on");
     expect(err).toContain("is the OLD root-task form");
-    expect(err).toContain("cli change new");
+    expect(err).toContain("cli plan new");
   });
 
   // §1/§6: a declaration is made BEFORE the work.
@@ -1664,7 +1664,8 @@ describe("the text and the CLI agree", () => {
   it("names in `pipeline` no command or field the CLI does not have", () => {
     const help = say("--help");
     const out = say("pipeline");
-    const named = [...out.matchAll(/\btodos ([a-z][a-z-]*(?: [a-z][a-z-]*)?)/g)].map((m) => m[1]);
+    const instructions = out.split("\nTHIS BOARD —")[0];
+    const named = [...instructions.matchAll(/\btodos ([a-z][a-z-]*(?: [a-z][a-z-]*)?)/g)].map((m) => m[1]);
     expect(named.length).toBeGreaterThan(8);
     for (const cmd of new Set(named)) {
       if (cmd.startsWith("set ")) expect(fields).toContain(cmd.slice(4));

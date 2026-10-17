@@ -6,6 +6,7 @@ import type { BoardChange } from "../contracts/board";
 import { useSettings } from "../kernel/settingsStore";
 import type { BoardTreeRow } from "./boardTree";
 import { localToday } from "./todoFilter";
+import { formatRef } from "../../scripts/cli/kernel/terms.mjs";
 import {
   fillDays,
   filterChangeRows,
@@ -114,10 +115,10 @@ function attentionStatus(item: AttentionItem): OverviewStatus {
   return item.kind === "review" ? "review" : item.kind === "over_budget" ? "running" : item.kind === "overdue" ? "blocked" : "queued";
 }
 function attentionTitle(item: AttentionItem): string {
-  return item.kind === "over_budget" ? `c#${item.number} ${item.title}` : `#${item.number} ${item.title}`;
+  return item.kind === "over_budget" ? `${formatRef(item.number)} ${item.title}` : `#${item.number} ${item.title}`;
 }
 function attentionNote(item: AttentionItem): string {
-  const prefix = item.kind !== "over_budget" && item.change !== null ? `c#${item.change} · ` : "";
+  const prefix = item.kind !== "over_budget" && item.change !== null ? `${formatRef(item.change)} · ` : "";
   if (item.kind === "review") return prefix + t("poAttReview");
   if (item.kind === "over_budget") return `${money(item.cost)} / ${money(item.budget)} · ${t("poAttOver", { p: Math.round((item.cost / item.budget - 1) * 100) })}`;
   if (item.kind === "overdue") return prefix + t("poAttOverdue", { date: item.since ? dayLabel(item.since) : "—" });
@@ -177,10 +178,10 @@ function openAttention(item: AttentionItem) {
             </span>
           </div>
           <div class="po-ct-h">
-            <span class="cu-t-cap">#</span><span class="cu-t-cap">change</span><span class="cu-t-cap">{{ t("poColTasks") }}</span><span class="cu-t-cap">{{ t("poColWave") }}</span><span class="cu-t-cap">{{ t("poColStatus") }}</span><span class="cu-t-cap po-right">{{ t("poColCost") }}</span>
+            <span class="cu-t-cap">#</span><span class="cu-t-cap">{{ t("poChanges") }}</span><span class="cu-t-cap">{{ t("poColTasks") }}</span><span class="cu-t-cap">{{ t("poColWave") }}</span><span class="cu-t-cap">{{ t("poColStatus") }}</span><span class="cu-t-cap po-right">{{ t("poColCost") }}</span>
           </div>
           <button v-for="row in shownRows" :key="row.id" type="button" class="po-ct-r" :class="{ closed: row.closed }" @click="emit('open-change', row.id)">
-            <span class="cu-id">c#{{ row.number }}</span>
+            <span class="cu-id">{{ formatRef(row.number) }}</span>
             <span class="po-ti"><b>{{ row.title }}</b></span>
             <span class="po-prog">
               <span class="po-bar"><i v-for="(seg, index) in segments(row.counts, row.total)" :key="index" :class="seg.cls" :style="{ flexGrow: seg.grow }"></i><i v-if="!row.total"></i></span>
@@ -233,7 +234,7 @@ function openAttention(item: AttentionItem) {
 <style scoped>
 .po { display: flex; flex-direction: column; min-width: 0; color: var(--paper); font-family: var(--sans); }
 .po-top { display: flex; flex-direction: column; gap: 12px; padding: 16px 28px 18px; border-bottom: 1px solid var(--line-2); }
-.po-top h1 { margin: 0; font-family: var(--cond); font-weight: 700; font-size: 30px; line-height: 1.05; letter-spacing: -.005em; overflow-wrap: anywhere; }
+.po-top h1 { margin: 0; font-family: var(--cond); font-weight: 700; font-size: var(--fs-4xl); line-height: 1.05; letter-spacing: -.005em; overflow-wrap: anywhere; }
 .po-meta { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .po-sp { margin-left: auto; display: flex; gap: 8px; }
 .po-content { display: flex; flex-direction: column; gap: 24px; padding: 24px 28px 36px; }
@@ -241,8 +242,8 @@ function openAttention(item: AttentionItem) {
 .po-kpi { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 14px 16px; border-right: 1px solid var(--line-2); }
 .po-kpi:last-child { border-right: 0; }
 .po-v { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-.po-v b { font-family: var(--cond); font-weight: 700; font-size: 34px; line-height: 1; letter-spacing: -.01em; }
-.po-v s { text-decoration: none; font-family: var(--mono); font-size: 11px; color: var(--paper-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.po-v b { font-family: var(--cond); font-weight: 700; font-size: var(--fs-5xl); line-height: 1; letter-spacing: -.01em; }
+.po-v s { text-decoration: none; font-family: var(--mono); font-size: var(--fs-xs); color: var(--paper-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .po-v s.crit { color: var(--crit); }
 .po-scale { margin-top: 4px; }
 .po-scale .fill { background: var(--hemp); }
@@ -257,7 +258,7 @@ function openAttention(item: AttentionItem) {
 .po-ct-r:hover { background: var(--ink-2); }
 .po-ct-r:focus-visible { outline: 2px solid var(--hemp); outline-offset: -2px; }
 .po-ti { min-width: 0; }
-.po-ti b { display: block; font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.po-ti b { display: block; font-weight: 600; font-size: var(--fs-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .po-ct-r.closed .po-ti b { color: var(--paper-3); }
 .po-right { text-align: right; }
 .po-prog { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
@@ -267,33 +268,33 @@ function openAttention(item: AttentionItem) {
 .po-bar i.running { background: var(--next); }
 .po-bar i.review { background: var(--warn); }
 .po-bar i.blocked { background: var(--crit); }
-.po-prog > span:last-child { font-family: var(--mono); font-size: 10.5px; color: var(--paper-3); }
-.po-wv { font-family: var(--mono); font-size: 11.5px; font-weight: 600; }
+.po-prog > span:last-child { font-family: var(--mono); font-size: var(--fs-xs); color: var(--paper-3); }
+.po-wv { font-family: var(--mono); font-size: var(--fs-xs); font-weight: 600; }
 .po-wv s { text-decoration: none; color: var(--paper-4); font-weight: 400; }
 .po-mini { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; min-width: 0; }
 .po-mini .cu-cost.crit { color: var(--crit); }
 .po-g { position: relative; width: 100%; height: 6px; border-radius: 3px; background: var(--ink-3); overflow: hidden; }
 .po-g i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--hemp); }
 .po-g.over i { background: var(--hazard); }
-.po-limit { font-size: 9.5px; }
-.po-empty { padding: 14px; font-size: 12.5px; color: var(--paper-3); }
+.po-limit { font-size: var(--fs-xs); }
+.po-empty { padding: 14px; font-size: var(--fs-xs); color: var(--paper-3); }
 .po-chart { position: relative; display: flex; align-items: flex-end; gap: 3px; height: 120px; padding-top: 10px; }
 .po-chart.dense { gap: 1px; }
 .po-chart i { flex: 1 1 0; min-width: 0; min-height: 2px; border-radius: 2px 2px 0 0; background: var(--bold); }
 .po-chart i.hi { background: var(--hemp); }
 .po-lim { position: absolute; left: 0; right: 0; border-top: 1.5px dashed var(--crit); pointer-events: none; }
-.po-lim span { position: absolute; right: 0; top: -16px; font-family: var(--mono); font-size: 10px; color: var(--crit); }
-.po-axis { display: flex; justify-content: space-between; margin-top: 6px; font-family: var(--mono); font-size: 10px; color: var(--paper-4); }
+.po-lim span { position: absolute; right: 0; top: -16px; font-family: var(--mono); font-size: var(--fs-xs); color: var(--crit); }
+.po-axis { display: flex; justify-content: space-between; margin-top: 6px; font-family: var(--mono); font-size: var(--fs-xs); color: var(--paper-4); }
 .po-split { display: flex; gap: 2px; height: 10px; margin: 12px 0 8px; border-radius: 5px; overflow: hidden; }
 .po-split i.claude { background: var(--ag-claude); }
 .po-split i.codex { background: var(--ag-codex); }
-.po-kv { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-top: 1px solid var(--line); font-size: 12.5px; }
-.po-kv b { font-family: var(--mono); font-weight: 500; font-size: 12px; }
-.po-att { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 12.5px; }
+.po-kv { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-top: 1px solid var(--line); font-size: var(--fs-xs); }
+.po-kv b { font-family: var(--mono); font-weight: 500; font-size: var(--fs-xs); }
+.po-att { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: var(--fs-xs); }
 .po-att:last-of-type { border-bottom: 0; }
 .po-att .cu-st { padding-top: 3px; }
 .po-att-t { line-height: 1.4; min-width: 0; overflow-wrap: anywhere; }
-.po-att-t small { display: block; margin-top: 2px; font-family: var(--mono); font-size: 10.5px; color: var(--paper-3); }
+.po-att-t small { display: block; margin-top: 2px; font-family: var(--mono); font-size: var(--fs-xs); color: var(--paper-3); }
 @media (max-width: 1240px) { .po-grid { grid-template-columns: 1fr; } }
 @media (max-width: 900px) {
   .po-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }

@@ -47,7 +47,7 @@ const emit = defineEmits<{ (e: "update:modelValue", value: string): void }>();
     background: transparent;
     color: var(--text-3);
     font: inherit;
-    font-size: 12.5px;
+    font-size: var(--fs-xs);
     white-space: nowrap;
     cursor: pointer;
 }
@@ -64,7 +64,7 @@ const emit = defineEmits<{ (e: "update:modelValue", value: string): void }>();
     border-radius: var(--r-pill);
     background: var(--accent-soft);
     color: var(--accent);
-    font-size: 10.5px;
+    font-size: var(--fs-xs);
     font-family: var(--mono);
 }
 </style>

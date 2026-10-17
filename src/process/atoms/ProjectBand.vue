@@ -24,7 +24,7 @@ defineProps<{
     align-items: center;
     gap: 10px;
     padding: 12px 24px 6px;
-    font-size: 11px;
+    font-size: var(--fs-xs);
     line-height: 1.4;
     color: var(--text-4);
 }

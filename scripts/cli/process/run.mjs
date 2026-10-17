@@ -86,6 +86,7 @@ import { findChange } from "../board/change.mjs";
 import { assertAgentDutiesAvailable, resolveDuty } from "../agents/agents.mjs";
 import { withDataDir } from "../kernel/board-lock.mjs";
 import { appDataDir, appDataFile } from "../kernel/appdata.mjs";
+import { formatRef, storageRef } from "../kernel/terms.mjs";
 import {
   gitHead,
   gitBase,
@@ -627,7 +628,7 @@ export function runLogPath() {
 export function emitRunEvent(ctx, event) {
   if (ctx.dry || !ctx.events) return;
   const task = event.task == null ? null : `t#${String(event.task).replace(/^t?#/, "")}`;
-  appendRunEvent({ run: ctx.runId, change: `c#${ctx.root.number}`, ...event, task });
+  appendRunEvent({ run: ctx.runId, change: storageRef(ctx.root), ...event, task });
 }
 
 export function runStartEvent(ctx, parallel) {
@@ -888,7 +889,7 @@ export function formatDecisionCard(stop, { task = null, change = null, spent = 0
     ? " (no node budget available)"
     : ` of $${effectiveBudget} ${stop.budget_source === "historical" ? "historical" : "declared"} budget`;
   out.push(`node: t#${task.number}; spent: $${round(spent)}${budgetLabel}\n`);
-  out.push(`diagnose this parked step: ${PLAN_ISSUES_DOC}\n`);
+  out.push(`diagnose this parked task: ${PLAN_ISSUES_DOC}\n`);
   if (tail) out.push(`verify tail (last 20 lines):\n${tailLines(tail, 20)}\n`);
   if (findings.length) {
     out.push("last review findings:\n");
@@ -896,7 +897,7 @@ export function formatDecisionCard(stop, { task = null, change = null, spent = 0
       out.push(`  [${finding.level || "unknown"}] ${finding.file || "(file not specified)"}${finding.line ? `:${finding.line}` : ""} ${finding.text || ""}\n`);
   }
   const retry = (limit ?? 0) + 2;
-  const changeRef = change?.number == null ? "c#<change>" : `c#${change.number}`;
+  const changeRef = change?.number == null ? "p#<plan>" : formatRef(change);
   out.push("actions:\n");
   out.push(`  accept as is: todos set status t#${task.number} done\n`);
   out.push(`  allow more attempts: todos set retry t#${task.number} ${retry}\n`);
@@ -1067,7 +1068,7 @@ export async function beginStep(ctx, task, wave = []) {
     if (!ctx.stepBaseWarned) {
       ctx.stepBaseWarned = true;
       process.stderr.write(
-        `run: step base unavailable for ${ctx.cwd}${based.error ? `: ${based.error}` : ""} — continuing without it, this run's produces/scope checks are best-effort\n`,
+        `run: task base unavailable for ${ctx.cwd}${based.error ? `: ${based.error}` : ""} — continuing without it, this run's produces/scope checks are best-effort\n`,
       );
     }
   }
@@ -1429,7 +1430,7 @@ export async function finishStep(ctx, task, { result, review, baton, cost, ownCh
       kind: "issue",
       routeEscalated: task._runner_high_route_attempt === attempt,
       endReason: result.timedOut ? "timeout" : "worker_error",
-      reason: `step failed: ${error}`,
+      reason: `task failed: ${error}`,
     });
   }
 
@@ -1579,7 +1580,7 @@ function missingProduces(report, reason) {
 function formatNeighbourDamage(damaged) {
   const lines = damaged.map((d) => `${d.state} ${d.path}`).join("\n");
   return (
-    `this step reverted or deleted work of earlier steps of the run, outside its own produces:\n${lines}`
+    `this task reverted or deleted work of earlier tasks of the run, outside its own produces:\n${lines}`
   );
 }
 
@@ -1613,7 +1614,7 @@ async function checkNeighbourDamage(ctx, task, result, baton, cost) {
       routeEscalated: task._runner_high_route_attempt === base.attempt,
       endReason: "reverted",
       endPaths: damage.damaged.map((d) => d.path),
-      reason: `step reverted or deleted work of earlier steps outside its own produces: ${damage.damaged.map((d) => d.path).join(", ")}`,
+      reason: `task reverted or deleted work of earlier tasks outside its own produces: ${damage.damaged.map((d) => d.path).join(", ")}`,
     }),
   };
 }
@@ -1934,13 +1935,13 @@ export function buildRunContext({ data, change, effects = {}, dry = true, cwd = 
 }
 
 const EMPTY_FRONTIER_REASON =
-  "the frontier is empty while the change is still open — no node has all of its prerequisites closed, so the graph lies: edges are missing or a cycle is written into depends_on";
+  "the frontier is empty while the plan is still open — no task has all of its prerequisites closed, so the graph lies: edges are missing or a cycle is written into depends_on";
 
 const REVIEW_GATE_REASON =
-  "already in review from an earlier step — the runner never takes a node back out of the human's column";
+  "already in review from an earlier task — the runner never takes a task back out of the human's column";
 
 const budgetExhaustedReason = (spent, budget, notStarted) =>
-  `group budget exhausted — $${round(spent)} of $${budget} spent; the step boundary is where the run stops, so #${notStarted.number} was NOT started and nothing was rolled back`;
+  `group budget exhausted — $${round(spent)} of $${budget} spent; the task boundary is where the run stops, so #${notStarted.number} was NOT started and nothing was rolled back`;
 
 const retryExhaustedReason = (attempt, limit) =>
   `attempt ${attempt + 1} would be past the declared limit — ${attempt}/<=${limit}; attempt M+1 never starts`;
@@ -2137,7 +2138,7 @@ export async function runChange({
     const wave = buildWave(runnable, limit);
     ctx.waves.push(wave.map((t) => t.number));
     if (ctx.steps.length + wave.length > bound) {
-      park(ctx, "empty-frontier", null, `runaway guard: more than ${bound} steps in one run — the graph or the seam is looping`);
+      park(ctx, "empty-frontier", null, `runaway guard: more than ${bound} tasks in one run — the graph or the seam is looping`);
       break;
     }
     let live_ = 0;
@@ -2153,7 +2154,7 @@ export async function runChange({
             return finishAttempt(ctx, t, {
               task: t, kind: "mechanics", attempt, limit: retryLimitOf(t), cost: null,
               session: null, review: null, endReason: ctx.interrupted ? "interrupted" : "mechanics",
-              reason: ctx.interrupted ? `interrupted by ${ctx.interrupted}` : `runner step crashed: ${String(err?.message || err)}`,
+              reason: ctx.interrupted ? `interrupted by ${ctx.interrupted}` : `runner task crashed: ${String(err?.message || err)}`,
             });
           }
         } finally {
@@ -2253,7 +2254,7 @@ export function formatStop(stop, change) {
     "   next:   yours. the runner does not push a node past its check — --force is a human exception, not the runner's.\n",
   );
   if (stop.card) out.push(stop.card);
-  if (change?.number != null) out.push(`restart: todos run c#${change.number} --go\n`);
+  if (change?.number != null) out.push(`restart: todos run ${formatRef(change)} --go\n`);
   return out.join("");
 }
 
@@ -2267,16 +2268,16 @@ export function formatRunReport(r) {
   const out = [];
   const th = r.change;
   out.push(
-    `change c#${th.number} "${th.subject}" — ${r.members.length} node(s), parallel limit ${th.parallel_limit}` +
+    `plan ${formatRef(th)} "${th.subject}" — ${r.members.length} task(s), parallel limit ${th.parallel_limit}` +
       `${th.parallel_declared === null ? " (undeclared, default 1)" : ""}` +
       `${th.budget_usd === null ? ", budget UNDECLARED" : `, budget $${th.budget_usd}`}\n`,
   );
   if (!th.is_change)
-    out.push("  note: this node is not marked as a change — running its dependency closure anyway\n");
+    out.push("  note: this task is not attached to a plan — running its dependency closure anyway\n");
   out.push(
     r.dry
       ? "plan of the run (dry — no model was started, the board was not touched):\n"
-      : "run (rollback touches only produces and files changed by this step; snapshots are unreferenced local commits, never pushed; unrelated uncommitted work is untouched):\n",
+      : "run (rollback touches only produces and files changed by this task; snapshots are unreferenced local commits, never pushed; unrelated uncommitted work is untouched):\n",
   );
   if (!r.steps.length) out.push("  (nothing to run — the frontier was empty from the start)\n");
   for (const s of r.steps) out.push(formatStepLine(s, r.dry));
@@ -2296,18 +2297,18 @@ export function formatRunReport(r) {
       }\n`
     : `  spent $${r.spend.usd}${
         r.spend.group_budget !== null ? ` of $${r.spend.group_budget}` : ""
-      }${r.spend.unmeasured_steps ? `; ${r.spend.unmeasured_steps} step(s) unmeasured` : ""}\n`;
+      }${r.spend.unmeasured_steps ? `; ${r.spend.unmeasured_steps} task(s) unmeasured` : ""}\n`;
   out.push(spend);
   if (r.dry && r.steps.length)
     out.push(
-      `\nto run it: todos run c#${th.number} --go — it takes minutes per step.\n` +
+      `\nto run it: todos run ${formatRef(th)} --go — it takes minutes per task.\n` +
         "  start it with background execution (`run_in_background: true`) and do not observe or narrate its progress from this session.\n" +
         "  on a stop the process exits; its final stdout lines are the decision card and restart command.\n",
     );
   if (r.stop) out.push(formatStop(r.stop, th));
   else if (r.complete)
     out.push(
-      `\n✓ every node of the change is closed. The change root c#${th.number} stays open — the runner never closes the group.\n`,
+      `\n✓ every task of the plan is closed. Plan ${formatRef(th)} stays open — the runner never closes the group.\n`,
     );
   return out.join("");
 }
@@ -2360,7 +2361,7 @@ export function formatRunHistory(records, summary, { limit = 20 } = {}) {
   out.push(`runs journal — ${records.length} record(s), newest last\n\n`);
   for (const r of records.slice(-limit)) {
     const when = String(r.ts || "").slice(0, 16).replace("T", " ");
-    const ch = r.change ? `c#${r.change.number}` : "(none)";
+    const ch = r.change ? formatRef(r.change) : "(none)";
     if (r.kind === "run") {
       const verdict = r.stop
         ? `parked: ${r.stop.kind}`
@@ -2384,7 +2385,7 @@ export function formatRunHistory(records, summary, { limit = 20 } = {}) {
   const stops = Object.entries(summary.parked);
   out.push(stops.length ? `parked: ${stops.map(([k, n]) => `${k} x${n}`).join(", ")}\n` : "parked: never\n");
   out.push(
-    `spend: $${summary.spend_usd} recorded${summary.unmeasured_steps ? `, ${summary.unmeasured_steps} step(s) unmeasured` : ""}\n`,
+    `spend: $${summary.spend_usd} recorded${summary.unmeasured_steps ? `, ${summary.unmeasured_steps} task(s) unmeasured` : ""}\n`,
   );
   return out.join("");
 }
@@ -2395,7 +2396,7 @@ function cmdHistory(ref, f) {
   if (ref) {
     const data = loadBoard(appDataFile("todos.json"));
     const { root } = collectChange(data, ref);
-    if (!root) fail(`no such change: ${ref}`);
+    if (!root) fail(`no such plan: ${ref}`);
     change = root.number;
   }
   const shown = change ? records.filter((r) => r.change && r.change.number === change) : records;
@@ -2436,45 +2437,45 @@ function parseFlags(args) {
 
 function usage(code) {
   process.stdout.write(
-    "usage: cli todos run <change> [--dry-run | --go] [--inherit] [--parallel N] [--timeout <min>] [--json]\n" +
-      "       cli todos run watch <change> [--from start]\n" +
+    "usage: cli todos run <plan> [--dry-run | --go] [--inherit] [--parallel N] [--timeout <min>] [--json]\n" +
+      "       cli todos run watch <plan> [--from start]\n" +
       "\n" +
-      "  Executes a change's task graph: frontier -> step -> verify -> outcome, one\n" +
-      "  session per step, until the run parks. What it executes is what already\n" +
-      "  stands in the graph — the runner creates no tasks and closes no change.\n\n" +
-      "  <change>       an id, a number, or #N (its dependency closure is the group)\n" +
-      "  --dry-run      DEFAULT: print the plan — the order of steps, what would run,\n" +
+      "  Executes a plan's task graph: frontier -> task -> verify -> outcome, one\n" +
+      "  session per task, until the run parks. What it executes is what already\n" +
+      "  stands in the graph — the runner creates no tasks and closes no plan.\n\n" +
+      "  <plan>         p#N, c#N (legacy alias), an id, a number, or #N\n" +
+      "  --dry-run      DEFAULT: print the run order — the tasks, what would run,\n" +
       "                 where it would hit a gate, what it would cost by the DECLARED\n" +
       "                 budgets. Touches neither the board nor a model.\n" +
-      "  --go           actually run it. Requires a budget declared on the change. Rollback touches only\n" +
-      "                 produces and files changed by this step; snapshots are unreferenced local commits,\n" +
+      "  --go           actually run it. Requires a budget declared on the plan. Rollback touches only\n" +
+      "                 produces and files changed by this task; snapshots are unreferenced local commits,\n" +
       "                 never pushed; unrelated uncommitted work is untouched.\n" +
-      "  --inherit      fork each step from its prerequisite's session instead of\n" +
+      "  --inherit      fork each task from its prerequisite's session instead of\n" +
       "                 starting it cold — cheaper, the prefix is already warm, but\n" +
-      "                 the step then SEES that session while its brief says there\n" +
+      "                 the task then SEES that session while its brief says there\n" +
       "                 is no earlier conversation. Only a node with exactly ONE\n" +
       "                 prerequisite run in this run inherits; a convergence node\n" +
       "                 starts cold, because two contexts cannot be merged and\n" +
       "                 dropping one of them silently is worse than the cost.\n" +
-      "  --parallel N   override the change's declared parallel limit for this run\n" +
-      "  --timeout <min>  ceiling for a step and for a check; without it the step\n" +
+      "  --parallel N   override the plan's declared parallel limit for this run\n" +
+      "  --timeout <min>  ceiling for a task and for a check; without it the task\n" +
       "                 executor's own defaults stand (run-step.mjs)\n" +
       "  --json         the run report, machine-readable\n\n" +
-      "  --history [<change>]  what past runs did, from the journal beside the board\n" +
+      "  --history [<plan>]  what past runs did, from the journal beside the board\n" +
       "                 (runs.jsonl, one line per --go run):\n" +
       "                 what each cost, where it parked, and the share of runs that\n" +
       "                 needed exactly ONE pass over the graph — the number that says\n" +
       "                 whether plans hold up, and which stop eats them when they do not.\n\n" +
-      "  watch <change>       print live events for one change and stop when its run parks or ends;\n" +
-      "                       --from start replays the latest run of the change first\n" +
+      "  watch <plan>         print live events for one plan and stop when its run parks or ends;\n" +
+      "                       --from start replays the latest run of the plan first\n" +
       "    --from start       include existing events; otherwise starts at the current end of the journal\n\n" +
       "  Four stops, all printed the same way (node in review + reason + parked):\n" +
       "    gate            a manual node, or an `auto` one with no declared verify\n" +
       "    retry           the declared limit is spent (M/<=M), or none was declared\n" +
       "                    at all — a missing limit forbids the ?issue transition\n" +
-      "    budget          soft, on a step boundary; nothing is rolled back\n" +
-      "    empty-frontier  the change is open but nothing is workable — the graph lies\n\n" +
-      "  Exit code: 0 when the change finished or parked at a gate, 1 otherwise.\n" +
+      "    budget          soft, on a task boundary; nothing is rolled back\n" +
+      "    empty-frontier  the plan is open but nothing is workable — the graph lies\n\n" +
+      "  Exit code: 0 when the plan finished or parked at a gate, 1 otherwise.\n" +
       "  There is no --force here: overriding a failed check is a human exception.\n\n" +
       "",
   );
@@ -2509,14 +2510,14 @@ export async function run(args) {
   if (!root) {
     const number = String(ref).trim().match(/^#?(\d+)$/)?.[1];
     const change = number ? findChange(data, number) : null;
-    fail(change ? `no graph for ${ref}; did you mean c#${change.number}?` : `no such task: ${ref}`);
+    fail(change ? `no graph for ${ref}; did you mean ${formatRef(change)}?` : `no such task: ${ref}`);
   }
   if (!dry && typeof root.budget_usd !== "number") {
     fail(
-      `refusing to run ${root.address ?? `#${root.number}`} unattended: no budget is declared on the change.\n` +
+      `refusing to run ${root.address ?? `#${root.number}`} unattended: no budget is declared on the plan.\n` +
         "an autonomous run needs a ceiling it can stop itself at — declare one first:\n" +
         (root.record
-          ? `  cli change set budget ${root.address} <usd>`
+          ? `  cli plan set budget ${root.address} <usd>`
           : `  todos set budget ${root.number} <usd>`),
     );
   }

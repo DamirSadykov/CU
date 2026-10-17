@@ -175,7 +175,7 @@ onUnmounted(() => {
 }
 
 .grid .val {
-  font-size: 14px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   min-width: 36px;
   text-align: right;
@@ -191,7 +191,7 @@ onUnmounted(() => {
 
 .row .label {
   width: 20px;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: color-mix(in srgb, var(--paper) 50%, transparent);
 }
 
@@ -216,7 +216,7 @@ onUnmounted(() => {
 .track i.t-red { background: var(--crit); }
 
 .row .val {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   width: 32px;
   text-align: right;
@@ -224,7 +224,7 @@ onUnmounted(() => {
 
 /* --- Shared --- */
 .label {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: color-mix(in srgb, var(--paper) 45%, transparent);
   flex-shrink: 0;
@@ -241,7 +241,7 @@ onUnmounted(() => {
 
 .loading {
   color: color-mix(in srgb, var(--paper) 30%, transparent);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   text-align: center;
   pointer-events: none;
 }

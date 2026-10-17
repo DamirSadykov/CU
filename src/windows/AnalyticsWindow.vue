@@ -726,7 +726,7 @@ function renderCharts() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { display: true, labels: { color: tick, font: { size: 11 } } },
+          legend: { display: true, labels: { color: tick, font: { size: 14 } } },
           tooltip: { ...chartTooltip(),
             callbacks: { label: (c) => `${c.dataset.label}: ${fmtTokens(Number(c.parsed.y) || 0)}` },
           },
@@ -2047,7 +2047,7 @@ onUnmounted(() => {
 }
 .aw-head h1 {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--fs-lg);
   font-weight: 600;
 }
 .aw-filters {
@@ -2061,7 +2061,7 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-3, color-mix(in srgb, var(--paper) 70%, transparent));
 }
 .aw-filters input,
@@ -2071,7 +2071,7 @@ onUnmounted(() => {
   color: var(--text);
   border-radius: var(--card-radius);
   padding: 5px 8px;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-family: var(--segoe);
   /* Hints the platform to render the dropdown in a dark colour scheme so the
      OS popup menu (which the WebView can't fully restyle) picks dark fg/bg. */
@@ -2099,7 +2099,7 @@ onUnmounted(() => {
   background: transparent;
   color: var(--text-2);
   padding: 5px 12px;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-family: var(--segoe);
   cursor: pointer;
   transition: background 120ms, color 120ms;
@@ -2123,7 +2123,7 @@ onUnmounted(() => {
   color: var(--on-accent);
   border-radius: var(--card-radius);
   padding: 5px 12px;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-family: var(--segoe);
   cursor: pointer;
   transition: filter 120ms;
@@ -2166,7 +2166,7 @@ onUnmounted(() => {
   border-bottom: 2px solid transparent;
   color: var(--text-3);
   padding: 10px 14px;
-  font-size: 13px;
+  font-size: var(--fs-xs);
   font-family: var(--segoe);
   font-weight: 500;
   cursor: pointer;
@@ -2188,7 +2188,7 @@ onUnmounted(() => {
   color: var(--accent);
   border-radius: 10px;
   padding: 1px 7px;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   min-width: 18px;
   text-align: center;
@@ -2210,7 +2210,7 @@ onUnmounted(() => {
 }
 /* Small uppercase group label inside a tab panel (e.g. "KPI summary"). */
 .aw-group-hd {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--text-3, color-mix(in srgb, var(--paper) 70%, transparent));
   text-transform: uppercase;
@@ -2233,7 +2233,7 @@ onUnmounted(() => {
   background: none;
   cursor: pointer;
   font-family: inherit;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 500;
   text-transform: none;
   letter-spacing: 0;
@@ -2282,12 +2282,12 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
-  font-size: 14px;
+  font-size: var(--fs-xs);
 }
 /* Inline empty state inside a tab panel (e.g. Tools tab with no data). */
 .aw-empty-inline {
   color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
-  font-size: 13px;
+  font-size: var(--fs-xs);
   font-style: italic;
   padding: 24px 4px;
   text-align: center;
@@ -2301,7 +2301,7 @@ onUnmounted(() => {
 }
 .aw-proj-desc {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
   max-width: 64ch;
   line-height: 1.5;
@@ -2328,7 +2328,7 @@ onUnmounted(() => {
   color: var(--on-accent);
   border-radius: var(--card-radius);
   padding: 5px 14px;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-family: var(--segoe);
   cursor: pointer;
   transition: filter 120ms;
@@ -2341,7 +2341,7 @@ onUnmounted(() => {
   cursor: default;
 }
 .aw-merge-err {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--crit);
 }
 .aw-merge-list {
@@ -2356,7 +2356,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--fs-xs);
 }
 .aw-merge-alias {
   color: var(--text-2, color-mix(in srgb, var(--paper) 85%, transparent));
@@ -2374,7 +2374,7 @@ onUnmounted(() => {
   color: var(--text);
   border-radius: var(--card-radius, 6px);
   padding: 7px 10px;
-  font-size: 13px;
+  font-size: var(--fs-xs);
   font-family: var(--segoe);
   width: 220px;
 }
@@ -2403,10 +2403,10 @@ onUnmounted(() => {
 }
 .aw-group-name {
   font-weight: 600;
-  font-size: 13px;
+  font-size: var(--fs-xs);
 }
 .aw-group-total {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-3, color-mix(in srgb, var(--paper) 70%, transparent));
   font-variant-numeric: tabular-nums;
   margin-left: auto;
@@ -2424,7 +2424,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 4px;
   padding: 2px 4px 2px 8px;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-2, color-mix(in srgb, var(--paper) 85%, transparent));
   background: color-mix(in srgb, var(--paper) 6%, transparent);
   border: 1px solid var(--stroke-strong, color-mix(in srgb, var(--paper) 10%, transparent));
@@ -2434,7 +2434,7 @@ onUnmounted(() => {
   border: none;
   background: transparent;
   color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
-  font-size: 14px;
+  font-size: var(--fs-xs);
   line-height: 1;
   cursor: pointer;
   padding: 0 2px;
@@ -2453,7 +2453,7 @@ onUnmounted(() => {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .aw-kpis.aw-headline .aw-kpi-val {
-  font-size: 28px;
+  font-size: var(--fs-4xl);
 }
 .aw-kpi {
   position: relative;
@@ -2474,7 +2474,7 @@ onUnmounted(() => {
   background: transparent;
   border: 1px solid color-mix(in srgb, var(--paper) 20%, transparent);
   color: color-mix(in srgb, var(--paper) 45%, transparent);
-  font-size: 10px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   line-height: 1;
   width: 16px;
@@ -2518,12 +2518,12 @@ onUnmounted(() => {
   margin-top: 0;
 }
 .aw-kpi-val {
-  font-size: 22px;
+  font-size: var(--fs-2xl);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 .aw-kpi-lbl {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -2535,7 +2535,7 @@ onUnmounted(() => {
   margin-top: 2px;
   text-transform: none;
   letter-spacing: 0;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--text-3, color-mix(in srgb, var(--paper) 40%, transparent));
 }
 
@@ -2546,7 +2546,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 3px;
   margin-top: 6px;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   line-height: 1;
@@ -2596,7 +2596,7 @@ onUnmounted(() => {
   display: inline-block;
   margin-top: 6px;
   margin-left: 6px;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -2632,7 +2632,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--text-3);
   text-transform: uppercase;
@@ -2644,14 +2644,14 @@ onUnmounted(() => {
   color: var(--on-next);
   border-radius: 10px;
   padding: 1px 8px;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   min-width: 18px;
   text-align: center;
 }
 .aw-insights-empty {
   color: var(--text-4);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   padding: 10px 4px;
   font-style: italic;
 }
@@ -2670,7 +2670,7 @@ onUnmounted(() => {
   border: 1px solid var(--stroke);
   border-radius: 8px;
   padding: 11px 12px;
-  font-size: 13px;
+  font-size: var(--fs-xs);
 }
 .aw-insight-body {
   flex: 1;
@@ -2680,7 +2680,7 @@ onUnmounted(() => {
   gap: 6px;
 }
 .aw-insight-text {
-  font-size: 13px;
+  font-size: var(--fs-xs);
   line-height: 1.5;
   color: var(--text-2);
   text-wrap: pretty;
@@ -2696,7 +2696,7 @@ onUnmounted(() => {
 }
 .aw-insight-help-body {
   color: color-mix(in srgb, var(--paper) 78%, transparent);
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
   line-height: 1.55;
   padding: 4px 4px 2px;
   border-top: 1px dashed color-mix(in srgb, var(--paper) 10%, transparent);
@@ -2704,7 +2704,7 @@ onUnmounted(() => {
 }
 .aw-insight-help-body h4 {
   margin: 10px 0 4px;
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: color-mix(in srgb, var(--paper) 95%, transparent);
 }
@@ -2725,7 +2725,7 @@ onUnmounted(() => {
   background: color-mix(in srgb, var(--paper) 8%, transparent);
   padding: 1px 5px;
   border-radius: 3px;
-  font-size: 11.5px;
+  font-size: var(--fs-xs);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 .aw-insight-help-body strong {
@@ -2765,7 +2765,7 @@ onUnmounted(() => {
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
   padding: 3px 8px;
   background: color-mix(in srgb, var(--hard) 15%, transparent);
   border-radius: 5px;
@@ -2779,7 +2779,7 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 .aw-cold-fix {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   line-height: 1.45;
   color: var(--text-3, color-mix(in srgb, var(--paper) 60%, transparent));
   margin-top: 8px;
@@ -2803,7 +2803,7 @@ onUnmounted(() => {
 .aw-ignored {
   border-top: 1px dashed color-mix(in srgb, var(--paper) 10%, transparent);
   padding-top: 8px;
-  font-size: 12px;
+  font-size: var(--fs-xs);
 }
 .aw-ignored summary {
   cursor: pointer;
@@ -2838,7 +2838,7 @@ onUnmounted(() => {
   color: inherit;
   border-radius: var(--card-radius);
   padding: 4px 10px;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   min-width: 180px;
 }
 .aw-search:focus {
@@ -2852,7 +2852,7 @@ onUnmounted(() => {
   color: var(--warn);
   border-radius: 4px;
   padding: 2px 7px;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-weight: 700;
@@ -2861,7 +2861,7 @@ onUnmounted(() => {
   background: transparent;
   border: none;
   color: var(--accent);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   padding: 8px 0 0;
   cursor: pointer;
   text-align: left;
@@ -2882,7 +2882,7 @@ onUnmounted(() => {
   padding: 12px;
 }
 .aw-card-hd {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--text-3, color-mix(in srgb, var(--paper) 70%, transparent));
   text-transform: uppercase;
@@ -2897,7 +2897,7 @@ onUnmounted(() => {
   text-transform: none;
   letter-spacing: 0;
   font-weight: 400;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
 }
 .aw-chart {
@@ -2908,13 +2908,13 @@ onUnmounted(() => {
 .aw-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: var(--fs-xs);
 }
 .aw-table th {
   text-align: left;
   font-weight: 500;
   color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
-  font-size: 11px;
+  font-size: var(--fs-xs);
   text-transform: uppercase;
   padding: 6px 8px;
   border-bottom: 1px solid var(--stroke-strong, color-mix(in srgb, var(--paper) 8%, transparent));
@@ -2934,7 +2934,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 13px;
+  font-size: var(--fs-xs);
 }
 .aw-row-line {
   display: flex;
@@ -2958,7 +2958,7 @@ onUnmounted(() => {
    the chip takes the slack via flex:1 to keep the bar full-width. */
 .aw-row-id {
   font-family: ui-monospace, Consolas, monospace;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   letter-spacing: 0.02em;
   color: var(--text-3, color-mix(in srgb, var(--paper) 70%, transparent));
   background: color-mix(in srgb, var(--paper) 5%, transparent);
@@ -3037,7 +3037,7 @@ onUnmounted(() => {
   border-radius: 5px;
   color: var(--text);
   padding: 5px 12px;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   cursor: pointer;
 }
 .aw-modal-actions button:hover {
@@ -3045,7 +3045,7 @@ onUnmounted(() => {
 }
 .aw-modal-hint {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
 }
 .aw-modal-box textarea {
@@ -3057,7 +3057,7 @@ onUnmounted(() => {
   border-radius: 6px;
   padding: 10px;
   font-family: ui-monospace, Consolas, monospace;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   resize: vertical;
 }
 </style>

@@ -199,7 +199,7 @@ export function batonComplaints(body, own) {
   if (text.length < MIN_CHARS)
     out.push(`it is ${text.length} chars — a receipt, not a baton (min ${MIN_CHARS})`);
   if (!NEXT_RE.test(text))
-    out.push("no next step — say what the next session should DO first");
+    out.push("no next task — say what the next session should DO first");
   if (!ANCHOR_RE.test(text))
     out.push(
       "nothing concrete — name a file, a `symbol` or a task (t#N)",
@@ -527,7 +527,7 @@ function reason(tasks) {
   );
   for (const t of tasks) {
     lines.push(
-      `  node "${CLI}" todos handoff set ${t.number} --text "<what's done; decision/gotcha; next step>"`,
+      `  node "${CLI}" todos handoff set ${t.number} --text "<what's done; decision/gotcha; next task>"`,
     );
   }
   lines.push(
@@ -542,8 +542,8 @@ function hint(tasks) {
   const refs = tasks.map((t) => `#${t.number}`).join(", ");
   return (
     `HANDOFF suggested for ${refs}, but STOP is not blocked: these tasks have no dependents.\n` +
-    `If someone may continue the work, leave the decision/gotcha and next step with ` +
-    `node "${CLI}" todos handoff set <task> --text "<what's done; gotcha; next step>"`
+    `If someone may continue the work, leave the decision/gotcha and next task with ` +
+    `node "${CLI}" todos handoff set <task> --text "<what's done; gotcha; next task>"`
   );
 }
 

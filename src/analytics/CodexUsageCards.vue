@@ -108,7 +108,7 @@ function isLimited(window: CodexLimitWindow): boolean {
   border: 1px solid color-mix(in srgb, var(--ok) 45%, transparent);
   border-radius: 999px;
   color: var(--ok);
-  font: 600 9px ui-monospace, Consolas, monospace;
+  font: 600 var(--fs-xs) ui-monospace, Consolas, monospace;
   text-transform: uppercase;
 }
 .codex-limit { color: var(--crit); }

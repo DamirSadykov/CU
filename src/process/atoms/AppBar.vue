@@ -24,7 +24,7 @@ defineProps<{ title?: string }>();
 }
 .app-bar h1 {
     margin: 0;
-    font-size: 17px;
+    font-size: var(--fs-lg);
     font-weight: 600;
     letter-spacing: -0.01em;
 }

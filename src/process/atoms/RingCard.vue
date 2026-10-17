@@ -49,13 +49,13 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
 }
 .ring-label {
     font-family: var(--mono);
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--text);
 }
 .ring-title {
     margin-top: 4px;
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     line-height: 1.35;
     color: var(--text-3);
 }
@@ -66,12 +66,12 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
     margin-top: 8px;
 }
 .ring-badge {
-    font-size: 11px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
 }
 .ring-cost {
     font-family: var(--mono);
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     color: var(--high);
 }
 .ring-counter {
@@ -79,7 +79,7 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
     right: 8px;
     bottom: 6px;
     font-family: var(--mono);
-    font-size: 10px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
 }
 
@@ -87,7 +87,7 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
     background: var(--node-bg-2);
 }
 .ring-card.tone-plain .ring-title {
-    font-size: 11px;
+    font-size: var(--fs-xs);
 }
 
 .ring-card.tone-hub {
@@ -113,7 +113,7 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
 }
 .ring-card.tone-focus .ring-label {
     font-family: var(--segoe);
-    font-size: 10px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.13em;
@@ -121,7 +121,7 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
 }
 .ring-card.tone-focus .ring-title {
     margin-top: 6px;
-    font-size: 14px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     line-height: 1.3;
     color: var(--text);

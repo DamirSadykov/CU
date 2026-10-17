@@ -49,6 +49,7 @@ import { matchPlanCli, specsEnabled } from "../kernel/settings.mjs";
 import { appDataFile } from "../kernel/appdata.mjs";
 import { findChange, changeAddress, CURRENT, BoardUnreadableError, STATUSES, col, isDone, isChangeRoot, normalizeLimit, todosPath, load, save, boardPath, loadBoard, assertBoardWritable, loadBoardForWrite, saveBoard, withDeferredSave, resolveTask, changeRootsFor, changeAsRoot, specAddressesForManual } from "../kernel/board-io.mjs";
 import { withBoardLock, withDataDir } from "../kernel/board-lock.mjs";
+import { formatRef, parseRef } from "../kernel/terms.mjs";
 
 let specPort = null;
 let closePort = null;
@@ -549,18 +550,18 @@ function setChange({ data, file, todo, value }) {
     const change = findChange(data, value);
     if (!change)
       fail(
-        `invalid change "${value}". valid: <c#N> | none\n` +
-          `  a change is a record now, not a flag — see them: cli change list --all`,
+        `invalid plan "${value}". valid: <p#N> | <c#N> | none\n` +
+          `  a plan is a record now, not a flag — see them: cli plan list --all`,
       );
     if (todo.change_id === change.id) {
-      process.stdout.write(`ok: #${todo.number} already in ${changeAddress(change)}\n`);
+      process.stdout.write(`ok: #${todo.number} already in plan ${changeAddress(change)}\n`);
       return;
     }
     todo.change_id = change.id;
     todo.updated_at = new Date().toISOString();
     save(file, data);
     process.stdout.write(
-      `ok: #${todo.number} change -> ${changeAddress(change)} "${change.title}"\n`,
+      `ok: #${todo.number} plan -> ${changeAddress(change)} "${change.title}"\n`,
     );
     return;
   }
@@ -568,23 +569,23 @@ function setChange({ data, file, todo, value }) {
     delete todo.change_id;
     todo.updated_at = new Date().toISOString();
     save(file, data);
-    process.stdout.write(`ok: #${todo.number} change -> none\n`);
+    process.stdout.write(`ok: #${todo.number} plan -> none\n`);
     return;
   }
   if (!clearing)
     fail(
-      `refusing: \`change ${s}\` is the OLD root-task form — a change is a record now.\n` +
-        `  cli change new "<title>"   then   todos set change ${todo.number} <c#N>`,
+      `refusing: \`change ${s}\` is the OLD root-task form — a plan is a record now.\n` +
+        `  cli plan new "<title>"   then   todos set change ${todo.number} <p#N>`,
     );
   if (isChangeRoot(todo)) {
     delete todo.change;
     delete todo.theme;
     todo.updated_at = new Date().toISOString();
     save(file, data);
-    process.stdout.write(`ok: #${todo.number} change -> none (old root flag dropped)\n`);
+    process.stdout.write(`ok: #${todo.number} plan -> none (old root flag dropped)\n`);
     return;
   }
-  process.stdout.write(`ok: #${todo.number} already change none\n`);
+  process.stdout.write(`ok: #${todo.number} already in no plan\n`);
 }
 
 // --- process DSL declarations (t#302) ---------------------------------------
@@ -632,7 +633,7 @@ const PRODUCES_USAGE =
   "       cli todos produces rm  <task> <path>\n" +
   "       cli todos produces list <task> [--json]\n" +
   "       <task> is an id, a number, or #N. <path> is a file path, an interface, a record —\n" +
-  "       whatever the next step is meant to take.";
+  "       whatever the next task is meant to take.";
 
 // Manage a node's declared outputs (§6). A declaration is a promise made BEFORE
 // the work, so it is deliberately a separate field from `handoff` (the baton
@@ -779,12 +780,12 @@ function setBudget({ data, file, todo, value }) {
 function setParallel({ data, file, todo, value }) {
   const limit = normalizeLimit(value);
   if (limit === undefined)
-    fail(`invalid parallel limit "${value}". valid: none (a change record holds the limit)`);
+    fail(`invalid parallel limit "${value}". valid: none (a plan record holds the limit)`);
   if (limit !== null)
     fail(
-      `refusing: a parallel limit belongs to the CHANGE, not to a task.\n` +
-        `  cli change set parallel <c#N> ${limit}` +
-        (todo.change_id ? "" : `   (put #${todo.number} in one first: todos set change ${todo.number} <c#N>)`),
+      `refusing: a parallel limit belongs to the PLAN, not to a task.\n` +
+        `  cli plan set parallel <p#N> ${limit}` +
+        (todo.change_id ? "" : `   (put #${todo.number} in one first: todos set change ${todo.number} <p#N>)`),
     );
   if ((todo.parallel_limit ?? null) === limit) {
     process.stdout.write(
@@ -1063,7 +1064,7 @@ const SET_FIELDS = {
     set: setRisk,
   },
   change: {
-    values: "<c#N> | none   (a change is a record: cli change list --all)",
+    values: "<p#N> | <c#N> | none   (a plan is a record: cli plan list --all)",
     set: setChange,
   },
   project: { values: "<name> | none   (none = global, project-less)", set: setProject },
@@ -1078,7 +1079,7 @@ const SET_FIELDS = {
     set: setRetry,
   },
   budget: {
-    values: "<usd> | none   (also $N; on a change = the whole group's)",
+    values: "<usd> | none   (also $N; on a plan = the whole group's)",
     declaration: true,
     set: setBudget,
   },
@@ -1251,8 +1252,8 @@ function cmdAdd(args) {
   const { positional, flags } = parseArgs(args);
   if (flags.change) {
     fail(
-      "refusing: `todos add --change` no longer creates legacy change roots.\n" +
-        '  cli change new "<title>"',
+      "refusing: `todos add --change` no longer creates legacy plan roots.\n" +
+        '  cli plan new "<title>"',
     );
   }
   const subject = String(positional[0] ?? flags.subject ?? "").trim();
@@ -1917,13 +1918,15 @@ function directPrereqs(data, t) {
 // change root's description carries it). Shared by `vision <task>` and the
 // in_progress anchor so both read identically.
 export function formatChangeVision(t, roots) {
-  let out = `★ Vision inherited by #${t.number} "${t.subject}" from its change root(s) — the chain's north star; keep this task true to it (if it pulls away, stop and flag it):\n`;
+  let out = `★ Vision inherited by #${t.number} "${t.subject}" from its plan(s) — the chain's north star; keep this task true to it (if it pulls away, stop and flag it):\n`;
   for (const r of roots) {
-    out += `\n── change ${r.address ?? `t#${r.number}`} ${r.subject} [${col(r.status)}] ──\n`;
+    const parsed = parseRef(r.address);
+    const address = parsed === null ? (r.address ?? `t#${r.number}`) : formatRef(parsed);
+    out += `\n── plan ${address} ${r.subject} [${col(r.status)}] ──\n`;
     out +=
       r.description && r.description.trim()
         ? r.description.trim() + "\n"
-        : `(change ${r.address ?? `t#${r.number}`} has no delta — its vision is missing; write it on the record)\n`;
+        : `(plan ${address} has no delta — its vision is missing; write it on the record)\n`;
   }
   return out;
 }
@@ -2050,8 +2053,8 @@ function cmdHandoff(args) {
 }
 
 const VISION_USAGE =
-  "usage: cli todos vision <task> [--json]   read the vision <task> inherits from its change root(s)\n" +
-  "       <task> is an id, a number, or #N. A change root's description carries it (`set description` writes it).";
+  "usage: cli todos vision <task> [--json]   read the vision <task> inherits from its plan\n" +
+  "       <task> is an id, a number, or #N. The plan's delta carries it.";
 
 // `todos vision <task>` — the read counterpart of `handoff <task>` for the UP
 // direction (t#252): the description of the nearest change root(s) above <task>.
@@ -2087,7 +2090,7 @@ function cmdVision(args) {
   }
   if (!roots.length && !specLink.addresses.length) {
     process.stdout.write(
-      `#${t.number} "${t.subject}" has no change above it and no spec link of its own — nothing to inherit. (A change is a record: \`cli change new "<title>"\`, then \`todos set change <id> <c#N>\`. A spec link is \`todos set spec <id> <домен>#<слаг>\`.)\n`,
+      `#${t.number} "${t.subject}" has no plan above it and no spec link of its own — nothing to inherit. (A plan is a record: \`cli plan new "<title>"\`, then \`todos set change <id> <p#N>\`. A spec link is \`todos set spec <id> <домен>#<слаг>\`.)\n`,
     );
     return;
   }
@@ -2245,7 +2248,7 @@ function cmdPipeline(args = []) {
       '  todos add "<subject>" [--project <name> | --global] [--kind auto|manual]\n' +
       "  todos dep add <task> <depends-on>    the edge: <task> waits for <depends-on>\n" +
       "  todos dep list <task>                its deps + dependents\n" +
-      "  todos produces add <task> <path>     what the step promises to produce\n" +
+      "  todos produces add <task> <path>     what the task promises to produce\n" +
       "  todos set <field> <task> <value>     " +
       fieldList(39) +
       "\n" +
@@ -2255,8 +2258,8 @@ function cmdPipeline(args = []) {
       "                                       to in_progress already binds it\n" +
       '  todos handoff set <task> --text "…"  the baton, written AFTER the work\n' +
       "  todos outcome <task> [--verify ok|issue]   promised -> produced -> consumed\n" +
-      "  todos run <change> [--dry-run | --go]       autonomous run of a change's graph\n" +
-      "  todos vision <task>                  the vision this task inherits from its change\n\n" +
+      "  todos run <plan> [--dry-run | --go]         autonomous run of a plan's graph\n" +
+      "  todos vision <task>                  the vision this task inherits from its plan\n\n" +
       "The CLI refuses what it can check — an unknown field or value, closing a node\n" +
       "with an unfinished prerequisite, a ?issue transition without a retry limit, a\n" +
       "declaration on a closed node, the same text in two fields — and says how to fix\n" +
@@ -2269,10 +2272,10 @@ function cmdPipeline(args = []) {
       "    a headless run can actually verify.\n" +
       "  - declare BEFORE the work (produces, verify, retry, budget), report after\n" +
       "    (handoff). A field the plan is silent about stays UNDECLARED — never guessed.\n" +
-      "  - one role per field: description = WHAT & WHY (a change root's = the change's\n" +
+      "  - one role per field: description = WHAT & WHY (a plan root's = the plan's\n" +
       "    DELTA — what this round changes, and why now), plan = HOW (steps + order),\n" +
       "    handoff = the baton, comments = journal.\n" +
-      "  - a change is worth a root from ~4-5 nodes.\n\n" +
+      "  - a plan is worth recording from ~4-5 tasks.\n\n" +
       "Full guide + rationale: docs/task-pipeline.md (CU repo).\n",
   );
   printBoardDeclarations(args);
@@ -2366,7 +2369,7 @@ function usage(code) {
       "                                  --dry-run is the DEFAULT; re-applying matches steps by subject\n" +
       "  lint [<change>] [--json]         check the RECORDED graph against the same invariants apply checks\n" +
       "                                  on a file (t#313): dangling ?issue, a transition with no retry limit,\n" +
-      "                                  a cycle, a change with no budget, a node closed on an unreconciled promise\n" +
+      "                                  a cycle, a plan with no budget, a task closed on an unreconciled promise\n" +
       "  adoption [--since <date> | --days N] [--json]\n" +
       "                                  is the language actually used (t#315): did the plan ritual fire, are\n" +
       "                                  produces/verify filled (§18: 70%), what apply refused, doubled steps,\n" +
@@ -2374,14 +2377,14 @@ function usage(code) {
       "  outcome <task> [--verify ok|issue] [--write] [--json]\n" +
       "                                  reconcile promised -> produced -> consumed (t#304) and print the machine\n" +
       "                                  predicate ok|issue; the declared verify is run by the RUNNER, not here\n" +
-      "  run <change> [--dry-run | --go] [--parallel N] [--timeout <min>] [--json]\n" +
-      "                                  autonomous run of a change's graph (t#305): frontier → step → verify →\n" +
-      "                                  outcome, one session per step. --dry-run is the DEFAULT and prints the plan\n" +
+      "  run <plan> [--dry-run | --go] [--parallel N] [--timeout <min>] [--json]\n" +
+      "                                  autonomous run of a plan's graph (t#305): frontier → task → verify →\n" +
+      "                                  outcome, one session per task. --dry-run is the DEFAULT and prints the run order\n" +
       "  handoff <task> [--json]         read the handoff of <task>'s direct prerequisites (deps it inherits)\n" +
       '  handoff set <task> --text "…"   set <task>\'s own handoff (carried to tasks that depend on it)\n' +
       "  handoff clear <task>            drop <task>'s own handoff\n" +
-      "  vision <task> [--json]          read the vision <task> inherits from its nearest change root(s) up the dep graph\n" +
-      "                                  (a change root's DESCRIPTION carries it; auto-printed on -> in_progress)\n" +
+      "  vision <task> [--json]          read the vision <task> inherits from its plan\n" +
+      "                                  (the plan's delta carries it; auto-printed on -> in_progress)\n" +
       "  related <project> [--json]      projects that work with <project>\n" +
       "  groups [--json]                 list association groups\n" +
       "  ready [--project <name> | --all] [--auto | --manual] [--json]\n" +
@@ -2396,9 +2399,9 @@ function usage(code) {
       "  Handoff (`handoff set`) — write for the NEXT task, the one that depends on this:\n" +
       "    DO:  the concrete outcome a dependent builds on (files/paths, interfaces, schema,\n" +
       "         decisions made); where it left off if unfinished; gotchas/constraints; the\n" +
-      "         suggested next step. Reference related tasks as t#N so context chains forward.\n" +
+      "         suggested next task. Reference related tasks as t#N so context chains forward.\n" +
       "    DON'T: restate the task's own subject/description (the dependent can read those);\n" +
-      "         session chatter or notes-to-self; step-by-step of how you got there; secrets.\n" +
+      "         session chatter or notes-to-self; a play-by-play of how you got there; secrets.\n" +
       "    Keep it short and specific — a baton, not a log. Empty is fine (nothing to pass on).\n" +
       "  Moving a task to `in_progress` AUTO-prints the handoff it inherits, so starting a task\n" +
       "  hands you its prerequisites' batons without asking. `handoff <task>` re-reads it.\n",

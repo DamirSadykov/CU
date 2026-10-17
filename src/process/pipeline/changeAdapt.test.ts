@@ -135,7 +135,7 @@ describe("blockersFor — конкурентные change'и на один ра�
         const found = blockersFor(c1, changeMembers(board, c1), [c1, c2], board);
         expect(found).toHaveLength(1);
         expect(found[0].rule).toBe("concurrent-change");
-        expect(found[0].detail).toMatch(/c#2 "второй"/);
+        expect(found[0].detail).toMatch(/p#2 "второй"/);
     });
 
     it("один открытый change на адрес — не блокер", () => {
@@ -319,7 +319,7 @@ describe("specSummaryFor", () => {
         ];
         const rows = specSummaryFor(c1, changeMembers(board, c1), [c1, c2], board);
         expect(rows[0].concurrent).toBe(true);
-        expect(rows[0].openOthers).toEqual(["c#2"]);
+        expect(rows[0].openOthers).toEqual(["p#2"]);
     });
 });
 
@@ -423,7 +423,7 @@ describe("openChangesAt / specAddressesOf", () => {
             task({ id: "a", change_id: "c1", number: 1, status: "in_progress" }),
             task({ id: "b", change_id: "c2", number: 2, status: "done" }),
         ];
-        expect(openChangesAt("tasks#ui", [c1, c2], board).map((c) => changeAddress(c))).toEqual(["c#1"]);
+        expect(openChangesAt("tasks#ui", [c1, c2], board).map((c) => changeAddress(c))).toEqual(["p#1"]);
     });
 });
 

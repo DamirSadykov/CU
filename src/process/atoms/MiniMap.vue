@@ -53,7 +53,7 @@ withDefaults(
     align-items: center;
     gap: 5px;
     margin-bottom: 7px;
-    font-size: 10px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.13em;

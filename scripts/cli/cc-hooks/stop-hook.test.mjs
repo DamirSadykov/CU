@@ -242,7 +242,7 @@ describe("batonComplaints", () => {
       own,
     );
     expect(c).toHaveLength(1);
-    expect(c[0]).toMatch(/no next step/);
+    expect(c[0]).toMatch(/no next task/);
   });
 
   it("rejects a forward-looking note with nothing concrete in it", () => {

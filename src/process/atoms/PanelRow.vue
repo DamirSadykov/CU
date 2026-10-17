@@ -29,7 +29,7 @@ withDefaults(
 .panel-row-icon {
     flex: none;
     width: 12px;
-    font-size: 11px;
+    font-size: var(--fs-xs);
     line-height: 1;
     text-align: center;
     color: var(--text-4);
@@ -37,7 +37,7 @@ withDefaults(
 .panel-row-text {
     flex: 1;
     min-width: 0;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     color: var(--text-2);
     white-space: nowrap;
     overflow: hidden;
@@ -45,11 +45,11 @@ withDefaults(
 }
 .panel-row-text.mono {
     font-family: var(--mono);
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
 }
 .panel-row-meta {
     flex: none;
-    font-size: 11px;
+    font-size: var(--fs-xs);
     color: var(--text-4);
 }
 .panel-row.tone-ok .panel-row-icon,

@@ -56,6 +56,7 @@
       "../scripts/cli.mjs": "scripts/cli.mjs",
       "../scripts/cli/board/todos.mjs": "scripts/cli/board/todos.mjs",
       "../scripts/cli/kernel/board-io.mjs": "scripts/cli/kernel/board-io.mjs",
+      "../scripts/cli/kernel/terms.mjs": "scripts/cli/kernel/terms.mjs",
       "../scripts/cli/kernel/board-lock.mjs": "scripts/cli/kernel/board-lock.mjs",
       "../scripts/cli/kernel/board-recover.mjs": "scripts/cli/kernel/board-recover.mjs",
       "../scripts/cli/spec/board-ritual.mjs": "scripts/cli/spec/board-ritual.mjs",

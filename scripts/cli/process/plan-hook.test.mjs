@@ -88,7 +88,7 @@ describe("buildEnterContext", () => {
 
   it("asks for the file itself, not for prose to be translated later", () => {
     expect(ctx).toContain("YAML");
-    expect(ctx).toContain("one step per task");
+    expect(ctx).toContain("one task per entry");
     expect(ctx).toContain(planFormatDoc());
   });
 
@@ -187,8 +187,8 @@ describe("the plan-format document", () => {
     expect(buildEnterContext("directive")).toContain(planFormatDoc());
     expect(buildExitContext("")).toContain(planFormatDoc());
     expect(doc).not.toMatch(/^## [56]\./m);
-    expect(issues).toMatch(/^## 5\. When a runner step does not converge$/m);
-    expect(cutting).toMatch(/^## 6\. Cutting the plan$/m);
+    expect(issues).toMatch(/^## 5\. When a runner task does not converge$/m);
+    expect(cutting).toMatch(/^## 6\. Cutting the draft plan$/m);
     expect(doc).toMatch(/^## 3\. Recording and refusals$/m);
   });
 
@@ -203,7 +203,7 @@ describe("the plan-format document", () => {
   it("reads only the base on entry and names supplements only at their trigger", () => {
     const context = buildEnterContext("directive");
     expect(context).toMatch(new RegExp(`READ THE BASE NOW[^]*${planFormatDoc().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
-    expect(context).toContain(`Only if a step parks: ${planFormatIssuesDoc()}`);
+    expect(context).toContain(`Only if a task parks: ${planFormatIssuesDoc()}`);
     expect(context).toContain(`Only if work must be split: ${planFormatCuttingDoc()}`);
   });
 
@@ -272,9 +272,9 @@ describe("buildExitContext", () => {
   // phrase would have duplicated the very task the session sits on. With the
   // binding key (t#324) it is a file like any other, and the instruction must
   // say so — an exception left standing is what keeps the language optional.
-  it("sends the one-step plan through apply too, bound to its task", () => {
+  it("sends the one-task plan through apply too, bound to its task", () => {
     const ctx = buildExitContext("");
-    expect(ctx).toMatch(/one-step plan is a file too/i);
+    expect(ctx).toMatch(/one-task plan is a file too/i);
     expect(ctx).not.toMatch(/no file and no apply/i);
   });
 
@@ -724,7 +724,7 @@ describe("buildRecordedContext", () => {
 
   it("launches the recorded graph in the background without session monitoring", () => {
     const ctx = buildRecordedContext(recorded, "");
-    expect(ctx).toContain("todos run c#39 --go");
+    expect(ctx).toContain("todos run p#39 --go");
     expect(ctx).toContain("run_in_background: true");
     expect(ctx).toContain("Do not observe or narrate");
     expect(ctx).toContain("final stdout lines");
