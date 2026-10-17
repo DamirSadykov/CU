@@ -43,8 +43,10 @@ import { appDataDir, writeJsonAtomic } from "../kernel/appdata.mjs";
 import {
   STEP_ANCHOR,
   downgradeUnchanged,
+  formatRepairPrompt,
   isBlocking,
   lastVerdict,
+  malformedLines,
   parseFindings,
   priorFindingsBlock,
   readReviewBar,
@@ -524,7 +526,7 @@ export function buildArchitectPrompt(plan, { prior = null, changed = [], rejecti
     "Judge the declared obligations: boundaries, dependency order, produces, verify, retries and review gates.",
     "Do not edit files.",
     reviewBarText({ subject: "plan", anchor: STEP_ANCHOR, bar }),
-    verdictInstruction(STEP_ANCHOR),
+    verdictInstruction(STEP_ANCHOR, { repair: true }),
   ];
   if (prior) {
     lines.push(
@@ -606,48 +608,59 @@ export function architectDecision(input, invoke, options = {}) {
   const steps = planSteps(plan);
   const changed = prior ? Object.keys(steps).filter((id) => prior.steps[id] !== steps[id]) : [];
   const rejections = prior ? planRejections(plan) : [];
-  const prompt = buildArchitectPrompt(plan, { prior, changed, rejections, bar: readReviewBar(cwd) });
-  let result;
-  try {
-    result = typeof invoke === "function"
-      ? invoke("architect", prompt, { cwd })
-      : invokeAvailableArchitect(gate, prompt, { cwd });
-  }
-  catch (error) {
-    result = { ok: false, error: error?.message || String(error) };
-  }
-  // A candidate existed at preflight, so a failure here belongs to the model
-  // call. It remains fail-open, but is visible in hook output rather than being
-  // indistinguishable from a gate that never ran.
-  if (!result || result.skipped || !result.ok) {
+  const call = (text) => {
+    try {
+      return typeof invoke === "function"
+        ? invoke("architect", text, { cwd })
+        : invokeAvailableArchitect(gate, text, { cwd });
+    } catch (error) {
+      return { ok: false, error: error?.message || String(error) };
+    }
+  };
+  const failed = (result, label = "") => {
     const detail = String(result?.error || result?.reason || "no result").trim().slice(0, 1000);
     return failOpen([
-      `ARCHITECT CHECK FAILED OPEN — ${gate.candidate.label} was available, but its review failed.`,
+      `ARCHITECT CHECK FAILED OPEN${label} — ${gate.candidate.label} was available, but its review failed.`,
       `Reason: ${detail || "unknown model error"}.`,
       "The deterministic plan-format guard passed; ExitPlanMode continues to the normal user approval.",
     ].join("\n"));
+  };
+  const judge = (text) => {
+    const parsed = parseFindings(lastVerdict(text) ? text : `${text}\nVERDICT: approve`, STEP_ANCHOR);
+    const found = prior
+      ? downgradeUnchanged(parsed.findings, {
+        prior: prior.findings,
+        changed: new Set(changed),
+        anchor: STEP_ANCHOR,
+        note: "step unchanged since the preceding round",
+      })
+      : parsed.findings;
+    const bad = malformedLines(text, STEP_ANCHOR);
+    const findings = dropRejected(bad.length ? found.filter((f) => !(isBlocking(f) && !f.step)) : found, rejections);
+    return { findings, blocking: findings.filter(isBlocking), bad };
+  };
+
+  let result = call(buildArchitectPrompt(plan, { prior, changed, rejections, bar: readReviewBar(cwd) }));
+  if (!result || result.skipped || !result.ok) return failed(result);
+  let text = String(result.text || "");
+  let verdict = judge(text);
+  if (verdict.bad.length && !verdict.blocking.length) {
+    result = call(formatRepairPrompt(text, verdict.bad, STEP_ANCHOR));
+    if (!result || result.skipped || !result.ok) return failed(result, " (format retry)");
+    text = String(result.text || "");
+    verdict = judge(text);
   }
-  const text = String(result.text || "");
-  const parsed = parseFindings(lastVerdict(text) ? text : `${text}\nVERDICT: approve`, STEP_ANCHOR);
-  let findings = prior
-    ? downgradeUnchanged(parsed.findings, {
-      prior: prior.findings,
-      changed: new Set(changed),
-      anchor: STEP_ANCHOR,
-      note: "step unchanged since the preceding round",
-    })
-    : parsed.findings;
-  findings = dropRejected(findings, rejections);
-  const blocking = findings.filter(isBlocking);
+  const { findings, blocking, bad } = verdict;
+  const answer = stripVerdict(text).slice(0, 4000);
   if (blocking.length) {
     if (session) {
       try { store.write(session, { plan, steps, findings, at: new Date().toISOString() }); } catch {}
     }
     return deny([
-      `PLAN REFUSED — the architect found ${blocking.length} blocking finding(s) (critical/high):`,
-      ...blocking.filter((f) => f.step).map(formatFinding),
+      `PLAN REFUSED — the architect found ${blocking.length} blocking finding(s) (critical/high)` +
+        `${blocking.some((f) => f.step) ? `: ${blocking.filter((f) => f.step).map(STEP_ANCHOR.format).join(", ")}` : ""}.`,
       "",
-      stripVerdict(text).slice(0, 4000) || "The architect returned an issue without details.",
+      answer || "The architect returned an issue without details.",
       "",
       "Revise the plan and call ExitPlanMode again; the next round re-checks these findings first.",
       "medium/low do not block. To reject one, add a line `отклонено: <finding> — <why>` to that step's why.",
@@ -656,12 +669,20 @@ export function architectDecision(input, invoke, options = {}) {
   if (session) {
     try { store.clear(session); } catch {}
   }
+  if (bad.length) {
+    return notes([
+      "ARCHITECT ANSWER NOT IN FORMAT — even after one rewrite; nothing in it blocks, the plan goes on to the user. Raw answer:",
+      "",
+      answer,
+    ].join("\n"));
+  }
   if (!findings.length) return null;
+  const adjusted = findings.filter((f) => /unchanged since the preceding round/.test(f.evidence || ""));
   return notes([
     "ARCHITECT NOTES — medium/low, not blocking; the plan goes on to the user.",
-    ...findings.map(formatFinding),
     "",
-    stripVerdict(text).slice(0, 4000),
+    answer,
+    ...(adjusted.length ? ["", "Lowered to medium by the gate (step unchanged since the preceding round):", ...adjusted.map(formatFinding)] : []),
   ].join("\n"));
 }
 

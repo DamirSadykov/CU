@@ -7,6 +7,9 @@ import {
   STEP_ANCHOR,
   downgradeUnchanged,
   findingFormat,
+  formatRepairPrompt,
+  malformedLines,
+  verdictInstruction,
   lastVerdict,
   parseFindings,
   priorFindingsBlock,
@@ -87,6 +90,25 @@ describe("parseFindings", () => {
 
   it("states the line format with the anchor", () => {
     expect(findingFormat(STEP_ANCHOR)).toBe("- [critical|high|medium|low] step N — substance — evidence");
+  });
+
+  it("names the lines that claim a level but break the format", () => {
+    expect(malformedLines([
+      "- [medium] step 3: produces misses plan-guard.mjs",
+      "- [low] step 4 — no produces",
+      "- not a finding",
+      "VERDICT: approve",
+    ].join("\n"), STEP_ANCHOR)).toEqual(["- [medium] step 3: produces misses plan-guard.mjs"]);
+    expect(malformedLines("- [high] src/a.mjs:4 — breaks save — scenario")).toEqual([]);
+  });
+
+  it("tells the runner review a broken line is lost, and the architect that it is returned", () => {
+    expect(verdictInstruction(FILE_ANCHOR)).toContain("its finding is lost");
+    expect(verdictInstruction(FILE_ANCHOR)).toContain("Example: - [high] src/store.mjs:42 — save drops the last row");
+    expect(verdictInstruction(STEP_ANCHOR, { repair: true })).toContain("returned for rewriting");
+    const repair = formatRepairPrompt("- [low] step 1: x\nVERDICT: approve", ["- [low] step 1: x"], STEP_ANCHOR);
+    expect(repair).toContain("Rewrite the WHOLE answer");
+    expect(repair).toContain("LINES NOT IN THE FORMAT:\n- [low] step 1: x");
   });
 });
 

@@ -12,6 +12,7 @@ export const FILE_ANCHOR = {
   present: (f) => !!(f?.file && f?.line),
   format: (f) => `${f?.file || "(no file)"}${f?.line ? `:${f.line}` : ""}`,
   place: (f) => normalizePath(f?.file),
+  example: "- [high] src/store.mjs:42 — save drops the last row — saving a 3-row table writes 2 rows",
 };
 
 export const STEP_ANCHOR = {
@@ -21,6 +22,7 @@ export const STEP_ANCHOR = {
   present: (f) => !!f?.step,
   format: (f) => (f?.step ? `step ${f.step}` : "(no step)"),
   place: (f) => String(f?.step ?? "").trim(),
+  example: "- [high] step 2 — verify does not run the new test — the gate stays green on the old suite",
 };
 
 export const isBlocking = (f) => f?.level === "critical" || f?.level === "high";
@@ -68,10 +70,26 @@ export function findingFormat(anchor) {
   return `- [critical|high|medium|low] ${anchor.label} — substance — evidence`;
 }
 
-export const verdictInstruction = (anchor) => [
+export const verdictInstruction = (anchor, { repair = false } = {}) => [
   "End with exactly one decision line: `VERDICT: approve` or `VERDICT: issue`.",
-  `Before it, list every finding exactly as \`${findingFormat(anchor)}\`.`,
+  `Before it, list every finding exactly as \`${findingFormat(anchor)}\`, one finding per line, the parts separated by \` — \` (an em dash with spaces), never by a colon.`,
+  `Example: ${anchor.example}`,
+  repair
+    ? "A line that starts with `- [level]` and does not follow this format is a format violation, and the answer is returned for rewriting."
+    : "A line that starts with `- [level]` and does not follow this format is not read, and its finding is lost.",
 ].join("\n");
+
+export function formatRepairPrompt(answer, bad, anchor) {
+  return [
+    "Your review answer broke the required line format. Rewrite the WHOLE answer in the format; keep its substance, do not add, drop or re-level findings.",
+    verdictInstruction(anchor, { repair: true }),
+    "LINES NOT IN THE FORMAT:",
+    ...bad,
+    "",
+    "YOUR ANSWER:",
+    answer,
+  ].join("\n");
+}
 
 const VERDICT_RE = /^[\s*_`]*VERDICT:[\s*_`]*(approve|issue)[\s*_`]*$/gim;
 
@@ -81,10 +99,21 @@ export function lastVerdict(text) {
 
 export const stripVerdict = (text) => String(text || "").replace(VERDICT_RE, "").trim();
 
+const findingLine = (anchor, flags) =>
+  new RegExp(String.raw`^\s*-\s*\[(critical|high|medium|low)\]\s*${anchor.pattern}(?:—|--)\s*(.*)\s*$`, flags);
+
+export function malformedLines(text, anchor = FILE_ANCHOR) {
+  const strict = findingLine(anchor, "i");
+  return String(text || "")
+    .split(/\r?\n/)
+    .filter((l) => /^\s*-\s*\[(critical|high|medium|low)\]/i.test(l) && !strict.test(l))
+    .map((l) => l.trim());
+}
+
 export function parseFindings(text, anchor = FILE_ANCHOR) {
   const source = String(text || "");
   const verdict = lastVerdict(source) || "issue";
-  const line = new RegExp(String.raw`^\s*-\s*\[(critical|high|medium|low)\]\s*${anchor.pattern}(?:—|--)\s*(.*)\s*$`, "gim");
+  const line = findingLine(anchor, "gim");
   const findings = [];
   for (const match of source.matchAll(line)) {
     const groups = match.slice(2, -1);

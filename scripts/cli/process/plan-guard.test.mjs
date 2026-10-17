@@ -583,6 +583,52 @@ describe("architectDecision · the review bar and the preceding round", () => {
     } finally { rmSync(appData, { recursive: true, force: true }); }
   });
 
+  const COLON = "- [high] step 2: verify misses duplicates — dup passes\nVERDICT: issue";
+
+  it("returns an answer with lines out of format to the model once, and judges the rewrite", () => {
+    const prompts = [];
+    const replies = [COLON, "- [high] step 2 — verify misses duplicates — dup passes\nVERDICT: issue"];
+    const seen = architectDecision(withSession(VALID), (_d, p) => { prompts.push(p); return { ok: true, text: replies.shift() }; }, { gate: AVAILABLE, store: memory() });
+    expect(prompts).toHaveLength(2);
+    expect(prompts[1]).toContain("LINES NOT IN THE FORMAT:");
+    expect(prompts[1]).toContain("- [high] step 2: verify misses duplicates");
+    expect(seen.permissionDecision).toBe("deny");
+    expect(seen.permissionDecisionReason).toContain("1 blocking finding(s) (critical/high): step 2.");
+  });
+
+  it("denies at once when a parsed blocking finding sits next to a line out of format", () => {
+    const prompts = [];
+    const seen = architectDecision(withSession(VALID), (_d, p) => {
+      prompts.push(p);
+      return { ok: true, text: "- [high] step 1 — table lacks a key — duplicate rows\n- [low] step 2: wording\nVERDICT: issue" };
+    }, { gate: AVAILABLE, store: memory() });
+    expect(prompts).toHaveLength(1);
+    expect(seen.permissionDecision).toBe("deny");
+    expect(seen.permissionDecisionReason).toContain("- [low] step 2: wording");
+  });
+
+  it("fails open with a format-retry label when the rewrite call fails", () => {
+    const replies = [{ ok: true, text: COLON }, { ok: false, error: "timed out" }];
+    const seen = architectDecision(withSession(VALID), () => replies.shift(), { gate: AVAILABLE, store: memory() });
+    expect(seen).not.toHaveProperty("permissionDecision");
+    expect(seen.additionalContext).toContain("ARCHITECT CHECK FAILED OPEN (format retry)");
+  });
+
+  it("passes the raw answer to the session when the rewrite is still out of format", () => {
+    const seen = architectDecision(withSession(VALID), answer(COLON), { gate: AVAILABLE, store: memory() });
+    expect(seen).not.toHaveProperty("permissionDecision");
+    expect(seen.additionalContext).toContain("ARCHITECT ANSWER NOT IN FORMAT");
+    expect(seen.additionalContext).toContain("- [high] step 2: verify misses duplicates");
+  });
+
+  it("asks for the strict format with an example in the first prompt", () => {
+    let prompt = "";
+    architectDecision(withSession(VALID), (_d, p) => { prompt = p; return { ok: true, text: "VERDICT: approve" }; }, { gate: AVAILABLE, store: memory() });
+    expect(prompt).toContain("never by a colon");
+    expect(prompt).toContain("Example: - [high] step 2 — verify does not run the new test");
+    expect(prompt).toContain("returned for rewriting");
+  });
+
   it("passes a plan whose architect answer has no verdict line", () => {
     expect(architectDecision(withSession(VALID), answer("looks fine"), { gate: AVAILABLE, store: memory() })).toBeNull();
   });
