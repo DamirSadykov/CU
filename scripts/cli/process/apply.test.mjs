@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from "vitest";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -8,6 +8,19 @@ import { parseYamlSubset, readDocument, validate, applyDocument, inferDocument, 
 import { loadBoard, withDeferredSave, saveBoard, setField } from "../board/todos.mjs";
 
 const cli = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "cli.mjs");
+
+let hostAppData;
+let isolatedAppData;
+beforeAll(() => {
+  hostAppData = process.env.APPDATA;
+  isolatedAppData = mkdtempSync(path.join(os.tmpdir(), "apply-appdata-"));
+  process.env.APPDATA = isolatedAppData;
+});
+afterAll(() => {
+  if (hostAppData === undefined) delete process.env.APPDATA;
+  else process.env.APPDATA = hostAppData;
+  rmSync(isolatedAppData, { recursive: true, force: true });
+});
 
 describe("the YAML subset apply reads", () => {
   it("reads nested mappings, block scalars and both list forms", () => {

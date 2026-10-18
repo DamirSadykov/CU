@@ -31,8 +31,8 @@ import WorkflowGraph from "../process/WorkflowGraph.vue";
 import WorkModeFlow from "./WorkModeFlow.vue";
 import agentProviderManifest from "../../scripts/cli/agents/agent-providers.json";
 import { dutyModeReader } from "../../scripts/cli/agents/duty-mode.mjs";
-import { loadSettingsStoreForWrite } from "../kernel/settingsStore";
-import type { QuietHoursSetting, RuntimeInsightsSetting, SpecsSetting } from "../kernel/settingsStore";
+import { DEFAULT_FLOW_LANGUAGES, FLOW_LANGUAGES, loadSettingsStoreForWrite } from "../kernel/settingsStore";
+import type { FlowLanguage, QuietHoursSetting, RuntimeInsightsSetting, SpecsSetting } from "../kernel/settingsStore";
 
 const TIER_LABELS: Record<AlertTierKey, string> = {
   five_hour: "session5h",
@@ -804,6 +804,88 @@ async function setTaskGuard(v: string) {
 }
 
 onMounted(loadTaskGuard);
+
+const flowcheckExe = ref("");
+const flowLanguagesMap = ref<Record<string, unknown>>({});
+const knownFlowProjects = ref<string[]>([]);
+
+function isFlowLanguage(value: unknown): value is FlowLanguage {
+  return typeof value === "string" && (FLOW_LANGUAGES as readonly string[]).includes(value);
+}
+
+function ownFlowLanguages(project: string): FlowLanguage[] {
+  const configured = flowLanguagesMap.value[project];
+  return Array.isArray(configured) ? [...new Set(configured.filter(isFlowLanguage))] : [];
+}
+
+function projectFlowLanguages(project: string): FlowLanguage[] {
+  const own = ownFlowLanguages(project);
+  return own.length ? own : [...DEFAULT_FLOW_LANGUAGES];
+}
+
+const flowProjects = computed(() =>
+  [...new Set([...Object.keys(flowLanguagesMap.value), ...knownFlowProjects.value])]
+    .filter((project) => project.trim())
+    .sort((a, b) => {
+      const own = Number(ownFlowLanguages(b).length > 0) - Number(ownFlowLanguages(a).length > 0);
+      return own || a.localeCompare(b);
+    }),
+);
+
+function asFlowLanguagesMap(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+async function loadFlowChecks() {
+  try {
+    const { load: loadStore } = await import("@tauri-apps/plugin-store");
+    const store = await loadStore("settings.json");
+    const exe = await store.get<string>("flowcheckExe");
+    if (typeof exe === "string") flowcheckExe.value = exe;
+    flowLanguagesMap.value = asFlowLanguagesMap(await store.get<unknown>("flowLanguages"));
+  } catch {}
+  try {
+    knownFlowProjects.value = await invoke<string[]>("get_cc_projects");
+  } catch {}
+}
+
+async function saveFlowcheckExe() {
+  const value = flowcheckExe.value.trim();
+  flowcheckExe.value = value;
+  try {
+    const store = await loadSettingsStoreForWrite();
+    await store.set("flowcheckExe", value);
+    await store.save();
+  } catch {}
+}
+
+async function pickFlowcheckExe() {
+  const picked = await openFileDialog({
+    multiple: false,
+    filters: [{ name: "flowcheck", extensions: ["exe"] }],
+  });
+  if (typeof picked !== "string") return;
+  flowcheckExe.value = picked;
+  await saveFlowcheckExe();
+}
+
+async function toggleFlowLanguage(project: string, language: FlowLanguage) {
+  const current = projectFlowLanguages(project);
+  const next = current.includes(language) ? current.filter((value) => value !== language) : [...current, language];
+  if (!next.length) return;
+  try {
+    const store = await loadSettingsStoreForWrite();
+    const map = {
+      ...asFlowLanguagesMap(await store.get<unknown>("flowLanguages")),
+      [project]: FLOW_LANGUAGES.filter((value) => next.includes(value)),
+    };
+    await store.set("flowLanguages", map);
+    await store.save();
+    flowLanguagesMap.value = map;
+  } catch {}
+}
+
+onMounted(loadFlowChecks);
 
 // --- Board import / export (#181) ---
 // Carrying todos.json between machines by hand DESTROYS whatever the other machine
@@ -1935,6 +2017,42 @@ function handleSave() {
 
       </template>
 
+      <div class="card">
+        <div class="field-label">{{ t('flowChecksTitle') }}</div>
+        <div class="field-hint" style="margin-top: 0; margin-bottom: 10px">{{ t('flowChecksDesc') }}</div>
+        <div class="field-label" style="margin-bottom: 6px">{{ t('flowcheckExeLabel') }}</div>
+        <div class="flow-exe-row">
+          <input
+            v-model="flowcheckExe"
+            type="text"
+            class="field-input"
+            spellcheck="false"
+            :placeholder="t('flowcheckExePlaceholder')"
+            @change="saveFlowcheckExe"
+          />
+          <button type="button" class="suggest-btn" @click="pickFlowcheckExe">{{ t('flowcheckExePick') }}</button>
+        </div>
+        <div class="field-hint">{{ flowcheckExe.trim() ? t('flowcheckExeHint') : t('flowcheckExeOff') }}</div>
+        <div class="field-label" style="margin-top: 12px; margin-bottom: 6px">{{ t('flowLanguagesLabel') }}</div>
+        <div v-if="!flowProjects.length" class="field-hint" style="margin-top: 0">{{ t('flowLanguagesEmpty') }}</div>
+        <div v-else class="flow-lang-list">
+          <div v-for="project in flowProjects" :key="project" class="flow-lang-row">
+            <span class="flow-lang-project" :title="project">{{ project }}</span>
+            <span v-if="!ownFlowLanguages(project).length" class="flow-lang-default">{{ t('flowLanguagesDefault') }}</span>
+            <label v-for="language in FLOW_LANGUAGES" :key="language" class="flow-lang-check">
+              <input
+                type="checkbox"
+                :checked="projectFlowLanguages(project).includes(language)"
+                :disabled="projectFlowLanguages(project).length === 1 && projectFlowLanguages(project).includes(language)"
+                @change="toggleFlowLanguage(project, language)"
+              />
+              <span>{{ language }}</span>
+            </label>
+          </div>
+        </div>
+        <div class="field-hint">{{ t('flowLanguagesHint') }}</div>
+      </div>
+
       <!-- Board import / export (#181): moving a board between machines. Import is a
            merge that never overwrites — see the script block for why a plain copy
            of todos.json loses tasks. -->
@@ -2626,6 +2744,58 @@ function handleSave() {
 
 .suggest-btn:hover {
   background: color-mix(in srgb, var(--paper) 6%, transparent);
+}
+
+.flow-exe-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.flow-exe-row .field-input {
+  flex: 1;
+  min-width: 0;
+  font-family: ui-monospace, Consolas, monospace;
+}
+.flow-lang-list {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--stroke-strong);
+  border-radius: 4px;
+}
+.flow-lang-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 10px;
+  font-size: var(--fs-xs);
+}
+.flow-lang-row + .flow-lang-row {
+  border-top: 1px solid var(--stroke-strong);
+}
+.flow-lang-project {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+.flow-lang-default {
+  flex-shrink: 0;
+  color: var(--text-4);
+}
+.flow-lang-check {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-3);
+  font-family: ui-monospace, Consolas, monospace;
+  cursor: pointer;
+}
+.flow-lang-check input {
+  margin: 0;
+  accent-color: var(--accent);
 }
 
 /* Import preview (#181) — shown before anything is written. */

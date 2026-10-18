@@ -384,6 +384,19 @@ const messages = {
     codexSession5h: "Codex · 5-hour limit",
     codexWeekly: "Codex · Weekly limit",
     codexRemaining: "{percent}% remaining",
+    flowChecksTitle: "Checks",
+    flowChecksDesc:
+      "Flow check of plan steps. A step that writes code in the project's languages must carry a flow field; the runner checks it with flowcheck, and todos apply draws the plan diagram with it.",
+    flowcheckExeLabel: "Path to flowcheck.exe",
+    flowcheckExePlaceholder: "C:\\tools\\flowcheck.exe",
+    flowcheckExePick: "Choose…",
+    flowcheckExeHint: "After a step the runner checks its declared flow and turns a mismatch into a finding.",
+    flowcheckExeOff: "No path: no plan diagram, and the runner parks any step that declares a flow.",
+    flowLanguagesLabel: "Code languages by project",
+    flowLanguagesDefault: "default",
+    flowLanguagesEmpty: "No projects yet: they appear after the first Claude Code session.",
+    flowLanguagesHint:
+      "cs — .cs, rs — .rs, ts — .ts/.tsx, js — .js/.mjs/.cjs. A project without its own choice is checked as cs. .vue files are not inspected.",
     taskCtxPrioSetting: "Task priority in context",
     taskCtxPrioDesc:
       "Lowest task priority injected into Claude Code sessions. Higher-priority tasks also appear in more detail.",
@@ -1370,6 +1383,19 @@ const messages = {
     codexSession5h: "Codex · лимит на 5 часов",
     codexWeekly: "Codex · недельный лимит",
     codexRemaining: "осталось {percent}%",
+    flowChecksTitle: "Проверки",
+    flowChecksDesc:
+      "Проверка flow у шагов плана. Шаг, который пишет код на языках проекта, обязан нести поле flow; раннер сверяет его через flowcheck, а todos apply по нему рисует схему плана.",
+    flowcheckExeLabel: "Путь к flowcheck.exe",
+    flowcheckExePlaceholder: "C:\\tools\\flowcheck.exe",
+    flowcheckExePick: "Выбрать…",
+    flowcheckExeHint: "После шага раннер сверяет объявленный flow и превращает расхождение в находку.",
+    flowcheckExeOff: "Путь не задан: схемы плана нет, а шаг с объявленным flow раннер паркует.",
+    flowLanguagesLabel: "Языки кода по проектам",
+    flowLanguagesDefault: "по умолчанию",
+    flowLanguagesEmpty: "Проектов пока нет: они появятся после первой сессии Claude Code.",
+    flowLanguagesHint:
+      "cs — .cs, rs — .rs, ts — .ts/.tsx, js — .js/.mjs/.cjs. Проект без своего выбора проверяется как cs. Файлы .vue не разбираются.",
     taskCtxPrioSetting: "Приоритет задач в контексте",
     taskCtxPrioDesc:
       "Минимальный приоритет задач, попадающих в контекст сессий Claude Code. Более приоритетные показываются подробнее.",

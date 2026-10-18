@@ -45,7 +45,7 @@
     { "key": "updateCheckHours", "scope": "ui", "writer": "app", "readers": ["ui"], "default": 6, "direct": true },
     { "key": "externalStatusMap", "scope": "ui", "writer": "app", "readers": ["ui"], "default": {}, "direct": true },
     { "key": "specs", "scope": "shared", "writer": "app", "readers": ["ui", "cli"], "default": { "enabled": false, "deltaGuard": "on" } },
-    { "key": "flowLanguages", "scope": "hook", "writer": "manual", "readers": ["cli"], "default": {} },
+    { "key": "flowLanguages", "scope": "shared", "writer": "app", "readers": ["ui", "cli"], "default": {}, "direct": true },
     { "key": "taskContextPriority", "scope": "shared", "writer": "app", "readers": ["ui", "cli"], "default": "medium", "direct": true },
     { "key": "hookContextEnabled", "scope": "shared", "writer": "app", "readers": ["ui", "cli"], "default": true, "direct": true },
     { "key": "workflowContextEnabled", "scope": "shared", "writer": "app", "readers": ["ui", "cli"], "default": false, "direct": true },
@@ -54,7 +54,7 @@
     { "key": "specRoot", "scope": "shared", "writer": "manual", "readers": ["rust", "cli"], "default": "docs/specs" },
     { "key": "matchPlanCli", "scope": "hook", "writer": "manual", "readers": ["cli"], "default": "" },
     { "key": "specRepos", "scope": "hook", "writer": "manual", "readers": ["cli"], "default": {} },
-    { "key": "flowcheckExe", "scope": "hook", "writer": "manual", "readers": ["cli"], "default": "" },
+    { "key": "flowcheckExe", "scope": "shared", "writer": "app", "readers": ["ui", "cli"], "default": "", "direct": true },
     { "key": "parkedStepExpiryHours", "scope": "hook", "writer": "manual", "readers": ["cli"], "default": 24 }
   ],
   "legacy": [
