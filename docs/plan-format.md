@@ -35,7 +35,7 @@ Task fields:
 `budget` — exceptional node spend ceiling; declare only with the reason in `why`, otherwise history translates `size` into dollars.
 `red` — command that must fail on the base state; include the regression-test path in the command.
 `red-tests` — regression-test paths protected during the red gate; omit to extract them from `red`, or declare explicitly.
-`flow` — method delta for configured source (`file`, `method`, `params`, `change`, `preserve`), or `n/a <reason>`; `nth` in `change` selects the 1-based anchor occurrence.
+`flow` — required for code in configured languages: method delta (`file`, `method`, `params`, `change`, `preserve`; `nth` = 1-based anchor) or `n/a <reason>`.
 `risk` — exceptional routing; declare only `high` or `sensitive`.
 
 `why` is the task's durable reasoning: its basis and risk. A refusal explains
@@ -49,10 +49,16 @@ vision: Delivery failures leave durable evidence for operators.
 steps:
   1:
     title: Delivery state is recorded
-    why: Receipt must leave evidence for both downstream branches.
+    why: Both branches need receipt proof.
     size: S
-    produces: [src/delivery-state.ts]
+    produces: [src/delivery.ts]
     verify: npm run test:delivery-state
+    flow:
+      file: src/delivery.ts
+      method: deliver
+      change:
+        - insert: recordDeliveryState
+          after: send
   2:
     title: Operators accept dashboard thresholds
     why: Threshold usefulness needs human judgement.
@@ -72,9 +78,10 @@ change: "PLAN: duplicate webhook regression"
 steps:
   fix:
     title: Duplicate delivery has a regression test
-    why: The command isolates the new regression file on the old implementation.
+    why: The new regression file fails on the old code.
     size: S
     produces: [test/webhook-duplicate.test.mjs]
+    flow: n/a test only
     verify: npx vitest run test/webhook-duplicate.test.mjs
     red: npx vitest run test/webhook-duplicate.test.mjs
 ```

@@ -6,6 +6,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import contract from "./settings-contract.json" with { type: "json" };
 import {
   SETTINGS_KEYS,
+  flowLanguages,
   flowcheckExe,
   hookContextEnabled,
   matchPlanCli,
@@ -50,6 +51,8 @@ describe("CLI settings contract", () => {
       expect(uiLocale(appData)).toBe(defaults.get("locale"));
       expect(parkedStepExpiryHours(appData)).toBe(defaults.get("parkedStepExpiryHours"));
       expect(flowcheckExe(appData)).toBe(defaults.get("flowcheckExe"));
+      expect(flowLanguages("unlisted", appData)).toEqual(["cs"]);
+      expect(defaults.get("flowLanguages")).toEqual({});
 
       const dir = path.join(appData, "com.cu.app");
       mkdirSync(dir, { recursive: true });
@@ -57,6 +60,10 @@ describe("CLI settings contract", () => {
       expect(parkedStepExpiryHours(appData)).toBe(0);
       writeFileSync(path.join(dir, "settings.json"), JSON.stringify({ parkedStepExpiryHours: -1 }));
       expect(parkedStepExpiryHours(appData)).toBe(24);
+      writeFileSync(path.join(dir, "settings.json"), JSON.stringify({ flowcheckExe: " C:/tools/flowcheck.exe ", flowLanguages: { app: ["rs", "vue", "ts"], empty: [] } }));
+      expect(flowcheckExe(appData)).toBe("C:/tools/flowcheck.exe");
+      expect(flowLanguages("app", appData)).toEqual(["rs", "ts"]);
+      expect(flowLanguages("empty", appData)).toEqual(["cs"]);
       writeFileSync(path.join(dir, "settings.json"), JSON.stringify({ runnerEnabled: false }));
       expect(runnerEnabled(appData)).toBe(false);
 

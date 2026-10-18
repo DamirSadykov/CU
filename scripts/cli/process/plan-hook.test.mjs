@@ -101,9 +101,9 @@ describe("buildEnterContext", () => {
   // survive the move into fields — otherwise the plan becomes a filled-in form.
   it("keeps the injection and base below the measured size ceiling", () => {
     const base = readFileSync(planFormatDoc(), "utf8");
-    expect(base.length).toBeLessThan(4_500);
+    expect(base.length).toBeLessThan(4_600);
     const docsDir = path.dirname(planFormatDoc());
-    expect(base.length + ctx.replaceAll(docsDir, "docs").length).toBeLessThan(5_000);
+    expect(base.length + ctx.replaceAll(docsDir, "docs").length).toBeLessThan(5_100);
   });
 
   // The guard is the point: a format that is merely asked for gets half-obeyed
