@@ -1,0 +1,21 @@
+--- src/coverage.rs
++++ replace && with || in named
+@@ -179,17 +179,17 @@
+         }
+     }
+     Ok(lines)
+ }
+ 
+ fn named(specs: &[Spec], file: &str, key: &str) -> bool {
+     specs 
+         .iter() 
+-        .any(|s| s.file == file && s.na.is_none() && !s.method.is_empty() && spec_key(s) == key) 
++        .any(|s| s.file == file && s.na.is_none() && !s.method.is_empty() || /* ~ changed by cargo-mutants ~ */ spec_key(s) == key) 
+ } 
+  
+ fn na_for(specs: &[Spec], file: &str, key: Option<&str>) -> Option<String> { 
+     specs.iter().find_map(|s| { 
+         if s.file != file || s.na.is_none() { 
+             return None; 
+         } 
+         if s.method.is_empty() || key.is_some_and(|k| spec_key(s) == k) { 

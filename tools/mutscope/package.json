@@ -1,0 +1,16 @@
+{
+  "name": "@cu/mutscope",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@stryker-mutator/core": "^10.0.0",
+    "@stryker-mutator/vitest-runner": "^10.0.0"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.7"
+  }
+}
+
