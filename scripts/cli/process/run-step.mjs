@@ -770,7 +770,31 @@ function formatRetryReviewContext(context) {
   ].join("\n");
 }
 
-export function buildReviewPrompt({ task, workerResult = "", execution, appData, cwd, ownChanges, outsideChanges, retryContext } = {}) {
+function mutationReviewBlock(mutation) {
+  if (!mutation || typeof mutation !== "object") return "MUTATION CHECK: (not run)";
+  const fact = (mutant) => {
+    const location = [mutant?.file, mutant?.line, mutant?.column].filter((value) => value != null).join(":") || "unknown location";
+    const details = [
+      mutant?.mutator ? `mutator=${mutant.mutator}` : "",
+      mutant?.replacement != null ? `replacement=${JSON.stringify(mutant.replacement)}` : "",
+      mutant?.selector ? `selector=${mutant.selector}` : "",
+    ].filter(Boolean).join("; ");
+    return `- ${location}${details ? `; ${details}` : ""}`;
+  };
+  const survived = Array.isArray(mutation.survived) ? mutation.survived : [];
+  const noCoverage = Array.isArray(mutation.noCoverage) ? mutation.noCoverage : [];
+  return [
+    "MUTATION CHECK (non-blocking facts; inspect these weaknesses instead of guessing test gaps):",
+    `status: ${mutation.status || "unknown"}${mutation.reason ? `; reason: ${mutation.reason}` : ""}`,
+    `levels: ${Array.isArray(mutation.levels) && mutation.levels.length ? mutation.levels.join(", ") : "(none)"}; killed: ${Number.isInteger(mutation.killed) ? mutation.killed : 0}`,
+    "SURVIVED MUTANTS:",
+    survived.length ? survived.map(fact).join("\n") : "(none)",
+    "NO-COVERAGE MUTANTS:",
+    noCoverage.length ? noCoverage.map(fact).join("\n") : "(none)",
+  ].join("\n");
+}
+
+export function buildReviewPrompt({ task, workerResult = "", execution, appData, cwd, ownChanges, outsideChanges, retryContext, mutation } = {}) {
   const parts = [
     `produces: ${(Array.isArray(task?.produces) ? task.produces : []).join(", ") || "(none)"}`,
     `verify: ${task?.verify || "(none — human gate)"}`,
@@ -796,6 +820,7 @@ export function buildReviewPrompt({ task, workerResult = "", execution, appData,
     formatChangesOfThisStep(ownChanges),
     formatOutsideChanges(outsideChanges),
     formatRetryReviewContext(retryContext),
+    mutationReviewBlock(mutation),
     workerResult ? `WORKER REPORT:\n${clampOutput(workerResult, 8000)}` : "WORKER REPORT: (none)",
     "",
     reviewBarText({ subject: "code", anchor: FILE_ANCHOR, bar: readReviewBar(cwd) }),
@@ -1098,6 +1123,7 @@ async function executeReviewCandidate({
   ownChanges,
   outsideChanges,
   retryContext,
+  mutation,
   executionOverride,
 } = {}) {
   if (!task) return { approved: false, ok: false, error: "executeReview: task is required" };
@@ -1106,7 +1132,7 @@ async function executeReviewCandidate({
   catch (e) { return { approved: false, ok: false, error: `routing: ${e?.message || e}` }; }
   if (!execution.enabled || !execution.model)
     return { approved: true, ok: true, skipped: true, duty: "review", costUsd: 0, route: execution.route || null };
-  const prompt = buildReviewPrompt({ task, workerResult, execution, appData, cwd, ownChanges, outsideChanges, retryContext });
+  const prompt = buildReviewPrompt({ task, workerResult, execution, appData, cwd, ownChanges, outsideChanges, retryContext, mutation });
   const candidate = createCandidate(execution);
 
   if (execution.provider === "openai") {

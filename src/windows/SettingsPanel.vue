@@ -808,6 +808,9 @@ onMounted(loadTaskGuard);
 const flowcheckExe = ref("");
 const flowLanguagesMap = ref<Record<string, unknown>>({});
 const knownFlowProjects = ref<string[]>([]);
+type MutationSettings = { enabled: boolean; step: boolean; plan: boolean; stepMaxLevel: number };
+const mutations = ref<MutationSettings>({ enabled: false, step: true, plan: true, stepMaxLevel: 1 });
+const mutscopeDir = ref("");
 
 function isFlowLanguage(value: unknown): value is FlowLanguage {
   return typeof value === "string" && (FLOW_LANGUAGES as readonly string[]).includes(value);
@@ -869,6 +872,69 @@ async function pickFlowcheckExe() {
   await saveFlowcheckExe();
 }
 
+function normalizeMutations(value: unknown): MutationSettings {
+  const v = value && typeof value === "object" && !Array.isArray(value)
+    ? value as Partial<MutationSettings>
+    : {};
+  return {
+    enabled: typeof v.enabled === "boolean" ? v.enabled : false,
+    step: typeof v.step === "boolean" ? v.step : true,
+    plan: typeof v.plan === "boolean" ? v.plan : true,
+    stepMaxLevel: typeof v.stepMaxLevel === "number"
+      && Number.isInteger(v.stepMaxLevel)
+      && v.stepMaxLevel >= 0
+      && v.stepMaxLevel <= 3
+      ? v.stepMaxLevel
+      : 1,
+  };
+}
+
+async function loadMutationChecks() {
+  try {
+    const { load: loadStore } = await import("@tauri-apps/plugin-store");
+    const store = await loadStore("settings.json");
+    mutations.value = normalizeMutations(await store.get<unknown>("mutations"));
+    const dir = await store.get<string>("mutscopeDir");
+    if (typeof dir === "string") mutscopeDir.value = dir.trim();
+  } catch {}
+}
+
+async function saveMutations(next: MutationSettings) {
+  mutations.value = next;
+  try {
+    const store = await loadSettingsStoreForWrite();
+    await store.set("mutations", next);
+    await store.save();
+  } catch {}
+}
+
+async function setMutationFlag(key: "enabled" | "step" | "plan") {
+  await saveMutations({ ...mutations.value, [key]: !mutations.value[key] });
+}
+
+async function setMutationStepMaxLevel(value: string) {
+  const level = Number(value);
+  if (!Number.isInteger(level) || level < 0 || level > 3) return;
+  await saveMutations({ ...mutations.value, stepMaxLevel: level });
+}
+
+async function saveMutscopeDir() {
+  const value = mutscopeDir.value.trim();
+  mutscopeDir.value = value;
+  try {
+    const store = await loadSettingsStoreForWrite();
+    await store.set("mutscopeDir", value);
+    await store.save();
+  } catch {}
+}
+
+async function pickMutscopeDir() {
+  const picked = await openFileDialog({ directory: true, multiple: false });
+  if (typeof picked !== "string") return;
+  mutscopeDir.value = picked;
+  await saveMutscopeDir();
+}
+
 async function toggleFlowLanguage(project: string, language: FlowLanguage) {
   const current = projectFlowLanguages(project);
   const next = current.includes(language) ? current.filter((value) => value !== language) : [...current, language];
@@ -886,6 +952,7 @@ async function toggleFlowLanguage(project: string, language: FlowLanguage) {
 }
 
 onMounted(loadFlowChecks);
+onMounted(loadMutationChecks);
 
 // --- Board import / export (#181) ---
 // Carrying todos.json between machines by hand DESTROYS whatever the other machine
@@ -2053,6 +2120,59 @@ function handleSave() {
         <div class="field-hint">{{ t('flowLanguagesHint') }}</div>
       </div>
 
+      <div class="card">
+        <div class="mutation-heading">
+          <div style="flex: 1; min-width: 0">
+            <div class="field-label">{{ t('mutationChecksTitle') }}</div>
+            <div class="field-hint" style="margin-top: 4px">{{ t('mutationChecksDesc') }}</div>
+          </div>
+          <button
+            type="button"
+            class="toggle mutation-toggle"
+            :class="{ on: mutations.enabled }"
+            :aria-label="t('mutationChecksTitle')"
+            :aria-pressed="mutations.enabled"
+            @click="setMutationFlag('enabled')"
+          >
+            <span class="toggle-knob"></span>
+          </button>
+        </div>
+        <div class="field-label" style="margin-top: 12px; margin-bottom: 6px">{{ t('mutscopeDirLabel') }}</div>
+        <div class="flow-exe-row">
+          <input
+            v-model="mutscopeDir"
+            type="text"
+            class="field-input"
+            spellcheck="false"
+            :placeholder="t('mutscopeDirPlaceholder')"
+            @change="saveMutscopeDir"
+          />
+          <button type="button" class="suggest-btn" @click="pickMutscopeDir">{{ t('mutscopeDirPick') }}</button>
+        </div>
+        <div class="field-hint">{{ mutscopeDir.trim() ? t('mutscopeDirHint') : t('mutscopeDirOff') }}</div>
+        <div class="mutation-options" :class="{ disabled: !mutations.enabled }">
+          <label class="mutation-check">
+            <input type="checkbox" :checked="mutations.step" :disabled="!mutations.enabled" @change="setMutationFlag('step')" />
+            <span>{{ t('mutationStepLabel') }}</span>
+          </label>
+          <label class="mutation-check">
+            <input type="checkbox" :checked="mutations.plan" :disabled="!mutations.enabled" @change="setMutationFlag('plan')" />
+            <span>{{ t('mutationPlanLabel') }}</span>
+          </label>
+          <label class="mutation-level">
+            <span>{{ t('mutationStepMaxLevel') }}</span>
+            <select
+              class="field-input"
+              :value="mutations.stepMaxLevel"
+              :disabled="!mutations.enabled || !mutations.step"
+              @change="setMutationStepMaxLevel(($event.target as HTMLSelectElement).value)"
+            >
+              <option v-for="level in [0, 1, 2, 3]" :key="level" :value="level">{{ level }}</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
       <!-- Board import / export (#181): moving a board between machines. Import is a
            merge that never overwrites — see the script block for why a plain copy
            of todos.json loses tasks. -->
@@ -2796,6 +2916,43 @@ function handleSave() {
 .flow-lang-check input {
   margin: 0;
   accent-color: var(--accent);
+}
+.mutation-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.mutation-toggle {
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.mutation-options {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  margin-top: 12px;
+}
+.mutation-options.disabled {
+  opacity: .5;
+}
+.mutation-check,
+.mutation-level {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+.mutation-check input {
+  margin: 0;
+  accent-color: var(--accent);
+}
+.mutation-level .field-input {
+  width: 64px;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 
 /* Import preview (#181) — shown before anything is written. */

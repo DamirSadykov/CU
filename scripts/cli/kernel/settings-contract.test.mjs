@@ -10,6 +10,8 @@ import {
   flowcheckExe,
   hookContextEnabled,
   matchPlanCli,
+  mutations,
+  mutscopeDir,
   parkedStepExpiryHours,
   specDeltaGuard,
   specRepoPath,
@@ -51,6 +53,8 @@ describe("CLI settings contract", () => {
       expect(uiLocale(appData)).toBe(defaults.get("locale"));
       expect(parkedStepExpiryHours(appData)).toBe(defaults.get("parkedStepExpiryHours"));
       expect(flowcheckExe(appData)).toBe(defaults.get("flowcheckExe"));
+      expect(mutations(appData)).toEqual(defaults.get("mutations"));
+      expect(mutscopeDir(appData)).toBe(defaults.get("mutscopeDir"));
       expect(flowLanguages("unlisted", appData)).toEqual(["cs"]);
       expect(defaults.get("flowLanguages")).toEqual({});
 
@@ -66,6 +70,19 @@ describe("CLI settings contract", () => {
       expect(flowLanguages("empty", appData)).toEqual(["cs"]);
       writeFileSync(path.join(dir, "settings.json"), JSON.stringify({ runnerEnabled: false }));
       expect(runnerEnabled(appData)).toBe(false);
+
+      writeFileSync(path.join(dir, "settings.json"), JSON.stringify({
+        mutations: { enabled: true, step: false, plan: false, stepMaxLevel: 3 },
+        mutscopeDir: " C:/tools/mutscope ",
+      }));
+      expect(mutations(appData)).toEqual({ enabled: true, step: false, plan: false, stepMaxLevel: 3 });
+      expect(mutscopeDir(appData)).toBe("C:/tools/mutscope");
+      writeFileSync(path.join(dir, "settings.json"), JSON.stringify({
+        mutations: { enabled: "yes", step: null, plan: 1, stepMaxLevel: 9 },
+        mutscopeDir: 42,
+      }));
+      expect(mutations(appData)).toEqual(defaults.get("mutations"));
+      expect(mutscopeDir(appData)).toBe("");
 
       writeFileSync(path.join(dir, "settings.json"), JSON.stringify({ specs: { enabled: true, deltaGuard: "off" } }));
       expect(specsEnabled(appData)).toBe(true);

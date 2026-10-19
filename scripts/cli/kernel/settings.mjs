@@ -168,6 +168,24 @@ export function flowcheckExe(appData) {
   return typeof v === "string" && v.trim() ? v.trim() : "";
 }
 
+export function mutations(appData) {
+  const v = readSettings(appData).mutations;
+  const value = v && typeof v === "object" && !Array.isArray(v) ? v : {};
+  return {
+    enabled: typeof value.enabled === "boolean" ? value.enabled : false,
+    step: typeof value.step === "boolean" ? value.step : true,
+    plan: typeof value.plan === "boolean" ? value.plan : true,
+    stepMaxLevel: Number.isInteger(value.stepMaxLevel) && value.stepMaxLevel >= 0 && value.stepMaxLevel <= 3
+      ? value.stepMaxLevel
+      : 1,
+  };
+}
+
+export function mutscopeDir(appData) {
+  const v = readSettings(appData).mutscopeDir;
+  return typeof v === "string" && v.trim() ? v.trim() : "";
+}
+
 export function parkedStepExpiryHours(appData) {
   const v = readSettings(appData).parkedStepExpiryHours;
   return typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : 24;

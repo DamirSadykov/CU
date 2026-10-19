@@ -397,6 +397,16 @@ const messages = {
     flowLanguagesEmpty: "No projects yet: they appear after the first Claude Code session.",
     flowLanguagesHint:
       "cs — .cs, rs — .rs, ts — .ts/.tsx, js — .js/.mjs/.cjs. A project without its own choice is checked as cs. .vue files are not inspected.",
+    mutationChecksTitle: "Mutation checks",
+    mutationChecksDesc: "Run mutscope on changed JavaScript and TypeScript before step review and after the plan. Findings inform review but do not block the runner.",
+    mutscopeDirLabel: "Path to the mutscope directory",
+    mutscopeDirPlaceholder: "C:\\tools\\mutscope",
+    mutscopeDirPick: "Choose…",
+    mutscopeDirHint: "The directory must contain stryker.mjs and installed dependencies.",
+    mutscopeDirOff: "No path: mutation checks are skipped with a reason.",
+    mutationStepLabel: "Before step review",
+    mutationPlanLabel: "After the plan",
+    mutationStepMaxLevel: "Step max level",
     taskCtxPrioSetting: "Task priority in context",
     taskCtxPrioDesc:
       "Lowest task priority injected into Claude Code sessions. Higher-priority tasks also appear in more detail.",
@@ -1396,6 +1406,16 @@ const messages = {
     flowLanguagesEmpty: "Проектов пока нет: они появятся после первой сессии Claude Code.",
     flowLanguagesHint:
       "cs — .cs, rs — .rs, ts — .ts/.tsx, js — .js/.mjs/.cjs. Проект без своего выбора проверяется как cs. Файлы .vue не разбираются.",
+    mutationChecksTitle: "Мутационные проверки",
+    mutationChecksDesc: "Запускать mutscope для изменённых JavaScript- и TypeScript-файлов перед ревью шага и после плана. Находки помогают ревью, но не блокируют раннер.",
+    mutscopeDirLabel: "Путь к каталогу mutscope",
+    mutscopeDirPlaceholder: "C:\\tools\\mutscope",
+    mutscopeDirPick: "Выбрать…",
+    mutscopeDirHint: "В каталоге должны быть stryker.mjs и установленные зависимости.",
+    mutscopeDirOff: "Путь не задан: мутационные проверки пропускаются с указанием причины.",
+    mutationStepLabel: "Перед ревью шага",
+    mutationPlanLabel: "После плана",
+    mutationStepMaxLevel: "Макс. уровень шага",
     taskCtxPrioSetting: "Приоритет задач в контексте",
     taskCtxPrioDesc:
       "Минимальный приоритет задач, попадающих в контекст сессий Claude Code. Более приоритетные показываются подробнее.",

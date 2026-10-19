@@ -102,8 +102,9 @@ import { DEFAULT_PARALLEL_LIMIT, buildWave, declaredRed, resolveParallelLimit } 
 import { appendRunEvent, createVerifyLog, runEventsPath, verifyLogPath, watchRunEvents, writeVerifyLog } from "./run-events.mjs";
 import { pathMatches } from "./outcome.mjs";
 import { runFlowGate } from "./flow-gate.mjs";
+import { runMutationGate } from "./mutation-gate.mjs";
 import { flowDeclared } from "./graph-rules.mjs";
-import { flowcheckExe, parkedStepExpiryHours } from "../kernel/settings.mjs";
+import { flowcheckExe, mutations as mutationSettings, mutscopeDir, parkedStepExpiryHours } from "../kernel/settings.mjs";
 
 export { DEFAULT_PARALLEL_LIMIT, buildWave, resolveParallelLimit };
 
@@ -352,6 +353,7 @@ export function simulationEffects() {
     ownChanges: async () => ({ ok: true, skip: true }),
     redGate: async () => ({ ok: true, field: "failed-on-base", reason: null }),
     flowGate: async () => ({ status: "pass", reason: null, coverage: [], unchecked: [], duration_ms: 0 }),
+    mutationGate: async () => ({ status: "skipped", reason: "dry" }),
     recordFlowDiagram: async () => ({ written: false }),
     stepCost: async ({ budgetUsd }) => budgetUsd,
   };
@@ -599,6 +601,25 @@ export function liveEffects({ cwd } = {}) {
       const exe = flowcheckExe();
       return runFlowGate({ task, cwd, timeoutMs, exe });
     },
+    mutationGate: async ({ task, cwd, timeoutMs }) => {
+      const configured = mutationSettings();
+      const mutation = !configured.enabled
+        ? { levels: [], killed: 0, survived: [], noCoverage: [], quarantined: [], duration_ms: 0, status: "skipped", reason: "mutation checks are disabled" }
+        : !configured.step
+          ? { levels: [], killed: 0, survived: [], noCoverage: [], quarantined: [], duration_ms: 0, status: "skipped", reason: "step mutation checks are disabled" }
+          : await runMutationGate({ task, cwd, timeoutMs, mutscopeDir: mutscopeDir(), maxLevel: configured.stepMaxLevel });
+      const write = withDataDir((dir) => {
+        const file = path.join(dir, "todos.json");
+        const data = loadBoardForWrite(file);
+        const todo = data.todos.find((t) => t && t.id === task.id);
+        if (!todo) return { written: false, error: `task ${task.id} not found on the board` };
+        todo.mutation = mutation;
+        todo.updated_at = new Date().toISOString();
+        saveBoard(file, data);
+        return { written: true };
+      });
+      return write.written ? mutation : { ...mutation, write_error: write.error };
+    },
     // What a step really cost lives in the tracker's blocks (SQLite, Rust side),
     // but the headless run already reports its own total — `executeStep` returns
     // it as `costUsd` (from `total_cost_usd` of the JSON result). Read that name,
@@ -766,6 +787,7 @@ export function runRecordOf(report, { inherit = false } = {}) {
       verify: s.verify ?? null,
       red: s.red ?? null,
       flow: s.flow ?? null,
+      mutation: s.mutation ?? null,
       cost_usd: typeof s.cost_usd === "number" ? s.cost_usd : null,
       size: stepSize(s.size) || null,
       risk: riskBucket(s.risk),
@@ -1222,14 +1244,14 @@ async function recordGateSkippedComment(ctx, task, reason) {
   return comment;
 }
 
-function resultBase(ctx, task, result, review, baton, cost, ownChanges, outsideChanges) {
+function resultBase(ctx, task, result, review, baton, cost, ownChanges, outsideChanges, mutation = null) {
   const attempt = ctx.attempts.get(task.id);
   const limit = retryLimitOf(task);
   if (typeof review?.costUsd === "number" && Number.isFinite(review.costUsd))
     cost = (typeof cost === "number" ? cost : 0) + review.costUsd;
 
   return {
-    task, attempt, limit, cost, baton, session: result.sessionId || null,
+    task, attempt, limit, cost, baton, mutation, session: result.sessionId || null,
     requestedMode: result.requestedMode || null,
     startMode: result.startMode || "unknown",
     parentSession: result.parentSession || null,
@@ -1361,7 +1383,7 @@ async function finishAttempt(ctx, task, outcome) {
 // issue / verify+reconcile / close. Anything that moves ANOTHER node (the
 // `?issue` transition) is only RETURNED as an intent here — it is applied in
 // board order afterwards, never from inside a single node's own step.
-export async function finishStep(ctx, task, { result, review, baton, cost, ownChanges, outsideChanges }) {
+export async function finishStep(ctx, task, { result, review, baton, cost, ownChanges, outsideChanges, mutation = null }) {
   const scopedFindings = scopeReviewFindings(
     review?.findings,
     task,
@@ -1369,7 +1391,7 @@ export async function finishStep(ctx, task, { result, review, baton, cost, ownCh
     () => repoRoot(ctx),
   );
   if (review && Array.isArray(review.findings)) review = { ...review, findings: scopedFindings };
-  const base = resultBase(ctx, task, result, review, baton, cost, ownChanges, outsideChanges);
+  const base = resultBase(ctx, task, result, review, baton, cost, ownChanges, outsideChanges, mutation);
   const { attempt, limit } = base;
 
   const findings = scopedFindings;
@@ -1698,6 +1720,20 @@ async function runOne(ctx, task, wave = []) {
   const outsideChanges = damage ? damage.outsideChanges : null;
   const retryContext = await retryReviewContext(ctx, task, ownChanges);
 
+  let mutation = null;
+  if (result.ok !== false && typeof ctx.effects.mutationGate === "function") {
+    try {
+      mutation = await ctx.effects.mutationGate({ task, cwd: ctx.cwd, timeoutMs: ctx.timeoutMs });
+    } catch (err) {
+      mutation = {
+        levels: [], killed: 0, survived: [], noCoverage: [], quarantined: [], duration_ms: 0,
+        status: "cannot", reason: `mutation gate crashed: ${String(err?.message || err)}`,
+      };
+    }
+    task.mutation = mutation;
+    emitRunEvent(ctx, { task: task.number, kind: "mutation", attempt: begun.attempt, limit: begun.limit, ...mutation });
+  }
+
   let review = null;
   if (result.ok !== false && typeof ctx.effects.reviewStep === "function") {
     try {
@@ -1709,13 +1745,14 @@ async function runOne(ctx, task, wave = []) {
         ownChanges,
         outsideChanges,
         retryContext,
+        mutation,
       });
       review = downgradeUntouchedRetryFindings(review, retryContext);
     } catch (err) {
       review = { approved: false, ok: false, error: String(err?.message || err) };
     }
   }
-  return finishStep(ctx, task, { result, review, baton, cost, ownChanges, outsideChanges });
+  return finishStep(ctx, task, { result, review, baton, cost, ownChanges, outsideChanges, mutation });
 }
 
 // The `?issue` transition and every stop it can produce. All of it runs in board
@@ -1978,6 +2015,7 @@ export async function applyResult(ctx, r, { dry, log }) {
     verify: r.verify ?? null,
     red: r.red ?? null,
     flow: r.flow ?? null,
+    mutation: r.mutation ?? null,
     outcome: r.kind === "done" || r.kind === "gate-skipped" ? "ok" : r.kind === "issue" ? "issue" : null,
     result: r.kind,
     reason: r.reason || null,

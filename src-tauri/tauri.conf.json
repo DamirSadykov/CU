@@ -74,6 +74,7 @@
       "../scripts/cli/process/run-events.mjs": "scripts/cli/process/run-events.mjs",
       "../scripts/cli/process/red-gate.mjs": "scripts/cli/process/red-gate.mjs",
       "../scripts/cli/process/flow-gate.mjs": "scripts/cli/process/flow-gate.mjs",
+      "../scripts/cli/process/mutation-gate.mjs": "scripts/cli/process/mutation-gate.mjs",
       "../scripts/cli/process/checkpoint.mjs": "scripts/cli/process/checkpoint.mjs",
       "../scripts/cli/process/review-core.mjs": "scripts/cli/process/review-core.mjs",
       "../scripts/cli/process/wave.mjs": "scripts/cli/process/wave.mjs",
