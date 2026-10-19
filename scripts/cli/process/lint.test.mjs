@@ -165,7 +165,7 @@ describe("todos lint checks the recorded graph", () => {
   });
 
   it("only warns when a red-tests path is not also in produces", () => {
-    board(task(1, { kind: "auto", red: "npm run test:red", red_tests: ["test/a.spec.js"], produces: ["src/a.js"] }));
+    board(task(1, { kind: "auto", red: "npm run test:red", red_tests: ["test/a.spec.js"], produces: ["src/a.js"], flow: "n/a fixture without methods" }));
     const { code, out } = lint();
     expect(code).toBe(0);
     expect(out).toMatch(/#1: red-tests path "test\/a\.spec\.js" is not declared in produces/);
@@ -176,6 +176,7 @@ describe("todos lint checks the recorded graph", () => {
         red: "npm run test:red",
         red_tests: ["test/a.spec.js"],
         produces: ["src/a.js", "test/a.spec.js"],
+        flow: "n/a fixture without methods",
       }),
     );
     expect(lint().out).toMatch(/nothing violates/);
@@ -189,32 +190,32 @@ describe("todos lint checks the recorded graph", () => {
   });
 
   it("requires flow for auto code in the configured languages, with an explained n/a escape hatch", () => {
-    board(task(1, { kind: "auto", produces: ["src/Notifier.cs"] }));
+    board(task(1, { kind: "auto", produces: ["src/notifier.ts"] }));
     let result = lint();
     expect(result.code).toBe(1);
     expect(result.out).toMatch(/#1: auto step produces configured flow-language code but has no flow/);
 
-    board(task(1, { kind: "auto", produces: ["src/Notifier.cs"], flow: "n/a" }));
+    board(task(1, { kind: "auto", produces: ["src/notifier.ts"], flow: "n/a" }));
     result = lint();
     expect(result.code).toBe(1);
     expect(result.out).toMatch(/#1: flow: n\/a needs a reason/);
 
-    board(task(1, { kind: "auto", verify: "npm test", produces: ["src/Notifier.cs"], flow: "n/a generated code has no method body" }));
+    board(task(1, { kind: "auto", verify: "npm test", produces: ["src/notifier.ts"], flow: "n/a generated code has no method body" }));
     result = lint();
     expect(result.code).toBe(0);
     expect(result.out).toMatch(/nothing violates/);
 
-    board(task(1, { kind: "auto", produces: ["src/Notifier.cs"], flow: "placeholder" }));
+    board(task(1, { kind: "auto", produces: ["src/notifier.ts"], flow: "placeholder" }));
     result = lint();
     expect(result.code).toBe(1);
     expect(result.out).toMatch(/#1: flow must be a method delta, a list of them, or flow: n\/a <reason>/);
-    const delta = (method) => ({ file: "src/Notifier.cs", method, change: [], preserve: "all" });
-    board(task(1, { kind: "auto", verify: "npm test", produces: ["src/Notifier.cs"], flow: [delta("SendSms"), delta("SendEmail")] }));
+    const delta = (method) => ({ file: "src/notifier.ts", method, change: [], preserve: "all" });
+    board(task(1, { kind: "auto", verify: "npm test", produces: ["src/notifier.ts"], flow: [delta("SendSms"), delta("SendEmail")] }));
     result = lint();
     expect(result.code).toBe(0);
     expect(result.out).toMatch(/nothing violates/);
 
-    board(task(1, { kind: "auto", verify: "npm test", produces: ["src/Notifier.cs"], flow: [] }));
+    board(task(1, { kind: "auto", verify: "npm test", produces: ["src/notifier.ts"], flow: [] }));
     expect(lint().code).toBe(1);
   });
 

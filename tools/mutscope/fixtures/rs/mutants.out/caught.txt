@@ -1,0 +1,10 @@
+src/coverage.rs:185:5: replace named -> bool with true
+src/coverage.rs:187:75: replace && with || in named
+src/coverage.rs:187:51: replace && with || in named
+src/coverage.rs:187:33: replace && with || in named
+src/coverage.rs:187:90: replace == with != in named
+src/coverage.rs:191:5: replace na_for -> Option<String> with None
+src/coverage.rs:191:5: replace na_for -> Option<String> with Some(String::new())
+src/coverage.rs:191:5: replace na_for -> Option<String> with Some("xyzzy".into())
+src/coverage.rs:192:19: replace != with == in na_for
+src/coverage.rs:195:32: replace || with && in na_for

@@ -13,7 +13,13 @@ export default defineConfig({
   plugins: [vue()],
   clearScreen: false,
   test: {
-    exclude: ["**/node_modules/**", "**/dist/**", "**/.claude/**"],
+    exclude: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/.claude/**",
+      "tools/mutscope/fixtures/**",
+      ".stryker-tmp/**",
+    ],
   },
   server: {
     port: 1420,

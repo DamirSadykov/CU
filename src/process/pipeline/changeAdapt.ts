@@ -25,6 +25,32 @@ export interface ChangeStatusEvent {
     at: string;
 }
 
+export interface MutationFinding {
+    file: string;
+    line: number | null;
+    column: number | null;
+    mutator: string | null;
+    replacement: string | null;
+    selector: string | null;
+}
+
+export interface MutationResult {
+    levels: number[];
+    killed: number;
+    survived: MutationFinding[];
+    noCoverage: MutationFinding[];
+    quarantined: unknown[];
+    duration_ms: number;
+    status: "pass" | "skipped" | "cannot";
+    reason?: string | null;
+    task?: number | null;
+}
+
+type MutationCarrier = {
+    mutation?: unknown;
+    ext?: { process?: { mutation?: unknown } };
+};
+
 export interface ChangeTask {
     id: string;
     number?: number;
@@ -44,6 +70,8 @@ export interface ChangeTask {
     status_history?: ChangeStatusEvent[];
     created_at?: string;
     updated_at?: string;
+    mutation?: MutationResult | null;
+    ext?: MutationCarrier["ext"];
 }
 
 export interface ChangeRecord {
@@ -58,6 +86,49 @@ export interface ChangeRecord {
     created_at?: string;
     updated_at?: string;
     closed_at?: string;
+    mutation?: MutationResult | null;
+    ext?: MutationCarrier["ext"];
+}
+
+function recordOf(value: unknown): Record<string, unknown> | null {
+    return value !== null && typeof value === "object" && !Array.isArray(value)
+        ? value as Record<string, unknown>
+        : null;
+}
+
+function mutationResultOf(value: unknown): MutationResult | null {
+    const result = recordOf(value);
+    if (!result) return null;
+    if (!Array.isArray(result.levels)
+        || !Array.isArray(result.survived)
+        || !Array.isArray(result.noCoverage)
+        || !Array.isArray(result.quarantined)
+        || typeof result.killed !== "number"
+        || typeof result.duration_ms !== "number"
+        || !["pass", "skipped", "cannot"].includes(String(result.status))) return null;
+    return result as unknown as MutationResult;
+}
+
+export function mutationOf(value: unknown): MutationResult | null {
+    const record = recordOf(value) as MutationCarrier | null;
+    if (!record) return null;
+    const direct = mutationResultOf(record.mutation);
+    if (direct) return direct;
+    return mutationResultOf(record.ext?.process?.mutation);
+}
+
+export interface StepMutationRow {
+    taskId: string;
+    taskNumber?: number;
+    subject: string;
+    mutation: MutationResult;
+}
+
+export function stepMutationsFor(members: ChangeTask[]): StepMutationRow[] {
+    return members.flatMap((member) => {
+        const mutation = mutationOf(member);
+        return mutation ? [{ taskId: member.id, taskNumber: member.number, subject: member.subject, mutation }] : [];
+    });
 }
 
 export function changeAddress(change: ChangeRecord): string {

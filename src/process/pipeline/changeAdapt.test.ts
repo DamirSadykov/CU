@@ -8,6 +8,7 @@ import {
     changeProgress,
     costFor,
     historyFor,
+    mutationOf,
     workMinutesFor,
     workSpan,
     openChangesAt,
@@ -15,9 +16,11 @@ import {
     specAddressesOf,
     specEditsCount,
     specSummaryFor,
+    stepMutationsFor,
     waitingFor,
     type ChangeRecord,
     type ChangeTask,
+    type MutationResult,
 } from "./changeAdapt";
 import type { RunGraphNode } from "../../board/graphModel";
 
@@ -51,6 +54,37 @@ function node(p: Partial<RunGraphNode> & { id: string }): RunGraphNode {
         ...p,
     };
 }
+
+const mutation: MutationResult = {
+    levels: [0, 1],
+    killed: 4,
+    survived: [{ file: "src/a.ts", line: 3, column: 5, mutator: "BooleanLiteral", replacement: "false", selector: "src/a.ts:3:4-3:8" }],
+    noCoverage: [],
+    quarantined: [],
+    duration_ms: 1250,
+    status: "pass",
+};
+
+describe("mutation adapters", () => {
+    it("reads process data from both the flattened CLI form and ext.process app form", () => {
+        expect(mutationOf({ mutation })).toBe(mutation);
+        expect(mutationOf({ ext: { process: { mutation } } })).toBe(mutation);
+        expect(mutationOf(null)).toBeNull();
+        expect(mutationOf({ mutation: { status: "pass" } })).toBeNull();
+    });
+
+    it("builds plan step rows only for tasks that have a mutation result", () => {
+        const members = [
+            task({ id: "a", number: 10, subject: "checked", mutation }),
+            task({ id: "b", number: 11, subject: "not checked" }),
+            task({ id: "c", number: 12, subject: "nested", ext: { process: { mutation: { ...mutation, status: "cannot" as const } } } }),
+        ];
+        expect(stepMutationsFor(members).map((row) => [row.taskNumber, row.mutation.status])).toEqual([
+            [10, "pass"],
+            [12, "cannot"],
+        ]);
+    });
+});
 
 describe("changeMembers / changeProgress / changeIsOpen", () => {
     const c = change({ id: "c1", number: 1 });

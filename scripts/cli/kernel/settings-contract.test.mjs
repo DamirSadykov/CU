@@ -10,6 +10,8 @@ import {
   flowcheckExe,
   hookContextEnabled,
   matchPlanCli,
+  mutations,
+  mutscopeDir,
   parkedStepExpiryHours,
   specDeltaGuard,
   specRepoPath,
@@ -50,8 +52,12 @@ describe("CLI settings contract", () => {
       expect(specRepoPath("unlisted", appData)).toBe("");
       expect(uiLocale(appData)).toBe(defaults.get("locale"));
       expect(parkedStepExpiryHours(appData)).toBe(defaults.get("parkedStepExpiryHours"));
-      expect(flowcheckExe(appData)).toBe(defaults.get("flowcheckExe"));
-      expect(flowLanguages("unlisted", appData)).toEqual(["cs"]);
+      const nothing = { exists: () => false };
+      expect(flowcheckExe(appData, nothing)).toBe("");
+      expect(defaults.get("mutations")).toEqual({});
+      expect(mutations("unlisted", appData)).toEqual({ enabled: false, step: true, plan: true, stepMaxLevel: 1 });
+      expect(mutscopeDir(appData, nothing)).toBe("");
+      expect(flowLanguages("unlisted", appData)).toEqual(["ts", "js"]);
       expect(defaults.get("flowLanguages")).toEqual({});
 
       const dir = path.join(appData, "com.cu.app");
@@ -61,11 +67,36 @@ describe("CLI settings contract", () => {
       writeFileSync(path.join(dir, "settings.json"), JSON.stringify({ parkedStepExpiryHours: -1 }));
       expect(parkedStepExpiryHours(appData)).toBe(24);
       writeFileSync(path.join(dir, "settings.json"), JSON.stringify({ flowcheckExe: " C:/tools/flowcheck.exe ", flowLanguages: { app: ["rs", "vue", "ts"], empty: [] } }));
-      expect(flowcheckExe(appData)).toBe("C:/tools/flowcheck.exe");
+      expect(flowcheckExe(appData, nothing)).toBe("");
       expect(flowLanguages("app", appData)).toEqual(["rs", "ts"]);
-      expect(flowLanguages("empty", appData)).toEqual(["cs"]);
+      expect(flowLanguages("empty", appData)).toEqual(["ts", "js"]);
       writeFileSync(path.join(dir, "settings.json"), JSON.stringify({ runnerEnabled: false }));
       expect(runnerEnabled(appData)).toBe(false);
+
+      writeFileSync(path.join(dir, "settings.json"), JSON.stringify({
+        mutations: { app: { enabled: true, step: false, plan: false, stepMaxLevel: 3 } },
+      }));
+      expect(mutations("app", appData)).toEqual({ enabled: true, step: false, plan: false, stepMaxLevel: 3 });
+      expect(mutations("other", appData)).toEqual({ enabled: false, step: true, plan: true, stepMaxLevel: 1 });
+      writeFileSync(path.join(dir, "settings.json"), JSON.stringify({
+        mutations: { app: { enabled: "yes", step: null, plan: 1, stepMaxLevel: 9 } },
+      }));
+      expect(mutations("app", appData)).toEqual({ enabled: false, step: true, plan: true, stepMaxLevel: 1 });
+      expect(mutscopeDir(appData, nothing)).toBe("");
+
+      writeFileSync(path.join(dir, "settings.json"), JSON.stringify({}));
+      const repoRoot = path.join(appData, "repo");
+      const installedExe = path.join(dir, "tools", "flowcheck.exe");
+      const builtExe = path.join(repoRoot, "tools", "flowcheck", "target", "release", "flowcheck.exe");
+      expect(flowcheckExe(appData, { repoRoot, exists: (file) => file === builtExe })).toBe(builtExe);
+      expect(flowcheckExe(appData, { repoRoot, exists: (file) => file === installedExe || file === builtExe })).toBe(installedExe);
+      const repoMutscope = path.join(repoRoot, "tools", "mutscope");
+      const ready = (directory) => (file) => file === path.join(directory, "stryker.mjs")
+        || file === path.join(directory, "node_modules", "@stryker-mutator", "core");
+      expect(mutscopeDir(appData, { repoRoot, exists: ready(repoMutscope) })).toBe(repoMutscope);
+      expect(mutscopeDir(appData, { repoRoot, exists: (file) => file === path.join(repoMutscope, "stryker.mjs") })).toBe("");
+      writeFileSync(path.join(dir, "settings.json"), JSON.stringify({ mutscopeDir: "C:/own/mutscope" }));
+      expect(mutscopeDir(appData, { repoRoot, exists: ready(repoMutscope) })).toBe(repoMutscope);
 
       writeFileSync(path.join(dir, "settings.json"), JSON.stringify({ specs: { enabled: true, deltaGuard: "off" } }));
       expect(specsEnabled(appData)).toBe(true);

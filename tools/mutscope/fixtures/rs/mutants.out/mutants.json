@@ -1,0 +1,482 @@
+[
+  {
+    "diff": "--- src/coverage.rs\n+++ replace named -> bool with true\n@@ -177,19 +177,17 @@\n         } else {\n             lines.extend(start..start + count);\n         }\n     }\n     Ok(lines)\n }\n \n fn named(specs: &[Spec], file: &str, key: &str) -> bool {\n-    specs \n-        .iter() \n-        .any(|s| s.file == file && s.na.is_none() && !s.method.is_empty() && spec_key(s) == key) \n+    true /* ~ changed by cargo-mutants ~ */ \n } \n  \n fn na_for(specs: &[Spec], file: &str, key: Option<&str>) -> Option<String> { \n     specs.iter().find_map(|s| { \n         if s.file != file || s.na.is_none() { \n             return None; \n         } \n         if s.method.is_empty() || key.is_some_and(|k| spec_key(s) == k) { \n",
+    "file": "src/coverage.rs",
+    "function": {
+      "function_name": "named",
+      "return_type": "-> bool",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 188
+        },
+        "start": {
+          "column": 1,
+          "line": 184
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/coverage.rs:185:5: replace named -> bool with true",
+    "package": "flowcheck",
+    "replacement": "true",
+    "span": {
+      "end": {
+        "column": 97,
+        "line": 187
+      },
+      "start": {
+        "column": 5,
+        "line": 185
+      }
+    }
+  },
+  {
+    "diff": "--- src/coverage.rs\n+++ replace named -> bool with false\n@@ -177,19 +177,17 @@\n         } else {\n             lines.extend(start..start + count);\n         }\n     }\n     Ok(lines)\n }\n \n fn named(specs: &[Spec], file: &str, key: &str) -> bool {\n-    specs \n-        .iter() \n-        .any(|s| s.file == file && s.na.is_none() && !s.method.is_empty() && spec_key(s) == key) \n+    false /* ~ changed by cargo-mutants ~ */ \n } \n  \n fn na_for(specs: &[Spec], file: &str, key: Option<&str>) -> Option<String> { \n     specs.iter().find_map(|s| { \n         if s.file != file || s.na.is_none() { \n             return None; \n         } \n         if s.method.is_empty() || key.is_some_and(|k| spec_key(s) == k) { \n",
+    "file": "src/coverage.rs",
+    "function": {
+      "function_name": "named",
+      "return_type": "-> bool",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 188
+        },
+        "start": {
+          "column": 1,
+          "line": 184
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/coverage.rs:185:5: replace named -> bool with false",
+    "package": "flowcheck",
+    "replacement": "false",
+    "span": {
+      "end": {
+        "column": 97,
+        "line": 187
+      },
+      "start": {
+        "column": 5,
+        "line": 185
+      }
+    }
+  },
+  {
+    "diff": "--- src/coverage.rs\n+++ replace && with || in named\n@@ -179,17 +179,17 @@\n         }\n     }\n     Ok(lines)\n }\n \n fn named(specs: &[Spec], file: &str, key: &str) -> bool {\n     specs \n         .iter() \n-        .any(|s| s.file == file && s.na.is_none() && !s.method.is_empty() && spec_key(s) == key) \n+        .any(|s| s.file == file && s.na.is_none() && !s.method.is_empty() || /* ~ changed by cargo-mutants ~ */ spec_key(s) == key) \n } \n  \n fn na_for(specs: &[Spec], file: &str, key: Option<&str>) -> Option<String> { \n     specs.iter().find_map(|s| { \n         if s.file != file || s.na.is_none() { \n             return None; \n         } \n         if s.method.is_empty() || key.is_some_and(|k| spec_key(s) == k) { \n",
+    "file": "src/coverage.rs",
+    "function": {
+      "function_name": "named",
+      "return_type": "-> bool",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 188
+        },
+        "start": {
+          "column": 1,
+          "line": 184
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/coverage.rs:187:75: replace && with || in named",
+    "package": "flowcheck",
+    "replacement": "||",
+    "span": {
+      "end": {
+        "column": 77,
+        "line": 187
+      },
+      "start": {
+        "column": 75,
+        "line": 187
+      }
+    }
+  },
+  {
+    "diff": "--- src/coverage.rs\n+++ replace && with || in named\n@@ -179,17 +179,17 @@\n         }\n     }\n     Ok(lines)\n }\n \n fn named(specs: &[Spec], file: &str, key: &str) -> bool {\n     specs \n         .iter() \n-        .any(|s| s.file == file && s.na.is_none() && !s.method.is_empty() && spec_key(s) == key) \n+        .any(|s| s.file == file && s.na.is_none() || /* ~ changed by cargo-mutants ~ */ !s.method.is_empty() && spec_key(s) == key) \n } \n  \n fn na_for(specs: &[Spec], file: &str, key: Option<&str>) -> Option<String> { \n     specs.iter().find_map(|s| { \n         if s.file != file || s.na.is_none() { \n             return None; \n         } \n         if s.method.is_empty() || key.is_some_and(|k| spec_key(s) == k) { \n",
+    "file": "src/coverage.rs",
+    "function": {
+      "function_name": "named",
+      "return_type": "-> bool",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 188
+        },
+        "start": {
+          "column": 1,
+          "line": 184
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/coverage.rs:187:51: replace && with || in named",
+    "package": "flowcheck",
+    "replacement": "||",
+    "span": {
+      "end": {
+        "column": 53,
+        "line": 187
+      },
+      "start": {
+        "column": 51,
+        "line": 187
+      }
+    }
+  },
+  {
+    "diff": "--- src/coverage.rs\n+++ replace && with || in named\n@@ -179,17 +179,17 @@\n         }\n     }\n     Ok(lines)\n }\n \n fn named(specs: &[Spec], file: &str, key: &str) -> bool {\n     specs \n         .iter() \n-        .any(|s| s.file == file && s.na.is_none() && !s.method.is_empty() && spec_key(s) == key) \n+        .any(|s| s.file == file || /* ~ changed by cargo-mutants ~ */ s.na.is_none() && !s.method.is_empty() && spec_key(s) == key) \n } \n  \n fn na_for(specs: &[Spec], file: &str, key: Option<&str>) -> Option<String> { \n     specs.iter().find_map(|s| { \n         if s.file != file || s.na.is_none() { \n             return None; \n         } \n         if s.method.is_empty() || key.is_some_and(|k| spec_key(s) == k) { \n",
+    "file": "src/coverage.rs",
+    "function": {
+      "function_name": "named",
+      "return_type": "-> bool",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 188
+        },
+        "start": {
+          "column": 1,
+          "line": 184
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/coverage.rs:187:33: replace && with || in named",
+    "package": "flowcheck",
+    "replacement": "||",
+    "span": {
+      "end": {
+        "column": 35,
+        "line": 187
+      },
+      "start": {
+        "column": 33,
+        "line": 187
+      }
+    }
+  },
+  {
+    "diff": "--- src/coverage.rs\n+++ replace == with != in named\n@@ -179,17 +179,17 @@\n         }\n     }\n     Ok(lines)\n }\n \n fn named(specs: &[Spec], file: &str, key: &str) -> bool {\n     specs \n         .iter() \n-        .any(|s| s.file == file && s.na.is_none() && !s.method.is_empty() && spec_key(s) == key) \n+        .any(|s| s.file != /* ~ changed by cargo-mutants ~ */ file && s.na.is_none() && !s.method.is_empty() && spec_key(s) == key) \n } \n  \n fn na_for(specs: &[Spec], file: &str, key: Option<&str>) -> Option<String> { \n     specs.iter().find_map(|s| { \n         if s.file != file || s.na.is_none() { \n             return None; \n         } \n         if s.method.is_empty() || key.is_some_and(|k| spec_key(s) == k) { \n",
+    "file": "src/coverage.rs",
+    "function": {
+      "function_name": "named",
+      "return_type": "-> bool",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 188
+        },
+        "start": {
+          "column": 1,
+          "line": 184
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/coverage.rs:187:25: replace == with != in named",
+    "package": "flowcheck",
+    "replacement": "!=",
+    "span": {
+      "end": {
+        "column": 27,
+        "line": 187
+      },
+      "start": {
+        "column": 25,
+        "line": 187
+      }
+    }
+  },
+  {
+    "diff": "--- src/coverage.rs\n+++ delete ! in named\n@@ -179,17 +179,17 @@\n         }\n     }\n     Ok(lines)\n }\n \n fn named(specs: &[Spec], file: &str, key: &str) -> bool {\n     specs \n         .iter() \n-        .any(|s| s.file == file && s.na.is_none() && !s.method.is_empty() && spec_key(s) == key) \n+        .any(|s| s.file == file && s.na.is_none() &&  /* ~ changed by cargo-mutants ~ */s.method.is_empty() && spec_key(s) == key) \n } \n  \n fn na_for(specs: &[Spec], file: &str, key: Option<&str>) -> Option<String> { \n     specs.iter().find_map(|s| { \n         if s.file != file || s.na.is_none() { \n             return None; \n         } \n         if s.method.is_empty() || key.is_some_and(|k| spec_key(s) == k) { \n",
+    "file": "src/coverage.rs",
+    "function": {
+      "function_name": "named",
+      "return_type": "-> bool",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 188
+        },
+        "start": {
+          "column": 1,
+          "line": 184
+        }
+      }
+    },
+    "genre": "UnaryOperator",
+    "name": "src/coverage.rs:187:54: delete ! in named",
+    "package": "flowcheck",
+    "replacement": "",
+    "span": {
+      "end": {
+        "column": 55,
+        "line": 187
+      },
+      "start": {
+        "column": 54,
+        "line": 187
+      }
+    }
+  },
+  {
+    "diff": "--- src/coverage.rs\n+++ replace == with != in named\n@@ -179,17 +179,17 @@\n         }\n     }\n     Ok(lines)\n }\n \n fn named(specs: &[Spec], file: &str, key: &str) -> bool {\n     specs \n         .iter() \n-        .any(|s| s.file == file && s.na.is_none() && !s.method.is_empty() && spec_key(s) == key) \n+        .any(|s| s.file == file && s.na.is_none() && !s.method.is_empty() && spec_key(s) != /* ~ changed by cargo-mutants ~ */ key) \n } \n  \n fn na_for(specs: &[Spec], file: &str, key: Option<&str>) -> Option<String> { \n     specs.iter().find_map(|s| { \n         if s.file != file || s.na.is_none() { \n             return None; \n         } \n         if s.method.is_empty() || key.is_some_and(|k| spec_key(s) == k) { \n",
+    "file": "src/coverage.rs",
+    "function": {
+      "function_name": "named",
+      "return_type": "-> bool",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 188
+        },
+        "start": {
+          "column": 1,
+          "line": 184
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/coverage.rs:187:90: replace == with != in named",
+    "package": "flowcheck",
+    "replacement": "!=",
+    "span": {
+      "end": {
+        "column": 92,
+        "line": 187
+      },
+      "start": {
+        "column": 90,
+        "line": 187
+      }
+    }
+  },
+  {
+    "diff": "--- src/coverage.rs\n+++ replace na_for -> Option<String> with None\n@@ -183,26 +183,17 @@\n \n fn named(specs: &[Spec], file: &str, key: &str) -> bool {\n     specs \n         .iter() \n         .any(|s| s.file == file && s.na.is_none() && !s.method.is_empty() && spec_key(s) == key) \n } \n  \n fn na_for(specs: &[Spec], file: &str, key: Option<&str>) -> Option<String> { \n-    specs.iter().find_map(|s| { \n-        if s.file != file || s.na.is_none() { \n-            return None; \n-        } \n-        if s.method.is_empty() || key.is_some_and(|k| spec_key(s) == k) { \n-            Some(s.na.clone().unwrap()) \n-        } else { \n-            None \n-        } \n-    }) \n+    None /* ~ changed by cargo-mutants ~ */ \n }\n \n pub fn inspect(specs: &[Spec], repo: &Path, base: &str, head: Option<&str>) -> Report {\n     let mut report = Report::default();\n     for spec in specs\n         .iter()\n         .filter(|s| s.na.is_some() && !s.method.is_empty())\n     {\n",
+    "file": "src/coverage.rs",
+    "function": {
+      "function_name": "na_for",
+      "return_type": "-> Option<String>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 201
+        },
+        "start": {
+          "column": 1,
+          "line": 190
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/coverage.rs:191:5: replace na_for -> Option<String> with None",
+    "package": "flowcheck",
+    "replacement": "None",
+    "span": {
+      "end": {
+        "column": 7,
+        "line": 200
+      },
+      "start": {
+        "column": 5,
+        "line": 191
+      }
+    }
+  },
+  {
+    "diff": "--- src/coverage.rs\n+++ replace na_for -> Option<String> with Some(String::new())\n@@ -183,26 +183,17 @@\n \n fn named(specs: &[Spec], file: &str, key: &str) -> bool {\n     specs \n         .iter() \n         .any(|s| s.file == file && s.na.is_none() && !s.method.is_empty() && spec_key(s) == key) \n } \n  \n fn na_for(specs: &[Spec], file: &str, key: Option<&str>) -> Option<String> { \n-    specs.iter().find_map(|s| { \n-        if s.file != file || s.na.is_none() { \n-            return None; \n-        } \n-        if s.method.is_empty() || key.is_some_and(|k| spec_key(s) == k) { \n-            Some(s.na.clone().unwrap()) \n-        } else { \n-            None \n-        } \n-    }) \n+    Some(String::new()) /* ~ changed by cargo-mutants ~ */ \n }\n \n pub fn inspect(specs: &[Spec], repo: &Path, base: &str, head: Option<&str>) -> Report {\n     let mut report = Report::default();\n     for spec in specs\n         .iter()\n         .filter(|s| s.na.is_some() && !s.method.is_empty())\n     {\n",
+    "file": "src/coverage.rs",
+    "function": {
+      "function_name": "na_for",
+      "return_type": "-> Option<String>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 201
+        },
+        "start": {
+          "column": 1,
+          "line": 190
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/coverage.rs:191:5: replace na_for -> Option<String> with Some(String::new())",
+    "package": "flowcheck",
+    "replacement": "Some(String::new())",
+    "span": {
+      "end": {
+        "column": 7,
+        "line": 200
+      },
+      "start": {
+        "column": 5,
+        "line": 191
+      }
+    }
+  },
+  {
+    "diff": "--- src/coverage.rs\n+++ replace na_for -> Option<String> with Some(\"xyzzy\".into())\n@@ -183,26 +183,17 @@\n \n fn named(specs: &[Spec], file: &str, key: &str) -> bool {\n     specs \n         .iter() \n         .any(|s| s.file == file && s.na.is_none() && !s.method.is_empty() && spec_key(s) == key) \n } \n  \n fn na_for(specs: &[Spec], file: &str, key: Option<&str>) -> Option<String> { \n-    specs.iter().find_map(|s| { \n-        if s.file != file || s.na.is_none() { \n-            return None; \n-        } \n-        if s.method.is_empty() || key.is_some_and(|k| spec_key(s) == k) { \n-            Some(s.na.clone().unwrap()) \n-        } else { \n-            None \n-        } \n-    }) \n+    Some(\"xyzzy\".into()) /* ~ changed by cargo-mutants ~ */ \n }\n \n pub fn inspect(specs: &[Spec], repo: &Path, base: &str, head: Option<&str>) -> Report {\n     let mut report = Report::default();\n     for spec in specs\n         .iter()\n         .filter(|s| s.na.is_some() && !s.method.is_empty())\n     {\n",
+    "file": "src/coverage.rs",
+    "function": {
+      "function_name": "na_for",
+      "return_type": "-> Option<String>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 201
+        },
+        "start": {
+          "column": 1,
+          "line": 190
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/coverage.rs:191:5: replace na_for -> Option<String> with Some(\"xyzzy\".into())",
+    "package": "flowcheck",
+    "replacement": "Some(\"xyzzy\".into())",
+    "span": {
+      "end": {
+        "column": 7,
+        "line": 200
+      },
+      "start": {
+        "column": 5,
+        "line": 191
+      }
+    }
+  },
+  {
+    "diff": "--- src/coverage.rs\n+++ replace || with && in na_for\n@@ -184,17 +184,17 @@\n fn named(specs: &[Spec], file: &str, key: &str) -> bool {\n     specs \n         .iter() \n         .any(|s| s.file == file && s.na.is_none() && !s.method.is_empty() && spec_key(s) == key) \n } \n  \n fn na_for(specs: &[Spec], file: &str, key: Option<&str>) -> Option<String> { \n     specs.iter().find_map(|s| { \n-        if s.file != file || s.na.is_none() { \n+        if s.file != file && /* ~ changed by cargo-mutants ~ */ s.na.is_none() { \n             return None; \n         } \n         if s.method.is_empty() || key.is_some_and(|k| spec_key(s) == k) { \n             Some(s.na.clone().unwrap()) \n         } else { \n             None \n         } \n     }) \n",
+    "file": "src/coverage.rs",
+    "function": {
+      "function_name": "na_for",
+      "return_type": "-> Option<String>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 201
+        },
+        "start": {
+          "column": 1,
+          "line": 190
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/coverage.rs:192:27: replace || with && in na_for",
+    "package": "flowcheck",
+    "replacement": "&&",
+    "span": {
+      "end": {
+        "column": 29,
+        "line": 192
+      },
+      "start": {
+        "column": 27,
+        "line": 192
+      }
+    }
+  },
+  {
+    "diff": "--- src/coverage.rs\n+++ replace != with == in na_for\n@@ -184,17 +184,17 @@\n fn named(specs: &[Spec], file: &str, key: &str) -> bool {\n     specs \n         .iter() \n         .any(|s| s.file == file && s.na.is_none() && !s.method.is_empty() && spec_key(s) == key) \n } \n  \n fn na_for(specs: &[Spec], file: &str, key: Option<&str>) -> Option<String> { \n     specs.iter().find_map(|s| { \n-        if s.file != file || s.na.is_none() { \n+        if s.file == /* ~ changed by cargo-mutants ~ */ file || s.na.is_none() { \n             return None; \n         } \n         if s.method.is_empty() || key.is_some_and(|k| spec_key(s) == k) { \n             Some(s.na.clone().unwrap()) \n         } else { \n             None \n         } \n     }) \n",
+    "file": "src/coverage.rs",
+    "function": {
+      "function_name": "na_for",
+      "return_type": "-> Option<String>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 201
+        },
+        "start": {
+          "column": 1,
+          "line": 190
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/coverage.rs:192:19: replace != with == in na_for",
+    "package": "flowcheck",
+    "replacement": "==",
+    "span": {
+      "end": {
+        "column": 21,
+        "line": 192
+      },
+      "start": {
+        "column": 19,
+        "line": 192
+      }
+    }
+  },
+  {
+    "diff": "--- src/coverage.rs\n+++ replace || with && in na_for\n@@ -187,17 +187,17 @@\n         .any(|s| s.file == file && s.na.is_none() && !s.method.is_empty() && spec_key(s) == key) \n } \n  \n fn na_for(specs: &[Spec], file: &str, key: Option<&str>) -> Option<String> { \n     specs.iter().find_map(|s| { \n         if s.file != file || s.na.is_none() { \n             return None; \n         } \n-        if s.method.is_empty() || key.is_some_and(|k| spec_key(s) == k) { \n+        if s.method.is_empty() && /* ~ changed by cargo-mutants ~ */ key.is_some_and(|k| spec_key(s) == k) { \n             Some(s.na.clone().unwrap()) \n         } else { \n             None \n         } \n     }) \n }\n \n pub fn inspect(specs: &[Spec], repo: &Path, base: &str, head: Option<&str>) -> Report {\n",
+    "file": "src/coverage.rs",
+    "function": {
+      "function_name": "na_for",
+      "return_type": "-> Option<String>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 201
+        },
+        "start": {
+          "column": 1,
+          "line": 190
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/coverage.rs:195:32: replace || with && in na_for",
+    "package": "flowcheck",
+    "replacement": "&&",
+    "span": {
+      "end": {
+        "column": 34,
+        "line": 195
+      },
+      "start": {
+        "column": 32,
+        "line": 195
+      }
+    }
+  },
+  {
+    "diff": "--- src/coverage.rs\n+++ replace == with != in na_for\n@@ -187,17 +187,17 @@\n         .any(|s| s.file == file && s.na.is_none() && !s.method.is_empty() && spec_key(s) == key) \n } \n  \n fn na_for(specs: &[Spec], file: &str, key: Option<&str>) -> Option<String> { \n     specs.iter().find_map(|s| { \n         if s.file != file || s.na.is_none() { \n             return None; \n         } \n-        if s.method.is_empty() || key.is_some_and(|k| spec_key(s) == k) { \n+        if s.method.is_empty() || key.is_some_and(|k| spec_key(s) != /* ~ changed by cargo-mutants ~ */ k) { \n             Some(s.na.clone().unwrap()) \n         } else { \n             None \n         } \n     }) \n }\n \n pub fn inspect(specs: &[Spec], repo: &Path, base: &str, head: Option<&str>) -> Report {\n",
+    "file": "src/coverage.rs",
+    "function": {
+      "function_name": "na_for",
+      "return_type": "-> Option<String>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 201
+        },
+        "start": {
+          "column": 1,
+          "line": 190
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/coverage.rs:195:67: replace == with != in na_for",
+    "package": "flowcheck",
+    "replacement": "!=",
+    "span": {
+      "end": {
+        "column": 69,
+        "line": 195
+      },
+      "start": {
+        "column": 67,
+        "line": 195
+      }
+    }
+  }
+]

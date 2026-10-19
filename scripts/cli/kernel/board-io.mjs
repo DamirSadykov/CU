@@ -50,8 +50,8 @@ export function load(file) {
   return data;
 }
 
-const TODO_PROCESS_FIELDS = ["produces", "verify", "retry_limit", "on_issue", "budget_usd", "parallel_limit", "outcome", "outcome_reason", "outcome_at", "handout_at", "red", "red_tests", "flow", "flow_diagram", "step_base", "risk", "size"];
-const CHANGE_PROCESS_FIELDS = ["spec", "budget_usd", "parallel_limit"];
+const TODO_PROCESS_FIELDS = ["produces", "verify", "retry_limit", "on_issue", "budget_usd", "parallel_limit", "outcome", "outcome_reason", "outcome_at", "handout_at", "red", "red_tests", "flow", "flow_diagram", "step_base", "mutation", "risk", "size"];
+const CHANGE_PROCESS_FIELDS = ["spec", "budget_usd", "parallel_limit", "mutation"];
 
 function aliasProcess(row, fields) {
   if (!row || typeof row !== "object" || !row.ext?.process || typeof row.ext.process !== "object") return;

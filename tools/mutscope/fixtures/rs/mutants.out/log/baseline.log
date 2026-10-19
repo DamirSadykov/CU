@@ -1,0 +1,1303 @@
+
+*** baseline
+
+*** C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe test --no-run --verbose --package=flowcheck@0.1.0
+   Compiling find-msvc-tools v0.1.14
+   Compiling shlex v2.0.1
+   Compiling tree-sitter-language v0.1.8
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.26
+   Compiling memchr v2.8.3
+   Compiling quote v1.0.47
+   Compiling zmij v1.0.23
+   Compiling equivalent v1.0.2
+   Compiling itoa v1.0.18
+   Compiling hashbrown v0.17.1
+   Compiling windows-link v0.2.1
+   Compiling serde_core v1.0.229
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name find_msvc_tools --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\find-msvc-tools-0.1.14\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no --allow=unexpected_cfgs '--warn=clippy::ptr_cast_constness' '--warn=clippy::ptr_as_ptr' --warn=missing_docs '--warn=clippy::manual_let_else' '--warn=clippy::doc_markdown' '--warn=clippy::disallowed_methods' '--warn=clippy::borrow_as_ptr' --check-cfg 'cfg(disable_clang_cl_tests)' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=6fd2a1ca590dadcf -C extra-filename=-514e4ccbd9cca3c8 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name shlex --edition=2018 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\shlex-2.0.1\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no --warn=unexpected_cfgs --check-cfg 'cfg(manual_codegen_check)' --cfg 'feature="default"' --cfg 'feature="std"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("default", "std"))' -C metadata=181708ecadab3b47 -C extra-filename=-f9df91f0b2c0ecd4 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name build_script_build --edition=2024 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-language-0.1.8\build.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C embed-bitcode=no '--warn=clippy::pedantic' '--warn=clippy::nursery' '--warn=clippy::cargo' '--allow=clippy::tuple_array_conversions' '--allow=clippy::too_many_lines' '--deny=clippy::todo' '--allow=clippy::struct_excessive_bools' '--allow=clippy::string_lit_as_bytes' '--allow=clippy::similar_names' '--allow=clippy::option_if_let_else' '--allow=clippy::multiple_crate_versions' '--allow=clippy::missing_panics_doc' '--allow=clippy::missing_errors_doc' --allow=mismatched_lifetime_syntaxes '--allow=clippy::items_after_statements' '--allow=clippy::if_not_else' '--deny=clippy::dbg_macro' '--allow=clippy::cast_sign_loss' '--allow=clippy::cast_precision_loss' '--allow=clippy::cast_possible_wrap' '--allow=clippy::cast_possible_truncation' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=c6d688324ac6c03c -C extra-filename=-c8cd384c78ec8f49 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-language-c8cd384c78ec8f49' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name build_script_build --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\proc-macro2-1.0.107\build.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C embed-bitcode=no --cfg 'feature="default"' --cfg 'feature="proc-macro"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("default", "nightly", "proc-macro", "span-locations"))' -C metadata=6b7600cea778fab2 -C extra-filename=-6da1e5c171cdc147 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\proc-macro2-6da1e5c171cdc147' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name unicode_ident --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\unicode-ident-1.0.26\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=9991fb8072f6dad2 -C extra-filename=-cd895043fb0a1633 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name memchr --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\memchr-2.8.3\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --cfg 'feature="alloc"' --cfg 'feature="std"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("alloc", "core", "default", "libc", "logging", "rustc-dep-of-std", "std", "use_std"))' -C metadata=7a8abca106250da8 -C extra-filename=-85a7902eb33c4c5d --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name build_script_build --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\quote-1.0.47\build.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C embed-bitcode=no --cfg 'feature="default"' --cfg 'feature="proc-macro"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("default", "proc-macro"))' -C metadata=04f6232b9455fe29 -C extra-filename=-30bf6636c31554fd --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\quote-30bf6636c31554fd' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name build_script_build --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\zmij-1.0.23\build.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C embed-bitcode=no --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("no-panic"))' -C metadata=5f92b6c0d66832b1 -C extra-filename=-e563492435d7d484 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\zmij-e563492435d7d484' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name equivalent --edition=2015 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\equivalent-1.0.2\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=3fb0bd604e6f7716 -C extra-filename=-b19a42cd8c2442b0 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name hashbrown --edition=2024 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hashbrown-0.17.1\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --warn=unused_extern_crates --warn=unsafe_op_in_unsafe_fn --warn=unreachable_pub '--warn=clippy::str_to_string' '--warn=clippy::semicolon_if_nothing_returned' '--warn=clippy::ref_as_ptr' '--warn=clippy::redundant_else' '--warn=clippy::ptr_cast_constness' '--warn=clippy::ptr_as_ptr' '--allow=clippy::option_if_let_else' '--warn=clippy::needless_continue' '--allow=clippy::must_use_candidate' '--allow=clippy::module_name_repetitions' '--allow=clippy::missing_safety_doc' '--allow=clippy::missing_errors_doc' --warn=missing_docs '--allow=clippy::manual_map' '--warn=clippy::manual_let_else' --warn=explicit_outlives_requirements --warn=ellipsis_inclusive_range_patterns --warn=elided_lifetimes_in_paths '--allow=clippy::doc_markdown' '--warn=clippy::borrow_as_ptr' --warn=bare_trait_objects --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("alloc", "allocator-api2", "core", "default", "default-hasher", "equivalent", "inline-more", "nightly", "raw-entry", "rayon", "rustc-dep-of-std", "rustc-internal-api", "serde"))' -C metadata=2939f90d0208a661 -C extra-filename=-bae4266ff5dabe82 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name itoa --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\itoa-1.0.18\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("no-panic"))' -C metadata=6f0440306a445c25 -C extra-filename=-a8758a9001f01135 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name windows_link --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\windows-link-0.2.1\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --warn=unexpected_cfgs --warn=missing_unsafe_on_extern --check-cfg 'cfg(windows_raw_dylib, windows_slim_errors)' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=8564d55611a64038 -C extra-filename=-d2ef63ecef51002c --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name build_script_build --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_core-1.0.229\build.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C embed-bitcode=no --cfg 'feature="std"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("alloc", "default", "rc", "result", "std", "unstable"))' -C metadata=d6e4146610ebfe2e -C extra-filename=-76a94cece5643ac8 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\serde_core-76a94cece5643ac8' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+   Compiling windows-sys v0.61.2
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name windows_sys --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\windows-sys-0.61.2\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --warn=unexpected_cfgs --warn=missing_unsafe_on_extern --check-cfg 'cfg(windows_raw_dylib, windows_slim_errors)' --cfg 'feature="Win32"' --cfg 'feature="Win32_Foundation"' --cfg 'feature="Win32_System"' --cfg 'feature="Win32_System_Console"' --cfg 'feature="default"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("Wdk", "Wdk_Devices", "Wdk_Devices_Bluetooth", "Wdk_Devices_HumanInterfaceDevice", "Wdk_Foundation", "Wdk_Graphics", "Wdk_Graphics_Direct3D", "Wdk_NetworkManagement", "Wdk_NetworkManagement_Ndis", "Wdk_NetworkManagement_WindowsFilteringPlatform", "Wdk_Storage", "Wdk_Storage_FileSystem", "Wdk_Storage_FileSystem_Minifilters", "Wdk_System", "Wdk_System_IO", "Wdk_System_Memory", "Wdk_System_OfflineRegistry", "Wdk_System_Registry", "Wdk_System_SystemInformation", "Wdk_System_SystemServices", "Wdk_System_Threading", "Win32", "Win32_Data", "Win32_Data_HtmlHelp", "Win32_Data_RightsManagement", "Win32_Devices", "Win32_Devices_AllJoyn", "Win32_Devices_Beep", "Win32_Devices_BiometricFramework", "Win32_Devices_Bluetooth", "Win32_Devices_Cdrom", "Win32_Devices_Communication", "Win32_Devices_DeviceAndDriverInstallation", "Win32_Devices_DeviceQuery", "Win32_Devices_Display", "Win32_Devices_Dvd", "Win32_Devices_Enumeration", "Win32_Devices_Enumeration_Pnp", "Win32_Devices_Fax", "Win32_Devices_HumanInterfaceDevice", "Win32_Devices_Nfc", "Win32_Devices_Nfp", "Win32_Devices_PortableDevices", "Win32_Devices_Properties", "Win32_Devices_Pwm", "Win32_Devices_Sensors", "Win32_Devices_SerialCommunication", "Win32_Devices_Tapi", "Win32_Devices_Usb", "Win32_Devices_WebServicesOnDevices", "Win32_Foundation", "Win32_Gaming", "Win32_Globalization", "Win32_Graphics", "Win32_Graphics_Dwm", "Win32_Graphics_Gdi", "Win32_Graphics_GdiPlus", "Win32_Graphics_Hlsl", "Win32_Graphics_OpenGL", "Win32_Graphics_Printing", "Win32_Graphics_Printing_PrintTicket", "Win32_Management", "Win32_Management_MobileDeviceManagementRegistration", "Win32_Media", "Win32_Media_Audio", "Win32_Media_DxMediaObjects", "Win32_Media_KernelStreaming", "Win32_Media_Multimedia", "Win32_Media_Streaming", "Win32_Media_WindowsMediaFormat", "Win32_NetworkManagement", "Win32_NetworkManagement_Dhcp", "Win32_NetworkManagement_Dns", "Win32_NetworkManagement_InternetConnectionWizard", "Win32_NetworkManagement_IpHelper", "Win32_NetworkManagement_Multicast", "Win32_NetworkManagement_Ndis", "Win32_NetworkManagement_NetBios", "Win32_NetworkManagement_NetManagement", "Win32_NetworkManagement_NetShell", "Win32_NetworkManagement_NetworkDiagnosticsFramework", "Win32_NetworkManagement_P2P", "Win32_NetworkManagement_QoS", "Win32_NetworkManagement_Rras", "Win32_NetworkManagement_Snmp", "Win32_NetworkManagement_WNet", "Win32_NetworkManagement_WebDav", "Win32_NetworkManagement_WiFi", "Win32_NetworkManagement_WindowsConnectionManager", "Win32_NetworkManagement_WindowsFilteringPlatform", "Win32_NetworkManagement_WindowsFirewall", "Win32_NetworkManagement_WindowsNetworkVirtualization", "Win32_Networking", "Win32_Networking_ActiveDirectory", "Win32_Networking_Clustering", "Win32_Networking_HttpServer", "Win32_Networking_Ldap", "Win32_Networking_WebSocket", "Win32_Networking_WinHttp", "Win32_Networking_WinInet", "Win32_Networking_WinSock", "Win32_Networking_WindowsWebServices", "Win32_Security", "Win32_Security_AppLocker", "Win32_Security_Authentication", "Win32_Security_Authentication_Identity", "Win32_Security_Authorization", "Win32_Security_Credentials", "Win32_Security_Cryptography", "Win32_Security_Cryptography_Catalog", "Win32_Security_Cryptography_Certificates", "Win32_Security_Cryptography_Sip", "Win32_Security_Cryptography_UI", "Win32_Security_DiagnosticDataQuery", "Win32_Security_DirectoryServices", "Win32_Security_EnterpriseData", "Win32_Security_ExtensibleAuthenticationProtocol", "Win32_Security_Isolation", "Win32_Security_LicenseProtection", "Win32_Security_NetworkAccessProtection", "Win32_Security_WinTrust", "Win32_Security_WinWlx", "Win32_Storage", "Win32_Storage_Cabinets", "Win32_Storage_CloudFilters", "Win32_Storage_Compression", "Win32_Storage_DistributedFileSystem", "Win32_Storage_FileHistory", "Win32_Storage_FileSystem", "Win32_Storage_Imapi", "Win32_Storage_IndexServer", "Win32_Storage_InstallableFileSystems", "Win32_Storage_IscsiDisc", "Win32_Storage_Jet", "Win32_Storage_Nvme", "Win32_Storage_OfflineFiles", "Win32_Storage_OperationRecorder", "Win32_Storage_Packaging", "Win32_Storage_Packaging_Appx", "Win32_Storage_ProjectedFileSystem", "Win32_Storage_StructuredStorage", "Win32_Storage_Vhd", "Win32_Storage_Xps", "Win32_System", "Win32_System_AddressBook", "Win32_System_Antimalware", "Win32_System_ApplicationInstallationAndServicing", "Win32_System_ApplicationVerifier", "Win32_System_ClrHosting", "Win32_System_Com", "Win32_System_Com_Marshal", "Win32_System_Com_StructuredStorage", "Win32_System_Com_Urlmon", "Win32_System_ComponentServices", "Win32_System_Console", "Win32_System_CorrelationVector", "Win32_System_DataExchange", "Win32_System_DeploymentServices", "Win32_System_DeveloperLicensing", "Win32_System_Diagnostics", "Win32_System_Diagnostics_Ceip", "Win32_System_Diagnostics_Debug", "Win32_System_Diagnostics_Debug_Extensions", "Win32_System_Diagnostics_Etw", "Win32_System_Diagnostics_ProcessSnapshotting", "Win32_System_Diagnostics_ToolHelp", "Win32_System_Diagnostics_TraceLogging", "Win32_System_DistributedTransactionCoordinator", "Win32_System_Environment", "Win32_System_ErrorReporting", "Win32_System_EventCollector", "Win32_System_EventLog", "Win32_System_EventNotificationService", "Win32_System_GroupPolicy", "Win32_System_HostCompute", "Win32_System_HostComputeNetwork", "Win32_System_HostComputeSystem", "Win32_System_Hypervisor", "Win32_System_IO", "Win32_System_Iis", "Win32_System_Ioctl", "Win32_System_JobObjects", "Win32_System_Js", "Win32_System_Kernel", "Win32_System_LibraryLoader", "Win32_System_Mailslots", "Win32_System_Mapi", "Win32_System_Memory", "Win32_System_Memory_NonVolatile", "Win32_System_MessageQueuing", "Win32_System_MixedReality", "Win32_System_Ole", "Win32_System_PasswordManagement", "Win32_System_Performance", "Win32_System_Performance_HardwareCounterProfiling", "Win32_System_Pipes", "Win32_System_Power", "Win32_System_ProcessStatus", "Win32_System_Recovery", "Win32_System_Registry", "Win32_System_RemoteDesktop", "Win32_System_RemoteManagement", "Win32_System_RestartManager", "Win32_System_Restore", "Win32_System_Rpc", "Win32_System_Search", "Win32_System_Search_Common", "Win32_System_SecurityCenter", "Win32_System_Services", "Win32_System_SetupAndMigration", "Win32_System_Shutdown", "Win32_System_StationsAndDesktops", "Win32_System_SubsystemForLinux", "Win32_System_SystemInformation", "Win32_System_SystemServices", "Win32_System_Threading", "Win32_System_Time", "Win32_System_TpmBaseServices", "Win32_System_UserAccessLogging", "Win32_System_Variant", "Win32_System_VirtualDosMachines", "Win32_System_WindowsProgramming", "Win32_System_Wmi", "Win32_UI", "Win32_UI_Accessibility", "Win32_UI_ColorSystem", "Win32_UI_Controls", "Win32_UI_Controls_Dialogs", "Win32_UI_HiDpi", "Win32_UI_Input", "Win32_UI_Input_Ime", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_Input_Pointer", "Win32_UI_Input_Touch", "Win32_UI_Input_XboxController", "Win32_UI_InteractionContext", "Win32_UI_Magnification", "Win32_UI_Shell", "Win32_UI_Shell_Common", "Win32_UI_Shell_PropertiesSystem", "Win32_UI_TabletPC", "Win32_UI_TextServices", "Win32_UI_WindowsAndMessaging", "Win32_Web", "Win32_Web_InternetExplorer", "default", "docs"))' -C metadata=a381dbc2b0f71b1b -C extra-filename=-4e0517ae0a3e7c6f --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'windows_link=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libwindows_link-d2ef63ecef51002c.rmeta' --cap-lints allow`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name build_script_build --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_core-1.0.229\build.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C embed-bitcode=no --cfg 'feature="result"' --cfg 'feature="std"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("alloc", "default", "rc", "result", "std", "unstable"))' -C metadata=ba161c1ec2c09ea6 -C extra-filename=-f3938ed9096deb0e --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\serde_core-f3938ed9096deb0e' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+   Compiling serde_json v1.0.151
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name build_script_build --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_json-1.0.151\build.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C embed-bitcode=no --cfg 'feature="default"' --cfg 'feature="indexmap"' --cfg 'feature="preserve_order"' --cfg 'feature="std"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("alloc", "arbitrary_precision", "default", "float_roundtrip", "indexmap", "preserve_order", "raw_value", "std", "unbounded_depth"))' -C metadata=fce1cba0d7ef631d -C extra-filename=-5ab5fa8a8eee8b2f --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\serde_json-5ab5fa8a8eee8b2f' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+   Compiling once_cell_polyfill v1.70.2
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name once_cell_polyfill --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\once_cell_polyfill-1.70.2\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --warn=rust_2018_idioms '--warn=clippy::zero_sized_map_values' '--warn=clippy::wildcard_imports' '--warn=clippy::verbose_file_reads' --warn=unused_qualifications --warn=unused_macro_rules --warn=unused_lifetimes --warn=unsafe_op_in_unsafe_fn --warn=unreachable_pub --warn=unnameable_types '--warn=clippy::uninlined_format_args' '--warn=clippy::trait_duplication_in_bounds' '--warn=clippy::todo' '--warn=clippy::string_to_string' '--warn=clippy::string_lit_as_bytes' '--warn=clippy::string_add_assign' '--warn=clippy::string_add' '--warn=clippy::str_to_string' '--warn=clippy::semicolon_if_nothing_returned' '--warn=clippy::self_named_module_files' '--warn=clippy::same_functions_in_if_condition' '--allow=clippy::result_large_err' '--warn=clippy::rest_pat_in_fully_bound_structs' '--warn=clippy::ref_option_ref' '--warn=clippy::redundant_feature_names' '--warn=clippy::rc_mutex' '--warn=clippy::ptr_as_ptr' '--warn=clippy::path_buf_push_overwrite' '--warn=clippy::negative_feature_names' '--warn=clippy::needless_for_each' '--allow=clippy::needless_continue' '--warn=clippy::mutex_integer' '--warn=clippy::mem_forget' '--warn=clippy::macro_use_imports' '--warn=clippy::lossy_float_literal' '--warn=clippy::linkedlist' '--allow=clippy::let_and_return' '--warn=clippy::large_types_passed_by_value' '--warn=clippy::large_stack_arrays' '--warn=clippy::large_digit_groups' '--warn=clippy::invalid_upcast_comparisons' '--warn=clippy::infinite_loop' '--warn=clippy::inefficient_to_string' '--warn=clippy::inconsistent_struct_constructor' '--warn=clippy::imprecise_flops' '--warn=clippy::implicit_clone' '--allow=clippy::if_same_then_else' '--warn=clippy::from_iter_instead_of_collect' '--warn=clippy::fn_params_excessive_bools' '--warn=clippy::float_cmp_const' '--warn=clippy::flat_map_option' '--warn=clippy::filter_map_next' '--warn=clippy::fallible_impl_from' '--warn=clippy::explicit_into_iter_loop' '--warn=clippy::explicit_deref_methods' '--warn=clippy::expl_impl_clone_on_copy' '--warn=clippy::enum_glob_use' '--warn=clippy::empty_enum' '--warn=clippy::doc_markdown' '--warn=clippy::debug_assert_with_mut_call' '--warn=clippy::dbg_macro' '--warn=clippy::create_dir' '--allow=clippy::collapsible_else_if' '--warn=clippy::checked_conversions' '--allow=clippy::branches_sharing_code' '--allow=clippy::bool_assert_comparison' --cfg 'feature="default"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("default"))' -C metadata=d5327a62091c529e -C extra-filename=-c99ed552160f707e --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-language-c8cd384c78ec8f49\build-script-build`
+   Compiling anstyle v1.0.14
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name anstyle --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\anstyle-1.0.14\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --warn=rust_2018_idioms '--warn=clippy::zero_sized_map_values' '--warn=clippy::wildcard_imports' '--warn=clippy::verbose_file_reads' --warn=unused_qualifications --warn=unused_macro_rules --warn=unused_lifetimes --warn=unsafe_op_in_unsafe_fn --warn=unreachable_pub --warn=unnameable_types '--warn=clippy::uninlined_format_args' '--warn=clippy::trait_duplication_in_bounds' '--warn=clippy::todo' '--warn=clippy::string_lit_as_bytes' '--warn=clippy::string_add_assign' '--warn=clippy::string_add' '--warn=clippy::str_to_string' '--warn=clippy::semicolon_if_nothing_returned' '--warn=clippy::self_named_module_files' '--warn=clippy::same_functions_in_if_condition' '--allow=clippy::result_large_err' '--warn=clippy::rest_pat_in_fully_bound_structs' '--warn=clippy::ref_option_ref' '--warn=clippy::redundant_feature_names' '--warn=clippy::rc_mutex' '--warn=clippy::ptr_as_ptr' '--warn=clippy::path_buf_push_overwrite' '--warn=clippy::negative_feature_names' '--warn=clippy::needless_for_each' '--allow=clippy::needless_continue' '--warn=clippy::mutex_integer' '--warn=clippy::mem_forget' '--warn=clippy::macro_use_imports' '--warn=clippy::lossy_float_literal' '--warn=clippy::linkedlist' '--allow=clippy::let_and_return' '--warn=clippy::large_types_passed_by_value' '--warn=clippy::large_stack_arrays' '--warn=clippy::large_digit_groups' '--warn=clippy::invalid_upcast_comparisons' '--warn=clippy::infinite_loop' '--warn=clippy::inefficient_to_string' '--warn=clippy::inconsistent_struct_constructor' '--warn=clippy::imprecise_flops' '--warn=clippy::implicit_clone' '--allow=clippy::if_same_then_else' '--warn=clippy::from_iter_instead_of_collect' '--warn=clippy::fn_params_excessive_bools' '--warn=clippy::float_cmp_const' '--warn=clippy::flat_map_option' '--warn=clippy::filter_map_next' '--warn=clippy::fallible_impl_from' '--warn=clippy::explicit_into_iter_loop' '--warn=clippy::explicit_deref_methods' '--warn=clippy::expl_impl_clone_on_copy' '--warn=clippy::enum_glob_use' '--warn=clippy::empty_enums' '--warn=clippy::doc_markdown' '--warn=clippy::debug_assert_with_mut_call' '--warn=clippy::dbg_macro' '--warn=clippy::create_dir' '--allow=clippy::collapsible_else_if' '--warn=clippy::checked_conversions' '--allow=clippy::branches_sharing_code' '--allow=clippy::bool_assert_comparison' --cfg 'feature="default"' --cfg 'feature="std"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("default", "std"))' -C metadata=7cc55bbeb43af3e0 -C extra-filename=-982c84b8ed131eed --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+   Compiling utf8parse v0.2.2
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name utf8parse --edition=2018 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\utf8parse-0.2.2\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --cfg 'feature="default"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("default", "nightly"))' -C metadata=6da517ec8f951ce5 -C extra-filename=-5bd14aaf47f2de67 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name tree_sitter_language --edition=2024 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-language-0.1.8\src\language.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 '--warn=clippy::pedantic' '--warn=clippy::nursery' '--warn=clippy::cargo' '--allow=clippy::tuple_array_conversions' '--allow=clippy::too_many_lines' '--deny=clippy::todo' '--allow=clippy::struct_excessive_bools' '--allow=clippy::string_lit_as_bytes' '--allow=clippy::similar_names' '--allow=clippy::option_if_let_else' '--allow=clippy::multiple_crate_versions' '--allow=clippy::missing_panics_doc' '--allow=clippy::missing_errors_doc' --allow=mismatched_lifetime_syntaxes '--allow=clippy::items_after_statements' '--allow=clippy::if_not_else' '--deny=clippy::dbg_macro' '--allow=clippy::cast_sign_loss' '--allow=clippy::cast_precision_loss' '--allow=clippy::cast_possible_wrap' '--allow=clippy::cast_possible_truncation' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=4c77efa150618fb3 -C extra-filename=-a6844efb92603f04 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\quote-30bf6636c31554fd\build-script-build`
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\zmij-e563492435d7d484\build-script-build`
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\proc-macro2-6da1e5c171cdc147\build-script-build`
+   Compiling cc v1.5.1
+   Compiling anstyle-parse v1.0.0
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name anstyle_parse --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\anstyle-parse-1.0.0\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --warn=rust_2018_idioms '--warn=clippy::zero_sized_map_values' '--warn=clippy::wildcard_imports' '--warn=clippy::verbose_file_reads' --warn=unused_qualifications --warn=unused_macro_rules --warn=unused_lifetimes --warn=unsafe_op_in_unsafe_fn --warn=unreachable_pub --warn=unnameable_types '--warn=clippy::uninlined_format_args' '--warn=clippy::trait_duplication_in_bounds' '--warn=clippy::todo' '--warn=clippy::string_lit_as_bytes' '--warn=clippy::string_add_assign' '--warn=clippy::string_add' '--warn=clippy::str_to_string' '--warn=clippy::semicolon_if_nothing_returned' '--warn=clippy::self_named_module_files' '--warn=clippy::same_functions_in_if_condition' '--allow=clippy::result_large_err' '--warn=clippy::rest_pat_in_fully_bound_structs' '--warn=clippy::ref_option_ref' '--warn=clippy::redundant_feature_names' '--warn=clippy::rc_mutex' '--warn=clippy::ptr_as_ptr' '--warn=clippy::path_buf_push_overwrite' '--warn=clippy::negative_feature_names' '--warn=clippy::needless_for_each' '--allow=clippy::needless_continue' '--warn=clippy::mutex_integer' '--warn=clippy::mem_forget' '--warn=clippy::macro_use_imports' '--warn=clippy::lossy_float_literal' '--warn=clippy::linkedlist' '--allow=clippy::let_and_return' '--warn=clippy::large_types_passed_by_value' '--warn=clippy::large_stack_arrays' '--warn=clippy::large_digit_groups' '--warn=clippy::invalid_upcast_comparisons' '--warn=clippy::infinite_loop' '--warn=clippy::inefficient_to_string' '--warn=clippy::inconsistent_struct_constructor' '--warn=clippy::imprecise_flops' '--warn=clippy::implicit_clone' '--allow=clippy::if_same_then_else' '--warn=clippy::from_iter_instead_of_collect' '--warn=clippy::fn_params_excessive_bools' '--warn=clippy::float_cmp_const' '--warn=clippy::flat_map_option' '--warn=clippy::filter_map_next' '--warn=clippy::fallible_impl_from' '--warn=clippy::explicit_into_iter_loop' '--warn=clippy::explicit_deref_methods' '--warn=clippy::expl_impl_clone_on_copy' '--warn=clippy::enum_glob_use' '--warn=clippy::empty_enums' '--warn=clippy::doc_markdown' '--warn=clippy::debug_assert_with_mut_call' '--warn=clippy::dbg_macro' '--warn=clippy::create_dir' '--allow=clippy::collapsible_else_if' '--warn=clippy::checked_conversions' '--allow=clippy::branches_sharing_code' '--allow=clippy::bool_assert_comparison' --cfg 'feature="default"' --cfg 'feature="utf8"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("core", "default", "utf8"))' -C metadata=35540a3c898a80b9 -C extra-filename=-62995aaea507db56 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'utf8parse=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libutf8parse-5bd14aaf47f2de67.rmeta' --cap-lints allow`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name cc --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\cc-1.5.1\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no --allow=unexpected_cfgs '--warn=clippy::ptr_cast_constness' '--warn=clippy::ptr_as_ptr' --warn=missing_docs '--warn=clippy::manual_let_else' '--warn=clippy::doc_markdown' '--warn=clippy::disallowed_methods' '--warn=clippy::borrow_as_ptr' --check-cfg 'cfg(disable_clang_cl_tests)' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("jobserver", "parallel"))' -C metadata=cff9bf8ab6b4fd5a -C extra-filename=-509951f8bde5e7a7 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'find_msvc_tools=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libfind_msvc_tools-514e4ccbd9cca3c8.rmeta' --extern 'shlex=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libshlex-f9df91f0b2c0ecd4.rmeta' --cap-lints allow`
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\serde_json-5ab5fa8a8eee8b2f\build-script-build`
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\serde_core-76a94cece5643ac8\build-script-build`
+   Compiling serde v1.0.229
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name build_script_build --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\build.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C embed-bitcode=no --cfg 'feature="default"' --cfg 'feature="derive"' --cfg 'feature="serde_derive"' --cfg 'feature="std"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("alloc", "default", "derive", "rc", "serde_derive", "std", "unstable"))' -C metadata=2fb17866aec19a80 -C extra-filename=-a92cd76b07cb3431 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\serde-a92cd76b07cb3431' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name zmij --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\zmij-1.0.23\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("no-panic"))' -C metadata=012dd8e0aecc443a -C extra-filename=-a825a2c509402988 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow --check-cfg 'cfg(exhaustive)' --check-cfg 'cfg(opt_level, values("s"))' --check-cfg 'cfg(zmij_no_select_unpredictable)'`
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\serde_core-f3938ed9096deb0e\build-script-build`
+   Compiling aho-corasick v1.1.5
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name aho_corasick --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\aho-corasick-1.1.5\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --cfg 'feature="perf-literal"' --cfg 'feature="std"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("default", "logging", "perf-literal", "std"))' -C metadata=4893579d628978cb -C extra-filename=-6193d2572954f0f5 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'memchr=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libmemchr-85a7902eb33c4c5d.rmeta' --cap-lints allow`
+   Compiling colorchoice v1.0.5
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name colorchoice --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\colorchoice-1.0.5\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --warn=rust_2018_idioms '--warn=clippy::zero_sized_map_values' '--warn=clippy::wildcard_imports' '--warn=clippy::verbose_file_reads' --warn=unused_qualifications --warn=unused_macro_rules --warn=unused_lifetimes --warn=unsafe_op_in_unsafe_fn --warn=unreachable_pub --warn=unnameable_types '--warn=clippy::uninlined_format_args' '--warn=clippy::trait_duplication_in_bounds' '--warn=clippy::todo' '--warn=clippy::string_lit_as_bytes' '--warn=clippy::string_add_assign' '--warn=clippy::string_add' '--warn=clippy::str_to_string' '--warn=clippy::semicolon_if_nothing_returned' '--warn=clippy::self_named_module_files' '--warn=clippy::same_functions_in_if_condition' '--allow=clippy::result_large_err' '--warn=clippy::rest_pat_in_fully_bound_structs' '--warn=clippy::ref_option_ref' '--warn=clippy::redundant_feature_names' '--warn=clippy::rc_mutex' '--warn=clippy::ptr_as_ptr' '--warn=clippy::path_buf_push_overwrite' '--warn=clippy::negative_feature_names' '--warn=clippy::needless_for_each' '--allow=clippy::needless_continue' '--warn=clippy::mutex_integer' '--warn=clippy::mem_forget' '--warn=clippy::macro_use_imports' '--warn=clippy::lossy_float_literal' '--warn=clippy::linkedlist' '--allow=clippy::let_and_return' '--warn=clippy::large_types_passed_by_value' '--warn=clippy::large_stack_arrays' '--warn=clippy::large_digit_groups' '--warn=clippy::invalid_upcast_comparisons' '--warn=clippy::infinite_loop' '--warn=clippy::inefficient_to_string' '--warn=clippy::inconsistent_struct_constructor' '--warn=clippy::imprecise_flops' '--warn=clippy::implicit_clone' '--allow=clippy::if_same_then_else' '--warn=clippy::from_iter_instead_of_collect' '--warn=clippy::fn_params_excessive_bools' '--warn=clippy::float_cmp_const' '--warn=clippy::flat_map_option' '--warn=clippy::filter_map_next' '--warn=clippy::fallible_impl_from' '--warn=clippy::explicit_into_iter_loop' '--warn=clippy::explicit_deref_methods' '--warn=clippy::expl_impl_clone_on_copy' '--warn=clippy::enum_glob_use' '--warn=clippy::empty_enums' '--warn=clippy::doc_markdown' '--warn=clippy::debug_assert_with_mut_call' '--warn=clippy::dbg_macro' '--warn=clippy::create_dir' '--allow=clippy::collapsible_else_if' '--warn=clippy::checked_conversions' '--allow=clippy::branches_sharing_code' '--allow=clippy::bool_assert_comparison' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=7ec8b173fd94ed93 -C extra-filename=-dcc8b86b002572e2 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+   Compiling indexmap v2.14.2
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name indexmap --edition=2024 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\indexmap-2.14.2\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --warn=rust_2018_idioms --deny=unsafe_code --deny=unreachable_pub --deny=unnameable_types '--allow=clippy::style' --deny=private_interfaces --deny=private_bounds --cfg 'feature="default"' --cfg 'feature="std"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("arbitrary", "borsh", "default", "quickcheck", "rayon", "serde", "std", "sval", "test_debug"))' -C metadata=615352477ed06375 -C extra-filename=-58cf2ec8d6f37cf1 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'equivalent=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libequivalent-b19a42cd8c2442b0.rmeta' --extern 'hashbrown=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libhashbrown-bae4266ff5dabe82.rmeta' --cap-lints allow`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name serde_core --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_core-1.0.229\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no --cfg 'feature="std"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("alloc", "default", "rc", "result", "std", "unstable"))' -C metadata=31774b1fd4acff85 -C extra-filename=-a0dbb342b705d945 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow --check-cfg 'cfg(if_docsrs_then_no_serde_core)' --check-cfg 'cfg(no_core_cstr)' --check-cfg 'cfg(no_core_error)' --check-cfg 'cfg(no_core_net)' --check-cfg 'cfg(no_core_num_saturating)' --check-cfg 'cfg(no_diagnostic_namespace)' --check-cfg 'cfg(no_serde_derive)' --check-cfg 'cfg(no_std_atomic)' --check-cfg 'cfg(no_std_atomic64)' --check-cfg 'cfg(no_target_has_atomic)'`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name proc_macro2 --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\proc-macro2-1.0.107\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no --cfg 'feature="default"' --cfg 'feature="proc-macro"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("default", "nightly", "proc-macro", "span-locations"))' -C metadata=636be829b0ec55d3 -C extra-filename=-3b4695d0e87a59b0 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'unicode_ident=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libunicode_ident-cd895043fb0a1633.rmeta' --cap-lints allow --cfg wrap_proc_macro --cfg proc_macro_span_location --cfg proc_macro_span_file --check-cfg 'cfg(fuzzing)' --check-cfg 'cfg(no_is_available)' --check-cfg 'cfg(no_literal_byte_character)' --check-cfg 'cfg(no_literal_c_string)' --check-cfg 'cfg(no_source_text)' --check-cfg 'cfg(proc_macro_span)' --check-cfg 'cfg(proc_macro_span_file)' --check-cfg 'cfg(proc_macro_span_location)' --check-cfg 'cfg(procmacro2_backtrace)' --check-cfg 'cfg(procmacro2_build_probe)' --check-cfg 'cfg(procmacro2_nightly_testing)' --check-cfg 'cfg(procmacro2_semver_exempt)' --check-cfg 'cfg(randomize_layout)' --check-cfg 'cfg(span_locations)' --check-cfg 'cfg(super_unstable)' --check-cfg 'cfg(wrap_proc_macro)'`
+   Compiling is_terminal_polyfill v1.70.2
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name is_terminal_polyfill --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\is_terminal_polyfill-1.70.2\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 '--warn=clippy::zero_sized_map_values' '--warn=clippy::wildcard_imports' '--warn=clippy::verbose_file_reads' --warn=unused_qualifications --warn=unused_macro_rules --warn=unused_lifetimes --warn=unsafe_op_in_unsafe_fn --warn=unreachable_pub '--warn=clippy::trait_duplication_in_bounds' '--warn=clippy::todo' '--warn=clippy::string_to_string' '--warn=clippy::string_lit_as_bytes' '--warn=clippy::string_add_assign' '--warn=clippy::string_add' '--warn=clippy::str_to_string' '--warn=clippy::single_match_else' '--warn=clippy::semicolon_if_nothing_returned' '--warn=clippy::self_named_module_files' '--warn=clippy::same_functions_in_if_condition' --warn=rust_2018_idioms '--warn=clippy::rest_pat_in_fully_bound_structs' '--warn=clippy::ref_option_ref' '--warn=clippy::redundant_feature_names' '--warn=clippy::rc_mutex' '--warn=clippy::ptr_as_ptr' '--warn=clippy::path_buf_push_overwrite' '--warn=clippy::negative_feature_names' '--warn=clippy::needless_for_each' '--warn=clippy::needless_continue' '--warn=clippy::mutex_integer' '--warn=clippy::mem_forget' '--warn=clippy::match_wildcard_for_single_variants' '--warn=clippy::macro_use_imports' '--warn=clippy::lossy_float_literal' '--warn=clippy::linkedlist' '--allow=clippy::let_and_return' '--warn=clippy::large_types_passed_by_value' '--warn=clippy::large_stack_arrays' '--warn=clippy::large_digit_groups' '--warn=clippy::invalid_upcast_comparisons' '--warn=clippy::infinite_loop' '--warn=clippy::inefficient_to_string' '--warn=clippy::inconsistent_struct_constructor' '--warn=clippy::imprecise_flops' '--warn=clippy::implicit_clone' '--allow=clippy::if_same_then_else' '--warn=clippy::from_iter_instead_of_collect' '--warn=clippy::fn_params_excessive_bools' '--warn=clippy::float_cmp_const' '--warn=clippy::flat_map_option' '--warn=clippy::filter_map_next' '--warn=clippy::fallible_impl_from' '--warn=clippy::explicit_into_iter_loop' '--warn=clippy::explicit_deref_methods' '--warn=clippy::expl_impl_clone_on_copy' '--warn=clippy::enum_glob_use' '--warn=clippy::empty_enum' '--warn=clippy::doc_markdown' '--warn=clippy::debug_assert_with_mut_call' '--warn=clippy::dbg_macro' '--warn=clippy::create_dir' '--allow=clippy::collapsible_else_if' '--warn=clippy::checked_conversions' '--allow=clippy::branches_sharing_code' '--allow=clippy::bool_assert_comparison' --cfg 'feature="default"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("default"))' -C metadata=148059b6eb62c798 -C extra-filename=-f26f00c589dc17e8 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name serde_core --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_core-1.0.229\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --cfg 'feature="result"' --cfg 'feature="std"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("alloc", "default", "rc", "result", "std", "unstable"))' -C metadata=20f4eaf250d3b5c4 -C extra-filename=-6eeffb32ad5085e9 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow --check-cfg 'cfg(if_docsrs_then_no_serde_core)' --check-cfg 'cfg(no_core_cstr)' --check-cfg 'cfg(no_core_error)' --check-cfg 'cfg(no_core_net)' --check-cfg 'cfg(no_core_num_saturating)' --check-cfg 'cfg(no_diagnostic_namespace)' --check-cfg 'cfg(no_serde_derive)' --check-cfg 'cfg(no_std_atomic)' --check-cfg 'cfg(no_std_atomic64)' --check-cfg 'cfg(no_target_has_atomic)'`
+   Compiling regex-syntax v0.8.11
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name regex_syntax --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\regex-syntax-0.8.11\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --allow=unexpected_cfgs --check-cfg 'cfg(docsrs_regex)' --cfg 'feature="std"' --cfg 'feature="unicode"' --cfg 'feature="unicode-age"' --cfg 'feature="unicode-bool"' --cfg 'feature="unicode-case"' --cfg 'feature="unicode-gencat"' --cfg 'feature="unicode-perl"' --cfg 'feature="unicode-script"' --cfg 'feature="unicode-segment"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("arbitrary", "default", "std", "unicode", "unicode-age", "unicode-bool", "unicode-case", "unicode-gencat", "unicode-perl", "unicode-script", "unicode-segment"))' -C metadata=d64fb15826ce1487 -C extra-filename=-22fc5df20f830326 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+   Compiling heck v0.5.0
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name heck --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\heck-0.5.0\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=cbef14065321d497 -C extra-filename=-c8dbe9f7c38c81ae --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+   Compiling anstyle-query v1.1.5
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name anstyle_query --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\anstyle-query-1.1.5\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --warn=rust_2018_idioms '--warn=clippy::zero_sized_map_values' '--warn=clippy::wildcard_imports' '--warn=clippy::verbose_file_reads' --warn=unused_qualifications --warn=unused_macro_rules --warn=unused_lifetimes --warn=unsafe_op_in_unsafe_fn --warn=unreachable_pub --warn=unnameable_types '--warn=clippy::uninlined_format_args' '--warn=clippy::trait_duplication_in_bounds' '--warn=clippy::todo' '--warn=clippy::string_lit_as_bytes' '--warn=clippy::string_add_assign' '--warn=clippy::string_add' '--warn=clippy::str_to_string' '--warn=clippy::semicolon_if_nothing_returned' '--warn=clippy::self_named_module_files' '--warn=clippy::same_functions_in_if_condition' '--allow=clippy::result_large_err' '--warn=clippy::rest_pat_in_fully_bound_structs' '--warn=clippy::ref_option_ref' '--warn=clippy::redundant_feature_names' '--warn=clippy::rc_mutex' '--warn=clippy::ptr_as_ptr' '--warn=clippy::path_buf_push_overwrite' '--warn=clippy::negative_feature_names' '--warn=clippy::needless_for_each' '--allow=clippy::needless_continue' '--warn=clippy::mutex_integer' '--warn=clippy::mem_forget' '--warn=clippy::macro_use_imports' '--warn=clippy::lossy_float_literal' '--warn=clippy::linkedlist' '--allow=clippy::let_and_return' '--warn=clippy::large_types_passed_by_value' '--warn=clippy::large_stack_arrays' '--warn=clippy::large_digit_groups' '--warn=clippy::invalid_upcast_comparisons' '--warn=clippy::infinite_loop' '--warn=clippy::inefficient_to_string' '--warn=clippy::inconsistent_struct_constructor' '--warn=clippy::imprecise_flops' '--warn=clippy::implicit_clone' '--allow=clippy::if_same_then_else' '--warn=clippy::from_iter_instead_of_collect' '--warn=clippy::fn_params_excessive_bools' '--warn=clippy::float_cmp_const' '--warn=clippy::flat_map_option' '--warn=clippy::filter_map_next' '--warn=clippy::fallible_impl_from' '--warn=clippy::explicit_into_iter_loop' '--warn=clippy::explicit_deref_methods' '--warn=clippy::expl_impl_clone_on_copy' '--warn=clippy::enum_glob_use' '--warn=clippy::empty_enum' '--warn=clippy::doc_markdown' '--warn=clippy::debug_assert_with_mut_call' '--warn=clippy::dbg_macro' '--warn=clippy::create_dir' '--allow=clippy::collapsible_else_if' '--warn=clippy::checked_conversions' '--allow=clippy::branches_sharing_code' '--allow=clippy::bool_assert_comparison' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=e75140b05965ee83 -C extra-filename=-124f12488ad9572c --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'windows_sys=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libwindows_sys-4e0517ae0a3e7c6f.rmeta' --cap-lints allow`
+   Compiling anstyle-wincon v3.0.11
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name anstyle_wincon --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\anstyle-wincon-3.0.11\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --warn=rust_2018_idioms '--warn=clippy::zero_sized_map_values' '--warn=clippy::wildcard_imports' '--warn=clippy::verbose_file_reads' --warn=unused_qualifications --warn=unused_macro_rules --warn=unused_lifetimes --warn=unsafe_op_in_unsafe_fn --warn=unreachable_pub --warn=unnameable_types '--warn=clippy::uninlined_format_args' '--warn=clippy::trait_duplication_in_bounds' '--warn=clippy::todo' '--warn=clippy::string_lit_as_bytes' '--warn=clippy::string_add_assign' '--warn=clippy::string_add' '--warn=clippy::str_to_string' '--warn=clippy::semicolon_if_nothing_returned' '--warn=clippy::self_named_module_files' '--warn=clippy::same_functions_in_if_condition' '--allow=clippy::result_large_err' '--warn=clippy::rest_pat_in_fully_bound_structs' '--warn=clippy::ref_option_ref' '--warn=clippy::redundant_feature_names' '--warn=clippy::rc_mutex' '--warn=clippy::ptr_as_ptr' '--warn=clippy::path_buf_push_overwrite' '--warn=clippy::negative_feature_names' '--warn=clippy::needless_for_each' '--allow=clippy::needless_continue' '--warn=clippy::mutex_integer' '--warn=clippy::mem_forget' '--warn=clippy::macro_use_imports' '--warn=clippy::lossy_float_literal' '--warn=clippy::linkedlist' '--allow=clippy::let_and_return' '--warn=clippy::large_types_passed_by_value' '--warn=clippy::large_stack_arrays' '--warn=clippy::large_digit_groups' '--warn=clippy::invalid_upcast_comparisons' '--warn=clippy::infinite_loop' '--warn=clippy::inefficient_to_string' '--warn=clippy::inconsistent_struct_constructor' '--warn=clippy::imprecise_flops' '--warn=clippy::implicit_clone' '--allow=clippy::if_same_then_else' '--warn=clippy::from_iter_instead_of_collect' '--warn=clippy::fn_params_excessive_bools' '--warn=clippy::float_cmp_const' '--warn=clippy::flat_map_option' '--warn=clippy::filter_map_next' '--warn=clippy::fallible_impl_from' '--warn=clippy::explicit_into_iter_loop' '--warn=clippy::explicit_deref_methods' '--warn=clippy::expl_impl_clone_on_copy' '--warn=clippy::enum_glob_use' '--warn=clippy::empty_enum' '--warn=clippy::doc_markdown' '--warn=clippy::debug_assert_with_mut_call' '--warn=clippy::dbg_macro' '--warn=clippy::create_dir' '--allow=clippy::collapsible_else_if' '--warn=clippy::checked_conversions' '--allow=clippy::branches_sharing_code' '--allow=clippy::bool_assert_comparison' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=455b079f74b6e752 -C extra-filename=-7a90acfff07fda5c --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'anstyle=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libanstyle-982c84b8ed131eed.rmeta' --extern 'once_cell_polyfill=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libonce_cell_polyfill-c99ed552160f707e.rmeta' --extern 'windows_sys=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libwindows_sys-4e0517ae0a3e7c6f.rmeta' --cap-lints allow`
+   Compiling clap_lex v1.1.1
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name build_script_build --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_json-1.0.151\build.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C embed-bitcode=no --cfg 'feature="default"' --cfg 'feature="std"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("alloc", "arbitrary_precision", "default", "float_roundtrip", "indexmap", "preserve_order", "raw_value", "std", "unbounded_depth"))' -C metadata=31f21c8d5292e02f -C extra-filename=-d19aaf13d9c4705c --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\serde_json-d19aaf13d9c4705c' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\serde-a92cd76b07cb3431\build-script-build`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name clap_lex --edition=2024 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\clap_lex-1.1.1\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --warn=rust_2018_idioms '--warn=clippy::zero_sized_map_values' '--warn=clippy::verbose_file_reads' '--warn=clippy::use_self' --warn=unused_qualifications --warn=unused_macro_rules --warn=unused_lifetimes '--warn=clippy::unseparated_literal_suffix' --warn=unsafe_op_in_unsafe_fn --warn=unreachable_pub '--warn=clippy::unnecessary_safety_doc' '--warn=clippy::unnecessary_safety_comment' '--warn=clippy::uninlined_format_args' --warn=trivial_numeric_casts '--warn=clippy::trait_duplication_in_bounds' '--warn=clippy::todo' '--warn=clippy::string_lit_as_bytes' '--warn=clippy::string_add_assign' '--warn=clippy::string_add' '--warn=clippy::str_to_string' '--warn=clippy::semicolon_if_nothing_returned' '--warn=clippy::self_named_module_files' '--warn=clippy::same_functions_in_if_condition' '--allow=clippy::result_large_err' '--warn=clippy::rest_pat_in_fully_bound_structs' '--warn=clippy::ref_option_ref' '--warn=clippy::redundant_feature_names' '--warn=clippy::rc_mutex' '--warn=clippy::ptr_as_ptr' '--warn=clippy::path_buf_push_overwrite' '--warn=clippy::partial_pub_fields' --warn=non_ascii_idents '--warn=clippy::negative_feature_names' '--warn=clippy::needless_for_each' '--allow=clippy::needless_continue' '--warn=clippy::mutex_integer' '--allow=clippy::multiple_bound_locations' '--warn=clippy::mismatching_type_param_order' '--warn=clippy::mem_forget' '--warn=clippy::macro_use_imports' '--warn=clippy::lossy_float_literal' '--warn=clippy::linkedlist' '--allow=clippy::let_and_return' '--warn=clippy::large_types_passed_by_value' '--warn=clippy::large_stack_arrays' '--warn=clippy::large_digit_groups' '--warn=clippy::invalid_upcast_comparisons' '--warn=clippy::infinite_loop' '--warn=clippy::inefficient_to_string' '--warn=clippy::inconsistent_struct_constructor' '--warn=clippy::imprecise_flops' '--warn=clippy::implicit_clone' '--allow=clippy::if_same_then_else' '--warn=clippy::fn_to_numeric_cast_any' '--warn=clippy::fn_params_excessive_bools' '--warn=clippy::float_cmp_const' '--warn=clippy::float_cmp' '--warn=clippy::flat_map_option' '--warn=clippy::filter_map_next' '--warn=clippy::fallible_impl_from' '--warn=clippy::explicit_into_iter_loop' '--warn=clippy::explicit_deref_methods' '--warn=clippy::expl_impl_clone_on_copy' '--warn=clippy::enum_glob_use' '--warn=clippy::empty_enums' '--warn=clippy::doc_markdown' '--warn=clippy::debug_assert_with_mut_call' '--warn=clippy::dbg_macro' '--warn=clippy::create_dir' '--warn=clippy::collection_is_never_read' '--allow=clippy::collapsible_match' '--allow=clippy::collapsible_else_if' '--warn=clippy::checked_conversions' '--allow=clippy::byte_char_slices' '--allow=clippy::branches_sharing_code' '--allow=clippy::bool_assert_comparison' '--allow=clippy::blocks_in_conditions' '--allow=clippy::assigning_clones' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=c469c98aee5e7be4 -C extra-filename=-fde394239673b4db --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+   Compiling anstream v1.0.0
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name quote --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\quote-1.0.47\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no --cfg 'feature="default"' --cfg 'feature="proc-macro"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("default", "proc-macro"))' -C metadata=813577b031480f7e -C extra-filename=-b363dbdb9fb99079 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'proc_macro2=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libproc_macro2-3b4695d0e87a59b0.rmeta' --cap-lints allow --check-cfg 'cfg(no_diagnostic_namespace)'`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name anstream --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\anstream-1.0.0\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --warn=rust_2018_idioms '--warn=clippy::zero_sized_map_values' '--warn=clippy::wildcard_imports' '--warn=clippy::verbose_file_reads' --warn=unused_qualifications --warn=unused_macro_rules --warn=unused_lifetimes --warn=unsafe_op_in_unsafe_fn --warn=unreachable_pub --warn=unnameable_types '--warn=clippy::uninlined_format_args' '--warn=clippy::trait_duplication_in_bounds' '--warn=clippy::todo' '--warn=clippy::string_lit_as_bytes' '--warn=clippy::string_add_assign' '--warn=clippy::string_add' '--warn=clippy::str_to_string' '--warn=clippy::semicolon_if_nothing_returned' '--warn=clippy::self_named_module_files' '--warn=clippy::same_functions_in_if_condition' '--allow=clippy::result_large_err' '--warn=clippy::rest_pat_in_fully_bound_structs' '--warn=clippy::ref_option_ref' '--warn=clippy::redundant_feature_names' '--warn=clippy::rc_mutex' '--warn=clippy::ptr_as_ptr' '--warn=clippy::path_buf_push_overwrite' '--warn=clippy::negative_feature_names' '--warn=clippy::needless_for_each' '--allow=clippy::needless_continue' '--warn=clippy::mutex_integer' '--warn=clippy::mem_forget' '--warn=clippy::macro_use_imports' '--warn=clippy::lossy_float_literal' '--warn=clippy::linkedlist' '--allow=clippy::let_and_return' '--warn=clippy::large_types_passed_by_value' '--warn=clippy::large_stack_arrays' '--warn=clippy::large_digit_groups' '--warn=clippy::invalid_upcast_comparisons' '--warn=clippy::infinite_loop' '--warn=clippy::inefficient_to_string' '--warn=clippy::inconsistent_struct_constructor' '--warn=clippy::imprecise_flops' '--warn=clippy::implicit_clone' '--allow=clippy::if_same_then_else' '--warn=clippy::from_iter_instead_of_collect' '--warn=clippy::fn_params_excessive_bools' '--warn=clippy::float_cmp_const' '--warn=clippy::flat_map_option' '--warn=clippy::filter_map_next' '--warn=clippy::fallible_impl_from' '--warn=clippy::explicit_into_iter_loop' '--warn=clippy::explicit_deref_methods' '--warn=clippy::expl_impl_clone_on_copy' '--warn=clippy::enum_glob_use' '--warn=clippy::empty_enums' '--warn=clippy::doc_markdown' '--warn=clippy::debug_assert_with_mut_call' '--warn=clippy::dbg_macro' '--warn=clippy::create_dir' '--allow=clippy::collapsible_else_if' '--warn=clippy::checked_conversions' '--allow=clippy::branches_sharing_code' '--allow=clippy::bool_assert_comparison' --cfg 'feature="auto"' --cfg 'feature="default"' --cfg 'feature="wincon"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("auto", "default", "test", "wincon"))' -C metadata=a15cbfa3147708c7 -C extra-filename=-21c9f652d399f92c --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'anstyle=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libanstyle-982c84b8ed131eed.rmeta' --extern 'anstyle_parse=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libanstyle_parse-62995aaea507db56.rmeta' --extern 'anstyle_query=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libanstyle_query-124f12488ad9572c.rmeta' --extern 'anstyle_wincon=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libanstyle_wincon-7a90acfff07fda5c.rmeta' --extern 'colorchoice=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libcolorchoice-dcc8b86b002572e2.rmeta' --extern 'is_terminal_polyfill=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libis_terminal_polyfill-f26f00c589dc17e8.rmeta' --extern 'utf8parse=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libutf8parse-5bd14aaf47f2de67.rmeta' --cap-lints allow`
+   Compiling strsim v0.11.1
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name strsim --edition=2015 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\strsim-0.11.1\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=6ffaaf56c03b5717 -C extra-filename=-f278ae3ace37fce3 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+   Compiling streaming-iterator v0.1.9
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name streaming_iterator --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\streaming-iterator-0.1.9\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("alloc", "std"))' -C metadata=435ff8906afe8180 -C extra-filename=-a568802d179ad611 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+   Compiling unsafe-libyaml v0.2.11
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name unsafe_libyaml --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\unsafe-libyaml-0.2.11\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=b3856b19a357052d -C extra-filename=-b42ac834995408db --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+   Compiling syn v3.0.6
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name syn --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\syn-3.0.6\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no --cfg 'feature="clone-impls"' --cfg 'feature="default"' --cfg 'feature="derive"' --cfg 'feature="full"' --cfg 'feature="parsing"' --cfg 'feature="printing"' --cfg 'feature="proc-macro"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("clone-impls", "default", "derive", "extra-traits", "fold", "full", "parsing", "printing", "proc-macro", "test", "visit", "visit-mut"))' -C metadata=2f67335b5c5c18df -C extra-filename=-e2d6f572a436aef5 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'proc_macro2=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libproc_macro2-3b4695d0e87a59b0.rmeta' --extern 'quote=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libquote-b363dbdb9fb99079.rmeta' --extern 'unicode_ident=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libunicode_ident-cd895043fb0a1633.rmeta' --cap-lints allow`
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\serde_json-d19aaf13d9c4705c\build-script-build`
+   Compiling ryu v1.0.23
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name ryu --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ryu-1.0.23\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("no-panic", "small"))' -C metadata=8b2de238008a2879 -C extra-filename=-e66e2e84528ce1f6 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --cap-lints allow`
+   Compiling clap_builder v4.6.7
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name clap_builder --edition=2024 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\clap_builder-4.6.7\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --warn=rust_2018_idioms '--warn=clippy::zero_sized_map_values' '--warn=clippy::verbose_file_reads' '--warn=clippy::use_self' --warn=unused_qualifications --warn=unused_macro_rules --warn=unused_lifetimes '--warn=clippy::unseparated_literal_suffix' --warn=unsafe_op_in_unsafe_fn --warn=unreachable_pub '--warn=clippy::unnecessary_safety_doc' '--warn=clippy::unnecessary_safety_comment' '--warn=clippy::uninlined_format_args' --warn=trivial_numeric_casts '--warn=clippy::trait_duplication_in_bounds' '--warn=clippy::todo' '--warn=clippy::string_lit_as_bytes' '--warn=clippy::string_add_assign' '--warn=clippy::string_add' '--warn=clippy::str_to_string' '--warn=clippy::semicolon_if_nothing_returned' '--warn=clippy::self_named_module_files' '--warn=clippy::same_functions_in_if_condition' '--allow=clippy::result_large_err' '--warn=clippy::rest_pat_in_fully_bound_structs' '--warn=clippy::ref_option_ref' '--warn=clippy::redundant_feature_names' '--warn=clippy::rc_mutex' '--warn=clippy::ptr_as_ptr' '--warn=clippy::path_buf_push_overwrite' '--warn=clippy::partial_pub_fields' --warn=non_ascii_idents '--warn=clippy::negative_feature_names' '--warn=clippy::needless_for_each' '--allow=clippy::needless_continue' '--warn=clippy::mutex_integer' '--allow=clippy::multiple_bound_locations' '--warn=clippy::mismatching_type_param_order' '--warn=clippy::mem_forget' '--warn=clippy::macro_use_imports' '--warn=clippy::lossy_float_literal' '--warn=clippy::linkedlist' '--allow=clippy::let_and_return' '--warn=clippy::large_types_passed_by_value' '--warn=clippy::large_stack_arrays' '--warn=clippy::large_digit_groups' '--warn=clippy::invalid_upcast_comparisons' '--warn=clippy::infinite_loop' '--warn=clippy::inefficient_to_string' '--warn=clippy::inconsistent_struct_constructor' '--warn=clippy::imprecise_flops' '--warn=clippy::implicit_clone' '--allow=clippy::if_same_then_else' '--warn=clippy::fn_to_numeric_cast_any' '--warn=clippy::fn_params_excessive_bools' '--warn=clippy::float_cmp_const' '--warn=clippy::float_cmp' '--warn=clippy::flat_map_option' '--warn=clippy::filter_map_next' '--warn=clippy::fallible_impl_from' '--warn=clippy::explicit_into_iter_loop' '--warn=clippy::explicit_deref_methods' '--warn=clippy::expl_impl_clone_on_copy' '--warn=clippy::enum_glob_use' '--warn=clippy::empty_enums' '--warn=clippy::doc_markdown' '--warn=clippy::debug_assert_with_mut_call' '--warn=clippy::dbg_macro' '--warn=clippy::create_dir' '--warn=clippy::collection_is_never_read' '--allow=clippy::collapsible_match' '--allow=clippy::collapsible_else_if' '--warn=clippy::checked_conversions' '--allow=clippy::byte_char_slices' '--allow=clippy::branches_sharing_code' '--allow=clippy::bool_assert_comparison' '--allow=clippy::blocks_in_conditions' '--allow=clippy::assigning_clones' --cfg 'feature="color"' --cfg 'feature="error-context"' --cfg 'feature="help"' --cfg 'feature="std"' --cfg 'feature="suggestions"' --cfg 'feature="usage"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("cargo", "color", "debug", "default", "deprecated", "env", "error-context", "help", "std", "string", "suggestions", "unicode", "unstable-doc", "unstable-ext", "unstable-styles", "unstable-v5", "usage", "wrap_help"))' -C metadata=f12fbf611e0a079c -C extra-filename=-a5af6ce5cb5f7ab8 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'anstream=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libanstream-21c9f652d399f92c.rmeta' --extern 'anstyle=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libanstyle-982c84b8ed131eed.rmeta' --extern 'clap_lex=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libclap_lex-fde394239673b4db.rmeta' --extern 'strsim=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libstrsim-f278ae3ace37fce3.rmeta' --cap-lints allow`
+   Compiling tree-sitter-c-sharp v0.23.5
+   Compiling tree-sitter-rust v0.24.2
+   Compiling tree-sitter-typescript v0.23.2
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name build_script_build --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-c-sharp-0.23.5\bindings\rust\build.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C embed-bitcode=no --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=eb0688bd45ce0d8f -C extra-filename=-bfe15954767f33a6 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-c-sharp-bfe15954767f33a6' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'cc=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libcc-509951f8bde5e7a7.rlib' --cap-lints allow`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name build_script_build --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-rust-0.24.2\bindings\rust\build.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C embed-bitcode=no --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=6f45c7f18247c049 -C extra-filename=-1222fca55fd9b108 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-rust-1222fca55fd9b108' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'cc=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libcc-509951f8bde5e7a7.rlib' --cap-lints allow`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name build_script_build --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-typescript-0.23.2\bindings\rust\build.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C embed-bitcode=no --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=688fc4d624bdce3b -C extra-filename=-35aea2ea5c4457dc --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-typescript-35aea2ea5c4457dc' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'cc=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libcc-509951f8bde5e7a7.rlib' --cap-lints allow`
+   Compiling tree-sitter-javascript v0.23.1
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name build_script_build --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-javascript-0.23.1\bindings\rust\build.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C embed-bitcode=no --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=5cd3215e4575ae28 -C extra-filename=-10c94f906f5ed4cd --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-javascript-10c94f906f5ed4cd' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'cc=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libcc-509951f8bde5e7a7.rlib' --cap-lints allow`
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-rust-1222fca55fd9b108\build-script-build`
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-typescript-35aea2ea5c4457dc\build-script-build`
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-c-sharp-bfe15954767f33a6\build-script-build`
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-javascript-10c94f906f5ed4cd\build-script-build`
+   Compiling regex-automata v0.4.18
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name regex_automata --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\regex-automata-0.4.18\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --allow=unexpected_cfgs --check-cfg 'cfg(docsrs_regex)' --cfg 'feature="alloc"' --cfg 'feature="dfa-onepass"' --cfg 'feature="hybrid"' --cfg 'feature="meta"' --cfg 'feature="nfa-backtrack"' --cfg 'feature="nfa-pikevm"' --cfg 'feature="nfa-thompson"' --cfg 'feature="perf-inline"' --cfg 'feature="perf-literal"' --cfg 'feature="perf-literal-multisubstring"' --cfg 'feature="perf-literal-substring"' --cfg 'feature="std"' --cfg 'feature="syntax"' --cfg 'feature="unicode"' --cfg 'feature="unicode-age"' --cfg 'feature="unicode-bool"' --cfg 'feature="unicode-case"' --cfg 'feature="unicode-gencat"' --cfg 'feature="unicode-perl"' --cfg 'feature="unicode-script"' --cfg 'feature="unicode-segment"' --cfg 'feature="unicode-word-boundary"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("alloc", "default", "dfa", "dfa-build", "dfa-onepass", "dfa-search", "hybrid", "internal-instrument", "internal-instrument-pikevm", "logging", "meta", "nfa", "nfa-backtrack", "nfa-pikevm", "nfa-thompson", "perf", "perf-inline", "perf-literal", "perf-literal-multisubstring", "perf-literal-substring", "std", "syntax", "unicode", "unicode-age", "unicode-bool", "unicode-case", "unicode-gencat", "unicode-perl", "unicode-script", "unicode-segment", "unicode-word-boundary"))' -C metadata=a19f2d129cab5312 -C extra-filename=-07ef7fd5b5711161 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'aho_corasick=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libaho_corasick-6193d2572954f0f5.rmeta' --extern 'memchr=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libmemchr-85a7902eb33c4c5d.rmeta' --extern 'regex_syntax=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libregex_syntax-22fc5df20f830326.rmeta' --cap-lints allow`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name serde_json --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_json-1.0.151\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no --cfg 'feature="default"' --cfg 'feature="indexmap"' --cfg 'feature="preserve_order"' --cfg 'feature="std"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("alloc", "arbitrary_precision", "default", "float_roundtrip", "indexmap", "preserve_order", "raw_value", "std", "unbounded_depth"))' -C metadata=a52d13d78581a6b0 -C extra-filename=-f0d5b5173b413efc --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'indexmap=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libindexmap-58cf2ec8d6f37cf1.rmeta' --extern 'itoa=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libitoa-a8758a9001f01135.rmeta' --extern 'memchr=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libmemchr-85a7902eb33c4c5d.rmeta' --extern 'serde_core=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_core-a0dbb342b705d945.rmeta' --extern 'zmij=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libzmij-a825a2c509402988.rmeta' --cap-lints allow --cfg 'fast_arithmetic="64"' --check-cfg 'cfg(fast_arithmetic, values("32", "64"))'`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name serde_json --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_json-1.0.151\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --cfg 'feature="default"' --cfg 'feature="std"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("alloc", "arbitrary_precision", "default", "float_roundtrip", "indexmap", "preserve_order", "raw_value", "std", "unbounded_depth"))' -C metadata=477e0d978ef4c92d -C extra-filename=-4c733c5892a78242 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'itoa=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libitoa-a8758a9001f01135.rmeta' --extern 'memchr=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libmemchr-85a7902eb33c4c5d.rmeta' --extern 'serde_core=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_core-6eeffb32ad5085e9.rmeta' --extern 'zmij=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libzmij-a825a2c509402988.rmeta' --cap-lints allow --cfg 'fast_arithmetic="64"' --check-cfg 'cfg(fast_arithmetic, values("32", "64"))'`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name tree_sitter_javascript --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-javascript-0.23.1\bindings\rust\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=9015192396e53eae -C extra-filename=-0a810f1c71c0b947 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'tree_sitter_language=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_language-a6844efb92603f04.rmeta' --cap-lints allow -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-javascript-efb081e35acad485\out' -l static=tree-sitter-javascript`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name tree_sitter_rust --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-rust-0.24.2\bindings\rust\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=da0f2327b0d523f0 -C extra-filename=-13e23b953c1c33a0 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'tree_sitter_language=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_language-a6844efb92603f04.rmeta' --cap-lints allow -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-rust-8154b2b9ca62018f\out' -l static=tree-sitter-rust`
+   Compiling tree-sitter v0.25.10
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name build_script_build --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-0.25.10\binding_rust\build.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C embed-bitcode=no '--warn=clippy::pedantic' '--warn=clippy::nursery' '--warn=clippy::cargo' '--allow=clippy::used_underscore_items' '--allow=clippy::unused_self' '--allow=clippy::unnecessary_wraps' '--allow=clippy::transmute_undefined_repr' '--allow=clippy::too_many_lines' '--deny=clippy::todo' '--allow=clippy::struct_field_names' '--allow=clippy::struct_excessive_bools' '--allow=clippy::string_lit_as_bytes' '--allow=clippy::similar_names' '--allow=clippy::ref_option' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::redundant_clone' '--allow=clippy::range_plus_one' '--allow=clippy::or_fun_call' '--allow=clippy::option_if_let_else' '--allow=clippy::obfuscated_if_else' '--allow=clippy::needless_for_each' '--allow=clippy::multiple_crate_versions' '--allow=clippy::module_name_repetitions' '--allow=clippy::missing_panics_doc' '--allow=clippy::missing_errors_doc' --allow=mismatched_lifetime_syntaxes '--allow=clippy::match_wildcard_for_single_variants' '--allow=clippy::items_after_statements' '--allow=clippy::inline_always' '--allow=clippy::if_not_else' '--allow=clippy::fn_params_excessive_bools' '--allow=clippy::fallible_impl_from' '--deny=clippy::dbg_macro' '--allow=clippy::collection_is_never_read' '--allow=clippy::cognitive_complexity' '--allow=clippy::checked_conversions' '--allow=clippy::cast_sign_loss' '--allow=clippy::cast_precision_loss' '--allow=clippy::cast_possible_wrap' '--allow=clippy::cast_possible_truncation' '--allow=clippy::cast_lossless' '--allow=clippy::branches_sharing_code' --cfg 'feature="default"' --cfg 'feature="std"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("bindgen", "default", "std", "wasm", "wasmtime-c-api"))' -C metadata=88c0f3d09a79f169 -C extra-filename=-d74942e73ae48850 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-d74942e73ae48850' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'cc=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libcc-509951f8bde5e7a7.rlib' --extern 'serde_json=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_json-f0d5b5173b413efc.rlib' --cap-lints allow`
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-d74942e73ae48850\build-script-build`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name tree_sitter_typescript --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-typescript-0.23.2\bindings\rust\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=61f550ce83452987 -C extra-filename=-40a2446fdafade13 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'tree_sitter_language=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_language-a6844efb92603f04.rmeta' --cap-lints allow -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-typescript-fae47cd35ac49d48\out' -l static=tree-sitter-typescript`
+   Compiling serde_derive v1.0.229
+   Compiling clap_derive v4.6.7
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name serde_derive --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_derive-1.0.229\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type proc-macro --emit=dep-info,link -C prefer-dynamic -C embed-bitcode=no --cfg 'feature="default"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("default", "deserialize_in_place"))' -C metadata=fbc5a86fe0ee4602 -C extra-filename=-7eac92a19523da1c --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'proc_macro2=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libproc_macro2-3b4695d0e87a59b0.rlib' --extern 'quote=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libquote-b363dbdb9fb99079.rlib' --extern 'syn=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libsyn-e2d6f572a436aef5.rlib' --extern proc_macro --cap-lints allow`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name clap_derive --edition=2024 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\clap_derive-4.6.7\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type proc-macro --emit=dep-info,link -C prefer-dynamic -C embed-bitcode=no --warn=rust_2018_idioms '--warn=clippy::zero_sized_map_values' '--warn=clippy::verbose_file_reads' '--warn=clippy::use_self' --warn=unused_qualifications --warn=unused_macro_rules --warn=unused_lifetimes '--warn=clippy::unseparated_literal_suffix' --warn=unsafe_op_in_unsafe_fn --warn=unreachable_pub '--warn=clippy::unnecessary_safety_doc' '--warn=clippy::unnecessary_safety_comment' '--warn=clippy::uninlined_format_args' --warn=trivial_numeric_casts '--warn=clippy::trait_duplication_in_bounds' '--warn=clippy::todo' '--warn=clippy::string_lit_as_bytes' '--warn=clippy::string_add_assign' '--warn=clippy::string_add' '--warn=clippy::str_to_string' '--warn=clippy::semicolon_if_nothing_returned' '--warn=clippy::self_named_module_files' '--warn=clippy::same_functions_in_if_condition' '--allow=clippy::result_large_err' '--warn=clippy::rest_pat_in_fully_bound_structs' '--warn=clippy::ref_option_ref' '--warn=clippy::redundant_feature_names' '--warn=clippy::rc_mutex' '--warn=clippy::ptr_as_ptr' '--warn=clippy::path_buf_push_overwrite' '--warn=clippy::partial_pub_fields' --warn=non_ascii_idents '--warn=clippy::negative_feature_names' '--warn=clippy::needless_for_each' '--allow=clippy::needless_continue' '--warn=clippy::mutex_integer' '--allow=clippy::multiple_bound_locations' '--warn=clippy::mismatching_type_param_order' '--warn=clippy::mem_forget' '--warn=clippy::macro_use_imports' '--warn=clippy::lossy_float_literal' '--warn=clippy::linkedlist' '--allow=clippy::let_and_return' '--warn=clippy::large_types_passed_by_value' '--warn=clippy::large_stack_arrays' '--warn=clippy::large_digit_groups' '--warn=clippy::invalid_upcast_comparisons' '--warn=clippy::infinite_loop' '--warn=clippy::inefficient_to_string' '--warn=clippy::inconsistent_struct_constructor' '--warn=clippy::imprecise_flops' '--warn=clippy::implicit_clone' '--allow=clippy::if_same_then_else' '--warn=clippy::fn_to_numeric_cast_any' '--warn=clippy::fn_params_excessive_bools' '--warn=clippy::float_cmp_const' '--warn=clippy::float_cmp' '--warn=clippy::flat_map_option' '--warn=clippy::filter_map_next' '--warn=clippy::fallible_impl_from' '--warn=clippy::explicit_into_iter_loop' '--warn=clippy::explicit_deref_methods' '--warn=clippy::expl_impl_clone_on_copy' '--warn=clippy::enum_glob_use' '--warn=clippy::empty_enums' '--warn=clippy::doc_markdown' '--warn=clippy::debug_assert_with_mut_call' '--warn=clippy::dbg_macro' '--warn=clippy::create_dir' '--warn=clippy::collection_is_never_read' '--allow=clippy::collapsible_match' '--allow=clippy::collapsible_else_if' '--warn=clippy::checked_conversions' '--allow=clippy::byte_char_slices' '--allow=clippy::branches_sharing_code' '--allow=clippy::bool_assert_comparison' '--allow=clippy::blocks_in_conditions' '--allow=clippy::assigning_clones' --cfg 'feature="default"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("debug", "default", "deprecated", "raw-deprecated", "unstable-markdown", "unstable-v5"))' -C metadata=91354885cf1bf0a2 -C extra-filename=-3d07193e4f819812 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'heck=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libheck-c8dbe9f7c38c81ae.rlib' --extern 'proc_macro2=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libproc_macro2-3b4695d0e87a59b0.rlib' --extern 'quote=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libquote-b363dbdb9fb99079.rlib' --extern 'syn=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libsyn-e2d6f572a436aef5.rlib' --extern proc_macro --cap-lints allow`
+   Compiling regex v1.13.1
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name regex --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\regex-1.13.1\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --allow=unexpected_cfgs --check-cfg 'cfg(docsrs_regex)' --cfg 'feature="perf"' --cfg 'feature="perf-backtrack"' --cfg 'feature="perf-cache"' --cfg 'feature="perf-dfa"' --cfg 'feature="perf-inline"' --cfg 'feature="perf-literal"' --cfg 'feature="perf-onepass"' --cfg 'feature="std"' --cfg 'feature="unicode"' --cfg 'feature="unicode-age"' --cfg 'feature="unicode-bool"' --cfg 'feature="unicode-case"' --cfg 'feature="unicode-gencat"' --cfg 'feature="unicode-perl"' --cfg 'feature="unicode-script"' --cfg 'feature="unicode-segment"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("default", "logging", "pattern", "perf", "perf-backtrack", "perf-cache", "perf-dfa", "perf-dfa-full", "perf-inline", "perf-literal", "perf-onepass", "std", "unicode", "unicode-age", "unicode-bool", "unicode-case", "unicode-gencat", "unicode-perl", "unicode-script", "unicode-segment", "unstable", "use_std"))' -C metadata=6e8013ff3a74ac47 -C extra-filename=-c9c211d2778777b4 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'aho_corasick=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libaho_corasick-6193d2572954f0f5.rmeta' --extern 'memchr=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libmemchr-85a7902eb33c4c5d.rmeta' --extern 'regex_automata=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libregex_automata-07ef7fd5b5711161.rmeta' --extern 'regex_syntax=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libregex_syntax-22fc5df20f830326.rmeta' --cap-lints allow`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name tree_sitter_c_sharp --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-c-sharp-0.23.5\bindings\rust\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=dee2d4173efa5374 -C extra-filename=-1ea372eca527300b --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'tree_sitter_language=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_language-a6844efb92603f04.rmeta' --cap-lints allow -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-c-sharp-43d2801d4eb0c18a\out' -l static=tree-sitter-c-sharp --cfg with_highlights_query --cfg with_tags_query --check-cfg 'cfg(with_highlights_query)' --check-cfg 'cfg(with_injections_query)' --check-cfg 'cfg(with_locals_query)' --check-cfg 'cfg(with_tags_query)'`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name tree_sitter --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-0.25.10\binding_rust\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 '--warn=clippy::pedantic' '--warn=clippy::nursery' '--warn=clippy::cargo' '--allow=clippy::used_underscore_items' '--allow=clippy::unused_self' '--allow=clippy::unnecessary_wraps' '--allow=clippy::transmute_undefined_repr' '--allow=clippy::too_many_lines' '--deny=clippy::todo' '--allow=clippy::struct_field_names' '--allow=clippy::struct_excessive_bools' '--allow=clippy::string_lit_as_bytes' '--allow=clippy::similar_names' '--allow=clippy::ref_option' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::redundant_clone' '--allow=clippy::range_plus_one' '--allow=clippy::or_fun_call' '--allow=clippy::option_if_let_else' '--allow=clippy::obfuscated_if_else' '--allow=clippy::needless_for_each' '--allow=clippy::multiple_crate_versions' '--allow=clippy::module_name_repetitions' '--allow=clippy::missing_panics_doc' '--allow=clippy::missing_errors_doc' --allow=mismatched_lifetime_syntaxes '--allow=clippy::match_wildcard_for_single_variants' '--allow=clippy::items_after_statements' '--allow=clippy::inline_always' '--allow=clippy::if_not_else' '--allow=clippy::fn_params_excessive_bools' '--allow=clippy::fallible_impl_from' '--deny=clippy::dbg_macro' '--allow=clippy::collection_is_never_read' '--allow=clippy::cognitive_complexity' '--allow=clippy::checked_conversions' '--allow=clippy::cast_sign_loss' '--allow=clippy::cast_precision_loss' '--allow=clippy::cast_possible_wrap' '--allow=clippy::cast_possible_truncation' '--allow=clippy::cast_lossless' '--allow=clippy::branches_sharing_code' --cfg 'feature="default"' --cfg 'feature="std"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("bindgen", "default", "std", "wasm", "wasmtime-c-api"))' -C metadata=547ea1460ca788bd -C extra-filename=-4a01923e7f000aef --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'regex=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libregex-c9c211d2778777b4.rmeta' --extern 'regex_syntax=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libregex_syntax-22fc5df20f830326.rmeta' --extern 'streaming_iterator=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libstreaming_iterator-a568802d179ad611.rmeta' --extern 'tree_sitter_language=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_language-a6844efb92603f04.rmeta' --cap-lints allow -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-d4e7868ca9ef2b43\out' -l static=tree-sitter`
+   Compiling clap v4.6.7
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name clap --edition=2024 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\clap-4.6.7\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --warn=rust_2018_idioms '--warn=clippy::zero_sized_map_values' '--warn=clippy::verbose_file_reads' '--warn=clippy::use_self' --warn=unused_qualifications --warn=unused_macro_rules --warn=unused_lifetimes '--warn=clippy::unseparated_literal_suffix' --warn=unsafe_op_in_unsafe_fn --warn=unreachable_pub '--warn=clippy::unnecessary_safety_doc' '--warn=clippy::unnecessary_safety_comment' '--warn=clippy::uninlined_format_args' --warn=trivial_numeric_casts '--warn=clippy::trait_duplication_in_bounds' '--warn=clippy::todo' '--warn=clippy::string_lit_as_bytes' '--warn=clippy::string_add_assign' '--warn=clippy::string_add' '--warn=clippy::str_to_string' '--warn=clippy::semicolon_if_nothing_returned' '--warn=clippy::self_named_module_files' '--warn=clippy::same_functions_in_if_condition' '--allow=clippy::result_large_err' '--warn=clippy::rest_pat_in_fully_bound_structs' '--warn=clippy::ref_option_ref' '--warn=clippy::redundant_feature_names' '--warn=clippy::rc_mutex' '--warn=clippy::ptr_as_ptr' '--warn=clippy::path_buf_push_overwrite' '--warn=clippy::partial_pub_fields' --warn=non_ascii_idents '--warn=clippy::negative_feature_names' '--warn=clippy::needless_for_each' '--allow=clippy::needless_continue' '--warn=clippy::mutex_integer' '--allow=clippy::multiple_bound_locations' '--warn=clippy::mismatching_type_param_order' '--warn=clippy::mem_forget' '--warn=clippy::macro_use_imports' '--warn=clippy::lossy_float_literal' '--warn=clippy::linkedlist' '--allow=clippy::let_and_return' '--warn=clippy::large_types_passed_by_value' '--warn=clippy::large_stack_arrays' '--warn=clippy::large_digit_groups' '--warn=clippy::invalid_upcast_comparisons' '--warn=clippy::infinite_loop' '--warn=clippy::inefficient_to_string' '--warn=clippy::inconsistent_struct_constructor' '--warn=clippy::imprecise_flops' '--warn=clippy::implicit_clone' '--allow=clippy::if_same_then_else' '--warn=clippy::fn_to_numeric_cast_any' '--warn=clippy::fn_params_excessive_bools' '--warn=clippy::float_cmp_const' '--warn=clippy::float_cmp' '--warn=clippy::flat_map_option' '--warn=clippy::filter_map_next' '--warn=clippy::fallible_impl_from' '--warn=clippy::explicit_into_iter_loop' '--warn=clippy::explicit_deref_methods' '--warn=clippy::expl_impl_clone_on_copy' '--warn=clippy::enum_glob_use' '--warn=clippy::empty_enums' '--warn=clippy::doc_markdown' '--warn=clippy::debug_assert_with_mut_call' '--warn=clippy::dbg_macro' '--warn=clippy::create_dir' '--warn=clippy::collection_is_never_read' '--allow=clippy::collapsible_match' '--allow=clippy::collapsible_else_if' '--warn=clippy::checked_conversions' '--allow=clippy::byte_char_slices' '--allow=clippy::branches_sharing_code' '--allow=clippy::bool_assert_comparison' '--allow=clippy::blocks_in_conditions' '--allow=clippy::assigning_clones' --cfg 'feature="color"' --cfg 'feature="default"' --cfg 'feature="derive"' --cfg 'feature="error-context"' --cfg 'feature="help"' --cfg 'feature="std"' --cfg 'feature="suggestions"' --cfg 'feature="usage"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("cargo", "color", "debug", "default", "deprecated", "derive", "env", "error-context", "help", "std", "string", "suggestions", "unicode", "unstable-derive-ui-tests", "unstable-doc", "unstable-ext", "unstable-markdown", "unstable-styles", "unstable-v5", "usage", "wrap_help"))' -C metadata=a385e64120145a82 -C extra-filename=-d90f2ea8b1cad81e --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'clap_builder=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libclap_builder-a5af6ce5cb5f7ab8.rmeta' --extern 'clap_derive=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\clap_derive-3d07193e4f819812.dll' --cap-lints allow`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name serde --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --cfg 'feature="default"' --cfg 'feature="derive"' --cfg 'feature="serde_derive"' --cfg 'feature="std"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("alloc", "default", "derive", "rc", "serde_derive", "std", "unstable"))' -C metadata=cb2906cc0494b2fc -C extra-filename=-a1364b032bcaaa58 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'serde_core=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_core-6eeffb32ad5085e9.rmeta' --extern 'serde_derive=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\serde_derive-7eac92a19523da1c.dll' --cap-lints allow --cfg if_docsrs_then_no_serde_core --check-cfg 'cfg(feature, values("result"))' --check-cfg 'cfg(if_docsrs_then_no_serde_core)' --check-cfg 'cfg(no_core_cstr)' --check-cfg 'cfg(no_core_error)' --check-cfg 'cfg(no_core_net)' --check-cfg 'cfg(no_core_num_saturating)' --check-cfg 'cfg(no_diagnostic_namespace)' --check-cfg 'cfg(no_serde_derive)' --check-cfg 'cfg(no_std_atomic)' --check-cfg 'cfg(no_std_atomic64)' --check-cfg 'cfg(no_target_has_atomic)'`
+   Compiling serde_yaml v0.9.34+deprecated
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name serde_yaml --edition=2021 'C:\Users\SuperUser020822\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_yaml-0.9.34+deprecated\src\lib.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=b29b6e57e26e0ced -C extra-filename=-bf5064495b63e533 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'indexmap=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libindexmap-58cf2ec8d6f37cf1.rmeta' --extern 'itoa=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libitoa-a8758a9001f01135.rmeta' --extern 'ryu=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libryu-e66e2e84528ce1f6.rmeta' --extern 'serde=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde-a1364b032bcaaa58.rmeta' --extern 'unsafe_libyaml=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libunsafe_libyaml-b42ac834995408db.rmeta' --cap-lints allow`
+   Compiling flowcheck v0.1.0 (C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp)
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name extra --edition=2021 'tests\extra.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=8f7ac3dab78ac4dc -C extra-filename=-1129a1722029a8f2 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -C 'incremental=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\incremental' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'clap=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libclap-d90f2ea8b1cad81e.rlib' --extern 'serde=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde-a1364b032bcaaa58.rlib' --extern 'serde_json=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_json-4c733c5892a78242.rlib' --extern 'serde_yaml=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_yaml-bf5064495b63e533.rlib' --extern 'tree_sitter=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter-4a01923e7f000aef.rlib' --extern 'tree_sitter_c_sharp=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_c_sharp-1ea372eca527300b.rlib' --extern 'tree_sitter_javascript=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_javascript-0a810f1c71c0b947.rlib' --extern 'tree_sitter_rust=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_rust-13e23b953c1c33a0.rlib' --extern 'tree_sitter_typescript=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_typescript-40a2446fdafade13.rlib' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-d4e7868ca9ef2b43\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-c-sharp-43d2801d4eb0c18a\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-javascript-efb081e35acad485\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-rust-8154b2b9ca62018f\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-typescript-fae47cd35ac49d48\out'`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name rust --edition=2021 'tests\rust.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=d4a5417a4f7de971 -C extra-filename=-f6504c81b2665605 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -C 'incremental=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\incremental' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'clap=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libclap-d90f2ea8b1cad81e.rlib' --extern 'serde=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde-a1364b032bcaaa58.rlib' --extern 'serde_json=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_json-4c733c5892a78242.rlib' --extern 'serde_yaml=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_yaml-bf5064495b63e533.rlib' --extern 'tree_sitter=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter-4a01923e7f000aef.rlib' --extern 'tree_sitter_c_sharp=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_c_sharp-1ea372eca527300b.rlib' --extern 'tree_sitter_javascript=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_javascript-0a810f1c71c0b947.rlib' --extern 'tree_sitter_rust=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_rust-13e23b953c1c33a0.rlib' --extern 'tree_sitter_typescript=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_typescript-40a2446fdafade13.rlib' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-d4e7868ca9ef2b43\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-c-sharp-43d2801d4eb0c18a\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-javascript-efb081e35acad485\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-rust-8154b2b9ca62018f\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-typescript-fae47cd35ac49d48\out'`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name fixture --edition=2021 'tests\fixture.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=5c05df4641b4fabf -C extra-filename=-0bec295730151ddc --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -C 'incremental=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\incremental' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'clap=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libclap-d90f2ea8b1cad81e.rlib' --extern 'serde=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde-a1364b032bcaaa58.rlib' --extern 'serde_json=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_json-4c733c5892a78242.rlib' --extern 'serde_yaml=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_yaml-bf5064495b63e533.rlib' --extern 'tree_sitter=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter-4a01923e7f000aef.rlib' --extern 'tree_sitter_c_sharp=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_c_sharp-1ea372eca527300b.rlib' --extern 'tree_sitter_javascript=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_javascript-0a810f1c71c0b947.rlib' --extern 'tree_sitter_rust=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_rust-13e23b953c1c33a0.rlib' --extern 'tree_sitter_typescript=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_typescript-40a2446fdafade13.rlib' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-d4e7868ca9ef2b43\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-c-sharp-43d2801d4eb0c18a\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-javascript-efb081e35acad485\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-rust-8154b2b9ca62018f\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-typescript-fae47cd35ac49d48\out'`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name skeleton --edition=2021 'tests\skeleton.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=85b18497a2a98e4e -C extra-filename=-f7094868c1bca6f6 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -C 'incremental=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\incremental' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'clap=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libclap-d90f2ea8b1cad81e.rlib' --extern 'serde=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde-a1364b032bcaaa58.rlib' --extern 'serde_json=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_json-4c733c5892a78242.rlib' --extern 'serde_yaml=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_yaml-bf5064495b63e533.rlib' --extern 'tree_sitter=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter-4a01923e7f000aef.rlib' --extern 'tree_sitter_c_sharp=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_c_sharp-1ea372eca527300b.rlib' --extern 'tree_sitter_javascript=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_javascript-0a810f1c71c0b947.rlib' --extern 'tree_sitter_rust=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_rust-13e23b953c1c33a0.rlib' --extern 'tree_sitter_typescript=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_typescript-40a2446fdafade13.rlib' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-d4e7868ca9ef2b43\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-c-sharp-43d2801d4eb0c18a\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-javascript-efb081e35acad485\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-rust-8154b2b9ca62018f\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-typescript-fae47cd35ac49d48\out'`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name ts --edition=2021 'tests\ts.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=6d60a833e9ba4efd -C extra-filename=-e8d57333d367eaab --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -C 'incremental=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\incremental' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'clap=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libclap-d90f2ea8b1cad81e.rlib' --extern 'serde=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde-a1364b032bcaaa58.rlib' --extern 'serde_json=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_json-4c733c5892a78242.rlib' --extern 'serde_yaml=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_yaml-bf5064495b63e533.rlib' --extern 'tree_sitter=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter-4a01923e7f000aef.rlib' --extern 'tree_sitter_c_sharp=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_c_sharp-1ea372eca527300b.rlib' --extern 'tree_sitter_javascript=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_javascript-0a810f1c71c0b947.rlib' --extern 'tree_sitter_rust=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_rust-13e23b953c1c33a0.rlib' --extern 'tree_sitter_typescript=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_typescript-40a2446fdafade13.rlib' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-d4e7868ca9ef2b43\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-c-sharp-43d2801d4eb0c18a\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-javascript-efb081e35acad485\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-rust-8154b2b9ca62018f\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-typescript-fae47cd35ac49d48\out'`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name coverage --edition=2021 'tests\coverage.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=481c1ce6cd8e55d3 -C extra-filename=-70a785250148e163 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -C 'incremental=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\incremental' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'clap=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libclap-d90f2ea8b1cad81e.rlib' --extern 'serde=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde-a1364b032bcaaa58.rlib' --extern 'serde_json=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_json-4c733c5892a78242.rlib' --extern 'serde_yaml=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_yaml-bf5064495b63e533.rlib' --extern 'tree_sitter=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter-4a01923e7f000aef.rlib' --extern 'tree_sitter_c_sharp=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_c_sharp-1ea372eca527300b.rlib' --extern 'tree_sitter_javascript=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_javascript-0a810f1c71c0b947.rlib' --extern 'tree_sitter_rust=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_rust-13e23b953c1c33a0.rlib' --extern 'tree_sitter_typescript=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_typescript-40a2446fdafade13.rlib' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-d4e7868ca9ef2b43\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-c-sharp-43d2801d4eb0c18a\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-javascript-efb081e35acad485\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-rust-8154b2b9ca62018f\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-typescript-fae47cd35ac49d48\out'`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name flowcheck --edition=2021 'src\main.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=7a266424d907d6dc -C extra-filename=-d122590a3cbd15d5 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -C 'incremental=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\incremental' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'clap=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libclap-d90f2ea8b1cad81e.rlib' --extern 'serde=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde-a1364b032bcaaa58.rlib' --extern 'serde_json=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_json-4c733c5892a78242.rlib' --extern 'serde_yaml=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_yaml-bf5064495b63e533.rlib' --extern 'tree_sitter=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter-4a01923e7f000aef.rlib' --extern 'tree_sitter_c_sharp=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_c_sharp-1ea372eca527300b.rlib' --extern 'tree_sitter_javascript=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_javascript-0a810f1c71c0b947.rlib' --extern 'tree_sitter_rust=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_rust-13e23b953c1c33a0.rlib' --extern 'tree_sitter_typescript=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_typescript-40a2446fdafade13.rlib' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-d4e7868ca9ef2b43\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-c-sharp-43d2801d4eb0c18a\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-javascript-efb081e35acad485\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-rust-8154b2b9ca62018f\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-typescript-fae47cd35ac49d48\out'`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name render --edition=2021 'tests\render.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=80268c0ccf964869 -C extra-filename=-97f5fd11b387812c --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -C 'incremental=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\incremental' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'clap=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libclap-d90f2ea8b1cad81e.rlib' --extern 'serde=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde-a1364b032bcaaa58.rlib' --extern 'serde_json=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_json-4c733c5892a78242.rlib' --extern 'serde_yaml=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_yaml-bf5064495b63e533.rlib' --extern 'tree_sitter=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter-4a01923e7f000aef.rlib' --extern 'tree_sitter_c_sharp=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_c_sharp-1ea372eca527300b.rlib' --extern 'tree_sitter_javascript=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_javascript-0a810f1c71c0b947.rlib' --extern 'tree_sitter_rust=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_rust-13e23b953c1c33a0.rlib' --extern 'tree_sitter_typescript=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_typescript-40a2446fdafade13.rlib' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-d4e7868ca9ef2b43\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-c-sharp-43d2801d4eb0c18a\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-javascript-efb081e35acad485\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-rust-8154b2b9ca62018f\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-typescript-fae47cd35ac49d48\out'`
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name flowcheck --edition=2021 'src\main.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=13f17803cb12cafe --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -C 'incremental=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\incremental' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'clap=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libclap-d90f2ea8b1cad81e.rlib' --extern 'serde=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde-a1364b032bcaaa58.rlib' --extern 'serde_json=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_json-4c733c5892a78242.rlib' --extern 'serde_yaml=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_yaml-bf5064495b63e533.rlib' --extern 'tree_sitter=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter-4a01923e7f000aef.rlib' --extern 'tree_sitter_c_sharp=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_c_sharp-1ea372eca527300b.rlib' --extern 'tree_sitter_javascript=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_javascript-0a810f1c71c0b947.rlib' --extern 'tree_sitter_rust=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_rust-13e23b953c1c33a0.rlib' --extern 'tree_sitter_typescript=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_typescript-40a2446fdafade13.rlib' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-d4e7868ca9ef2b43\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-c-sharp-43d2801d4eb0c18a\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-javascript-efb081e35acad485\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-rust-8154b2b9ca62018f\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-typescript-fae47cd35ac49d48\out'`
+warning: field `na` is never read
+  --> tests\..\src\flow.rs:27:9
+   |
+22 | pub struct Spec {
+   |            ---- field in this struct
+...
+27 |     pub na: Option<String>,
+   |         ^^
+   |
+   = note: `Spec` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: fields `builtin_calls` and `builtin_value_methods` are never read
+  --> tests\..\src\lang.rs:34:9
+   |
+ 8 | pub struct LanguageSpec {
+   |            ------------ fields in this struct
+...
+34 |     pub builtin_calls: &'static [&'static str],
+   |         ^^^^^^^^^^^^^
+35 |     pub builtin_value_methods: &'static [&'static str],
+   |         ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `supported_file` is never used
+   --> tests\..\src\lang.rs:109:8
+    |
+109 | pub fn supported_file(file: &str) -> bool {
+    |        ^^^^^^^^^^^^^^
+
+warning: struct `Cannot` is never constructed
+  --> tests\..\src\flow.rs:19:12
+   |
+19 | pub struct Cannot(pub String);
+   |            ^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: fields `change`, `preserve`, and `keep` are never read
+  --> tests\..\src\flow.rs:30:9
+   |
+22 | pub struct Spec {
+   |            ---- fields in this struct
+...
+30 |     pub change: Vec<Change>,
+   |         ^^^^^^
+31 |     #[serde(default)]
+32 |     pub preserve: Preserve,
+   |         ^^^^^^^^
+33 |     #[serde(default)]
+34 |     pub keep: Vec<String>,
+   |         ^^^^
+   |
+   = note: `Spec` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: multiple fields are never read
+  --> tests\..\src\flow.rs:39:9
+   |
+38 | pub struct Change {
+   |            ------ fields in this struct
+39 |     pub insert: Option<String>,
+   |         ^^^^^^
+40 |     pub before: Option<String>,
+   |         ^^^^^^
+41 |     pub after: Option<String>,
+   |         ^^^^^
+42 |     pub nth: Option<usize>,
+   |         ^^^
+43 |     pub guard: Option<String>,
+   |         ^^^^^
+44 |     #[serde(rename = "remove-call")]
+45 |     pub remove_call: Option<String>,
+   |         ^^^^^^^^^^^
+46 |     #[serde(rename = "remove-read")]
+47 |     pub remove_read: Option<String>,
+   |         ^^^^^^^^^^^
+   |
+   = note: `Change` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `0` is never read
+  --> tests\..\src\flow.rs:53:10
+   |
+53 |     Word(String),
+   |     ---- ^^^^^^
+   |     |
+   |     field in this variant
+   |
+   = note: `Preserve` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+   |
+53 -     Word(String),
+53 +     Word(()),
+   |
+
+warning: method `all` is never used
+  --> tests\..\src\flow.rs:61:8
+   |
+60 | impl Preserve {
+   | ------------- method in this implementation
+61 |     fn all(&self) -> bool {
+   |        ^^^
+
+warning: struct `ResultRow` is never constructed
+  --> tests\..\src\flow.rs:67:12
+   |
+67 | pub struct ResultRow {
+   |            ^^^^^^^^^
+
+warning: struct `TopStep` is never constructed
+  --> tests\..\src\flow.rs:89:12
+   |
+89 | pub struct TopStep {
+   |            ^^^^^^^
+
+warning: struct `FlowTree` is never constructed
+  --> tests\..\src\flow.rs:97:12
+   |
+97 | pub struct FlowTree {
+   |            ^^^^^^^^
+
+warning: struct `FlowNode` is never constructed
+   --> tests\..\src\flow.rs:104:12
+    |
+104 | pub struct FlowNode {
+    |            ^^^^^^^^
+
+warning: struct `FlowBranch` is never constructed
+   --> tests\..\src\flow.rs:114:12
+    |
+114 | pub struct FlowBranch {
+    |            ^^^^^^^^^^
+
+warning: struct `ClosureTree` is never constructed
+   --> tests\..\src\flow.rs:120:12
+    |
+120 | pub struct ClosureTree {
+    |            ^^^^^^^^^^^
+
+warning: struct `Step` is never constructed
+   --> tests\..\src\flow.rs:126:8
+    |
+126 | struct Step {
+    |        ^^^^
+
+warning: struct `Source` is never constructed
+   --> tests\..\src\flow.rs:133:8
+    |
+133 | struct Source {
+    |        ^^^^^^
+
+warning: multiple associated items are never used
+   --> tests\..\src\flow.rs:139:8
+    |
+138 | impl Source {
+    | ----------- associated items in this implementation
+139 |     fn parse(bytes: Vec<u8>, lang: &'static LanguageSpec) -> Result<Self, Cannot> {
+    |        ^^^^^
+...
+150 |     fn text(&self, n: Node) -> String {
+    |        ^^^^
+...
+155 |     fn display_text(&self, n: Node) -> String {
+    |        ^^^^^^^^^^^^
+...
+161 |     fn walk<'a>(&self, node: Node<'a>, out: &mut Vec<Node<'a>>) {
+    |        ^^^^
+...
+168 |     fn methods(&self) -> Vec<Node<'_>> {
+    |        ^^^^^^^
+...
+175 |     fn find_method(&self, name: &str, params: Option<&str>) -> Result<Node<'_>, Cannot> {
+    |        ^^^^^^^^^^^
+...
+216 |     fn method_name(&self, method: Node) -> Option<String> {
+    |        ^^^^^^^^^^^
+...
+272 |     fn callee(&self, node: Node) -> String {
+    |        ^^^^^^
+...
+291 |     fn steps(&self, method: Node) -> Vec<Step> {
+    |        ^^^^^
+...
+342 |     fn tree(&self, method: Node, changed: &HashSet<usize>) -> FlowTree {
+    |        ^^^^
+...
+505 |     fn locals(&self, method: Node) -> HashSet<String> {
+    |        ^^^^^^
+...
+521 |     fn flow(&self, method: Node, depth: usize, seen: &mut HashSet<usize>) -> Vec<Step> {
+    |        ^^^^
+...
+555 |     fn depth_limited(&self, method: Node, depth: usize, seen: &mut HashSet<usize>) -> Vec<String> {
+    |        ^^^^^^^^^^^^^
+...
+588 |     fn extra_flow(
+    |        ^^^^^^^^^^
+
+warning: function `matches` is never used
+   --> tests\..\src\flow.rs:633:4
+    |
+633 | fn matches(key: &str, name: &str) -> bool {
+    |    ^^^^^^^
+
+warning: function `key` is never used
+   --> tests\..\src\flow.rs:636:4
+    |
+636 | fn key(s: &Step) -> String {
+    |    ^^^
+
+warning: function `load_source` is never used
+   --> tests\..\src\flow.rs:639:4
+    |
+639 | fn load_source(repo: &Path, rev: Option<&str>, file: &str) -> Result<Source, Cannot> {
+    |    ^^^^^^^^^^^
+
+warning: function `is_call_to` is never used
+   --> tests\..\src\flow.rs:664:4
+    |
+664 | fn is_call_to(s: &Source, n: Node, name: &str) -> bool {
+    |    ^^^^^^^^^^
+
+warning: function `contains_call` is never used
+   --> tests\..\src\flow.rs:670:4
+    |
+670 | fn contains_call(s: &Source, n: Node, name: &str, aliases: &HashSet<String>) -> bool {
+    |    ^^^^^^^^^^^^^
+
+warning: function `unwrap` is never used
+   --> tests\..\src\flow.rs:678:4
+    |
+678 | fn unwrap<'a>(s: &Source, n: Option<Node<'a>>) -> Option<Node<'a>> {
+    |    ^^^^^^
+
+warning: function `is_guard_atom` is never used
+   --> tests\..\src\flow.rs:685:4
+    |
+685 | fn is_guard_atom(s: &Source, n: Node, name: &str, aliases: &HashSet<String>) -> bool {
+    |    ^^^^^^^^^^^^^
+
+warning: function `bool_literal` is never used
+   --> tests\..\src\flow.rs:688:4
+    |
+688 | fn bool_literal(s: &Source, n: Node) -> Option<bool> {
+    |    ^^^^^^^^^^^^
+
+warning: function `eq_form` is never used
+   --> tests\..\src\flow.rs:695:4
+    |
+695 | fn eq_form(s: &Source, n: Node, name: &str, aliases: &HashSet<String>) -> Option<bool> {
+    |    ^^^^^^^
+
+warning: function `true_implies_valid` is never used
+   --> tests\..\src\flow.rs:711:4
+    |
+711 | fn true_implies_valid(s: &Source, n: Option<Node>, name: &str, aliases: &HashSet<String>) -> bool {
+    |    ^^^^^^^^^^^^^^^^^^
+
+warning: function `invalid_implies_true` is never used
+   --> tests\..\src\flow.rs:737:4
+    |
+737 | fn invalid_implies_true(
+    |    ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `exits` is never used
+   --> tests\..\src\flow.rs:767:4
+    |
+767 | fn exits(s: &Source, n: Node) -> bool {
+    |    ^^^^^
+
+warning: function `top_level_call` is never used
+   --> tests\..\src\flow.rs:796:4
+    |
+796 | fn top_level_call(s: &Source, stmt: Node, name: &str) -> bool {
+    |    ^^^^^^^^^^^^^^
+
+warning: function `bare_call` is never used
+   --> tests\..\src\flow.rs:806:4
+    |
+806 | fn bare_call(s: &Source, stmt: Node, name: &str) -> bool {
+    |    ^^^^^^^^^
+
+warning: function `call_in_single_statement_try` is never used
+   --> tests\..\src\flow.rs:817:4
+    |
+817 | fn call_in_single_statement_try(s: &Source, stmt: Node, name: &str, mode: &str) -> bool {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `previous_named_sibling` is never used
+   --> tests\..\src\flow.rs:839:4
+    |
+839 | fn previous_named_sibling<'a>(block: Node<'a>, node: Node<'a>) -> Option<Node<'a>> {
+    |    ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `enclosing_aliases` is never used
+   --> tests\..\src\flow.rs:851:4
+    |
+851 | fn enclosing_aliases(s: &Source, node: Node, name: &str) -> HashSet<String> {
+    |    ^^^^^^^^^^^^^^^^^
+
+warning: function `guarded` is never used
+   --> tests\..\src\flow.rs:886:4
+    |
+886 | fn guarded(s: &Source, target: Node, name: &str, mode: &str) -> bool {
+    |    ^^^^^^^
+
+warning: function `rust_bool_guard` is never used
+   --> tests\..\src\flow.rs:954:4
+    |
+954 | fn rust_bool_guard(s: &Source, stmt: Node, name: &str, alias: bool) -> bool {
+    |    ^^^^^^^^^^^^^^^
+
+warning: function `rust_result_guard` is never used
+   --> tests\..\src\flow.rs:968:4
+    |
+968 | fn rust_result_guard(s: &Source, stmt: Node, name: &str) -> bool {
+    |    ^^^^^^^^^^^^^^^^^
+
+warning: function `changed_lines` is never used
+    --> tests\..\src\flow.rs:1007:4
+     |
+1007 | fn changed_lines(
+     |    ^^^^^^^^^^^^^
+
+warning: function `top_steps` is never used
+    --> tests\..\src\flow.rs:1049:4
+     |
+1049 | fn top_steps(steps: Vec<Step>, changed: &HashSet<usize>) -> Vec<TopStep> {
+     |    ^^^^^^^^^
+
+warning: function `check_method` is never used
+    --> tests\..\src\flow.rs:1061:8
+     |
+1061 | pub fn check_method(
+     |        ^^^^^^^^^^^^
+
+warning: function `find_node_by_id` is never used
+    --> tests\..\src\flow.rs:1266:4
+     |
+1266 | fn find_node_by_id<'a>(s: &'a Source, method: Node<'a>, node_id: usize) -> Option<Node<'a>> {
+     |    ^^^^^^^^^^^^^^^
+
+warning: multiple fields are never read
+  --> tests\..\src\lang.rs:12:9
+   |
+ 8 | pub struct LanguageSpec {
+   |            ------------ fields in this struct
+...
+12 |     pub invocation_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^
+13 |     pub new_expression_kind: Option<&'static str>,
+   |         ^^^^^^^^^^^^^^^^^^^
+14 |     pub macro_invocation_kind: Option<&'static str>,
+   |         ^^^^^^^^^^^^^^^^^^^^^
+15 |     pub member_access_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^^^
+16 |     pub local_kinds: &'static [&'static str],
+   |         ^^^^^^^^^^^
+17 |     pub identifier_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^
+18 |     pub parenthesized_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^^^
+19 |     pub prefix_unary_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^^
+20 |     pub binary_kind: &'static str,
+   |         ^^^^^^^^^^^
+21 |     pub exit_kinds: &'static [&'static str],
+   |         ^^^^^^^^^^
+22 |     pub block_kind: &'static str,
+   |         ^^^^^^^^^^
+23 |     pub conditional_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^
+24 |     pub branch_kinds: &'static [&'static str],
+   |         ^^^^^^^^^^^^
+25 |     pub loop_kinds: &'static [&'static str],
+   |         ^^^^^^^^^^
+26 |     pub try_kinds: &'static [&'static str],
+   |         ^^^^^^^^^
+27 |     pub case_kinds: &'static [&'static str],
+   |         ^^^^^^^^^^
+28 |     pub closure_kinds: &'static [&'static str],
+   |         ^^^^^^^^^^^^^
+29 |     pub expression_statement_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+30 |     pub await_kind: &'static str,
+   |         ^^^^^^^^^^
+31 |     pub local_declaration_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^^^^^^^
+32 |     pub variable_declarator_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^
+33 |     pub comment_kind: &'static str,
+34 |     pub builtin_calls: &'static [&'static str],
+   |         ^^^^^^^^^^^^^
+35 |     pub builtin_value_methods: &'static [&'static str],
+   |         ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `supported_file` is never used
+   --> tests\..\src\lang.rs:109:8
+    |
+109 | pub fn supported_file(file: &str) -> bool {
+    |        ^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `flowcheck` (test "coverage") generated 39 warnings
+warning: `flowcheck` (test "skeleton") generated 3 warnings (3 duplicates)
+warning: `flowcheck` (test "extra") generated 3 warnings
+warning: `flowcheck` (test "ts") generated 3 warnings (3 duplicates)
+warning: `flowcheck` (test "fixture") generated 3 warnings (3 duplicates)
+warning: `flowcheck` (test "rust") generated 3 warnings (3 duplicates)
+warning: `flowcheck` (test "render") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.65s
+  Executable `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\flowcheck-d122590a3cbd15d5.exe`
+  Executable `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\coverage-70a785250148e163.exe`
+  Executable `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\extra-1129a1722029a8f2.exe`
+  Executable `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\fixture-0bec295730151ddc.exe`
+  Executable `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\render-97f5fd11b387812c.exe`
+  Executable `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\rust-f6504c81b2665605.exe`
+  Executable `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\skeleton-f7094868c1bca6f6.exe`
+  Executable `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\ts-e8d57333d367eaab.exe`
+
+*** result: Success
+
+*** C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe test --verbose --package=flowcheck@0.1.0 --no-fail-fast
+       Fresh shlex v2.0.1
+       Fresh find-msvc-tools v0.1.14
+       Fresh unicode-ident v1.0.26
+       Fresh memchr v2.8.3
+       Fresh windows-link v0.2.1
+       Fresh hashbrown v0.17.1
+       Fresh equivalent v1.0.2
+       Fresh itoa v1.0.18
+       Fresh cc v1.5.1
+       Fresh windows-sys v0.61.2
+       Fresh indexmap v2.14.2
+       Fresh anstyle v1.0.14
+       Fresh once_cell_polyfill v1.70.2
+       Fresh utf8parse v0.2.2
+       Fresh proc-macro2 v1.0.107
+       Fresh zmij v1.0.23
+       Fresh tree-sitter-language v0.1.8
+       Fresh anstyle-query v1.1.5
+       Fresh anstyle-wincon v3.0.11
+       Fresh anstyle-parse v1.0.0
+       Fresh aho-corasick v1.1.5
+       Fresh regex-syntax v0.8.11
+       Fresh colorchoice v1.0.5
+       Fresh is_terminal_polyfill v1.70.2
+       Fresh quote v1.0.47
+       Fresh serde_core v1.0.229
+       Fresh anstream v1.0.0
+       Fresh regex-automata v0.4.18
+       Fresh strsim v0.11.1
+       Fresh clap_lex v1.1.1
+       Fresh syn v3.0.6
+       Fresh heck v0.5.0
+       Fresh clap_builder v4.6.7
+       Fresh regex v1.13.1
+       Fresh streaming-iterator v0.1.9
+       Fresh unsafe-libyaml v0.2.11
+       Fresh ryu v1.0.23
+       Fresh serde_derive v1.0.229
+       Fresh clap_derive v4.6.7
+       Fresh tree-sitter-typescript v0.23.2
+       Fresh tree-sitter-javascript v0.23.1
+       Fresh tree-sitter-c-sharp v0.23.5
+       Fresh tree-sitter-rust v0.24.2
+       Fresh serde_json v1.0.151
+       Fresh serde v1.0.229
+       Fresh tree-sitter v0.25.10
+       Fresh clap v4.6.7
+       Fresh serde_yaml v0.9.34+deprecated
+warning: function `supported_file` is never used
+   --> tests\..\src\lang.rs:109:8
+    |
+109 | pub fn supported_file(file: &str) -> bool {
+    |        ^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: field `na` is never read
+  --> tests\..\src\flow.rs:27:9
+   |
+22 | pub struct Spec {
+   |            ---- field in this struct
+...
+27 |     pub na: Option<String>,
+   |         ^^
+   |
+   = note: `Spec` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: fields `builtin_calls` and `builtin_value_methods` are never read
+  --> tests\..\src\lang.rs:34:9
+   |
+ 8 | pub struct LanguageSpec {
+   |            ------------ fields in this struct
+...
+34 |     pub builtin_calls: &'static [&'static str],
+   |         ^^^^^^^^^^^^^
+35 |     pub builtin_value_methods: &'static [&'static str],
+   |         ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `supported_file` is never used
+   --> tests\..\src\lang.rs:109:8
+    |
+109 | pub fn supported_file(file: &str) -> bool {
+    |        ^^^^^^^^^^^^^^
+
+warning: struct `Cannot` is never constructed
+  --> tests\..\src\flow.rs:19:12
+   |
+19 | pub struct Cannot(pub String);
+   |            ^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: fields `change`, `preserve`, and `keep` are never read
+  --> tests\..\src\flow.rs:30:9
+   |
+22 | pub struct Spec {
+   |            ---- fields in this struct
+...
+30 |     pub change: Vec<Change>,
+   |         ^^^^^^
+31 |     #[serde(default)]
+32 |     pub preserve: Preserve,
+   |         ^^^^^^^^
+33 |     #[serde(default)]
+34 |     pub keep: Vec<String>,
+   |         ^^^^
+   |
+   = note: `Spec` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: multiple fields are never read
+  --> tests\..\src\flow.rs:39:9
+   |
+38 | pub struct Change {
+   |            ------ fields in this struct
+39 |     pub insert: Option<String>,
+   |         ^^^^^^
+40 |     pub before: Option<String>,
+   |         ^^^^^^
+41 |     pub after: Option<String>,
+   |         ^^^^^
+42 |     pub nth: Option<usize>,
+   |         ^^^
+43 |     pub guard: Option<String>,
+   |         ^^^^^
+44 |     #[serde(rename = "remove-call")]
+45 |     pub remove_call: Option<String>,
+   |         ^^^^^^^^^^^
+46 |     #[serde(rename = "remove-read")]
+47 |     pub remove_read: Option<String>,
+   |         ^^^^^^^^^^^
+   |
+   = note: `Change` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `0` is never read
+  --> tests\..\src\flow.rs:53:10
+   |
+53 |     Word(String),
+   |     ---- ^^^^^^
+   |     |
+   |     field in this variant
+   |
+   = note: `Preserve` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+   |
+53 -     Word(String),
+53 +     Word(()),
+   |
+
+warning: method `all` is never used
+  --> tests\..\src\flow.rs:61:8
+   |
+60 | impl Preserve {
+   | ------------- method in this implementation
+61 |     fn all(&self) -> bool {
+   |        ^^^
+
+warning: struct `ResultRow` is never constructed
+  --> tests\..\src\flow.rs:67:12
+   |
+67 | pub struct ResultRow {
+   |            ^^^^^^^^^
+
+warning: struct `TopStep` is never constructed
+  --> tests\..\src\flow.rs:89:12
+   |
+89 | pub struct TopStep {
+   |            ^^^^^^^
+
+warning: struct `FlowTree` is never constructed
+  --> tests\..\src\flow.rs:97:12
+   |
+97 | pub struct FlowTree {
+   |            ^^^^^^^^
+
+warning: struct `FlowNode` is never constructed
+   --> tests\..\src\flow.rs:104:12
+    |
+104 | pub struct FlowNode {
+    |            ^^^^^^^^
+
+warning: struct `FlowBranch` is never constructed
+   --> tests\..\src\flow.rs:114:12
+    |
+114 | pub struct FlowBranch {
+    |            ^^^^^^^^^^
+
+warning: struct `ClosureTree` is never constructed
+   --> tests\..\src\flow.rs:120:12
+    |
+120 | pub struct ClosureTree {
+    |            ^^^^^^^^^^^
+
+warning: struct `Step` is never constructed
+   --> tests\..\src\flow.rs:126:8
+    |
+126 | struct Step {
+    |        ^^^^
+
+warning: struct `Source` is never constructed
+   --> tests\..\src\flow.rs:133:8
+    |
+133 | struct Source {
+    |        ^^^^^^
+
+warning: multiple associated items are never used
+   --> tests\..\src\flow.rs:139:8
+    |
+138 | impl Source {
+    | ----------- associated items in this implementation
+139 |     fn parse(bytes: Vec<u8>, lang: &'static LanguageSpec) -> Result<Self, Cannot> {
+    |        ^^^^^
+...
+150 |     fn text(&self, n: Node) -> String {
+    |        ^^^^
+...
+155 |     fn display_text(&self, n: Node) -> String {
+    |        ^^^^^^^^^^^^
+...
+161 |     fn walk<'a>(&self, node: Node<'a>, out: &mut Vec<Node<'a>>) {
+    |        ^^^^
+...
+168 |     fn methods(&self) -> Vec<Node<'_>> {
+    |        ^^^^^^^
+...
+175 |     fn find_method(&self, name: &str, params: Option<&str>) -> Result<Node<'_>, Cannot> {
+    |        ^^^^^^^^^^^
+...
+216 |     fn method_name(&self, method: Node) -> Option<String> {
+    |        ^^^^^^^^^^^
+...
+272 |     fn callee(&self, node: Node) -> String {
+    |        ^^^^^^
+...
+291 |     fn steps(&self, method: Node) -> Vec<Step> {
+    |        ^^^^^
+...
+342 |     fn tree(&self, method: Node, changed: &HashSet<usize>) -> FlowTree {
+    |        ^^^^
+...
+505 |     fn locals(&self, method: Node) -> HashSet<String> {
+    |        ^^^^^^
+...
+521 |     fn flow(&self, method: Node, depth: usize, seen: &mut HashSet<usize>) -> Vec<Step> {
+    |        ^^^^
+...
+555 |     fn depth_limited(&self, method: Node, depth: usize, seen: &mut HashSet<usize>) -> Vec<String> {
+    |        ^^^^^^^^^^^^^
+...
+588 |     fn extra_flow(
+    |        ^^^^^^^^^^
+
+warning: function `matches` is never used
+   --> tests\..\src\flow.rs:633:4
+    |
+633 | fn matches(key: &str, name: &str) -> bool {
+    |    ^^^^^^^
+
+warning: function `key` is never used
+   --> tests\..\src\flow.rs:636:4
+    |
+636 | fn key(s: &Step) -> String {
+    |    ^^^
+
+warning: function `load_source` is never used
+   --> tests\..\src\flow.rs:639:4
+    |
+639 | fn load_source(repo: &Path, rev: Option<&str>, file: &str) -> Result<Source, Cannot> {
+    |    ^^^^^^^^^^^
+
+warning: function `is_call_to` is never used
+   --> tests\..\src\flow.rs:664:4
+    |
+664 | fn is_call_to(s: &Source, n: Node, name: &str) -> bool {
+    |    ^^^^^^^^^^
+
+warning: function `contains_call` is never used
+   --> tests\..\src\flow.rs:670:4
+    |
+670 | fn contains_call(s: &Source, n: Node, name: &str, aliases: &HashSet<String>) -> bool {
+    |    ^^^^^^^^^^^^^
+
+warning: function `unwrap` is never used
+   --> tests\..\src\flow.rs:678:4
+    |
+678 | fn unwrap<'a>(s: &Source, n: Option<Node<'a>>) -> Option<Node<'a>> {
+    |    ^^^^^^
+
+warning: function `is_guard_atom` is never used
+   --> tests\..\src\flow.rs:685:4
+    |
+685 | fn is_guard_atom(s: &Source, n: Node, name: &str, aliases: &HashSet<String>) -> bool {
+    |    ^^^^^^^^^^^^^
+
+warning: function `bool_literal` is never used
+   --> tests\..\src\flow.rs:688:4
+    |
+688 | fn bool_literal(s: &Source, n: Node) -> Option<bool> {
+    |    ^^^^^^^^^^^^
+
+warning: function `eq_form` is never used
+   --> tests\..\src\flow.rs:695:4
+    |
+695 | fn eq_form(s: &Source, n: Node, name: &str, aliases: &HashSet<String>) -> Option<bool> {
+    |    ^^^^^^^
+
+warning: function `true_implies_valid` is never used
+   --> tests\..\src\flow.rs:711:4
+    |
+711 | fn true_implies_valid(s: &Source, n: Option<Node>, name: &str, aliases: &HashSet<String>) -> bool {
+    |    ^^^^^^^^^^^^^^^^^^
+
+warning: function `invalid_implies_true` is never used
+   --> tests\..\src\flow.rs:737:4
+    |
+737 | fn invalid_implies_true(
+    |    ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `exits` is never used
+   --> tests\..\src\flow.rs:767:4
+    |
+767 | fn exits(s: &Source, n: Node) -> bool {
+    |    ^^^^^
+
+warning: function `top_level_call` is never used
+   --> tests\..\src\flow.rs:796:4
+    |
+796 | fn top_level_call(s: &Source, stmt: Node, name: &str) -> bool {
+    |    ^^^^^^^^^^^^^^
+
+warning: function `bare_call` is never used
+   --> tests\..\src\flow.rs:806:4
+    |
+806 | fn bare_call(s: &Source, stmt: Node, name: &str) -> bool {
+    |    ^^^^^^^^^
+
+warning: function `call_in_single_statement_try` is never used
+   --> tests\..\src\flow.rs:817:4
+    |
+817 | fn call_in_single_statement_try(s: &Source, stmt: Node, name: &str, mode: &str) -> bool {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `previous_named_sibling` is never used
+   --> tests\..\src\flow.rs:839:4
+    |
+839 | fn previous_named_sibling<'a>(block: Node<'a>, node: Node<'a>) -> Option<Node<'a>> {
+    |    ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `enclosing_aliases` is never used
+   --> tests\..\src\flow.rs:851:4
+    |
+851 | fn enclosing_aliases(s: &Source, node: Node, name: &str) -> HashSet<String> {
+    |    ^^^^^^^^^^^^^^^^^
+
+warning: function `guarded` is never used
+   --> tests\..\src\flow.rs:886:4
+    |
+886 | fn guarded(s: &Source, target: Node, name: &str, mode: &str) -> bool {
+    |    ^^^^^^^
+
+warning: function `rust_bool_guard` is never used
+   --> tests\..\src\flow.rs:954:4
+    |
+954 | fn rust_bool_guard(s: &Source, stmt: Node, name: &str, alias: bool) -> bool {
+    |    ^^^^^^^^^^^^^^^
+
+warning: function `rust_result_guard` is never used
+   --> tests\..\src\flow.rs:968:4
+    |
+968 | fn rust_result_guard(s: &Source, stmt: Node, name: &str) -> bool {
+    |    ^^^^^^^^^^^^^^^^^
+
+warning: function `changed_lines` is never used
+    --> tests\..\src\flow.rs:1007:4
+     |
+1007 | fn changed_lines(
+     |    ^^^^^^^^^^^^^
+
+warning: function `top_steps` is never used
+    --> tests\..\src\flow.rs:1049:4
+     |
+1049 | fn top_steps(steps: Vec<Step>, changed: &HashSet<usize>) -> Vec<TopStep> {
+     |    ^^^^^^^^^
+
+warning: function `check_method` is never used
+    --> tests\..\src\flow.rs:1061:8
+     |
+1061 | pub fn check_method(
+     |        ^^^^^^^^^^^^
+
+warning: function `find_node_by_id` is never used
+    --> tests\..\src\flow.rs:1266:4
+     |
+1266 | fn find_node_by_id<'a>(s: &'a Source, method: Node<'a>, node_id: usize) -> Option<Node<'a>> {
+     |    ^^^^^^^^^^^^^^^
+
+warning: multiple fields are never read
+  --> tests\..\src\lang.rs:12:9
+   |
+ 8 | pub struct LanguageSpec {
+   |            ------------ fields in this struct
+...
+12 |     pub invocation_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^
+13 |     pub new_expression_kind: Option<&'static str>,
+   |         ^^^^^^^^^^^^^^^^^^^
+14 |     pub macro_invocation_kind: Option<&'static str>,
+   |         ^^^^^^^^^^^^^^^^^^^^^
+15 |     pub member_access_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^^^
+16 |     pub local_kinds: &'static [&'static str],
+   |         ^^^^^^^^^^^
+17 |     pub identifier_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^
+18 |     pub parenthesized_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^^^
+19 |     pub prefix_unary_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^^
+20 |     pub binary_kind: &'static str,
+   |         ^^^^^^^^^^^
+21 |     pub exit_kinds: &'static [&'static str],
+   |         ^^^^^^^^^^
+22 |     pub block_kind: &'static str,
+   |         ^^^^^^^^^^
+23 |     pub conditional_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^
+24 |     pub branch_kinds: &'static [&'static str],
+   |         ^^^^^^^^^^^^
+25 |     pub loop_kinds: &'static [&'static str],
+   |         ^^^^^^^^^^
+26 |     pub try_kinds: &'static [&'static str],
+   |         ^^^^^^^^^
+27 |     pub case_kinds: &'static [&'static str],
+   |         ^^^^^^^^^^
+28 |     pub closure_kinds: &'static [&'static str],
+   |         ^^^^^^^^^^^^^
+29 |     pub expression_statement_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+30 |     pub await_kind: &'static str,
+   |         ^^^^^^^^^^
+31 |     pub local_declaration_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^^^^^^^
+32 |     pub variable_declarator_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^
+33 |     pub comment_kind: &'static str,
+34 |     pub builtin_calls: &'static [&'static str],
+   |         ^^^^^^^^^^^^^
+35 |     pub builtin_value_methods: &'static [&'static str],
+   |         ^^^^^^^^^^^^^^^^^^^^^
+
+       Fresh flowcheck v0.1.0 (C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp)
+warning: `flowcheck` (test "render") generated 1 warning
+warning: `flowcheck` (test "rust") generated 3 warnings
+warning: `flowcheck` (test "ts") generated 3 warnings (3 duplicates)
+warning: `flowcheck` (test "fixture") generated 3 warnings (3 duplicates)
+warning: `flowcheck` (test "coverage") generated 39 warnings
+warning: `flowcheck` (test "extra") generated 3 warnings (3 duplicates)
+warning: `flowcheck` (test "skeleton") generated 3 warnings (3 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\flowcheck-d122590a3cbd15d5.exe`
+
+running 3 tests
+test flow::extra::tests::removes_only_as_many_matching_steps_as_are_allowed ... ok
+test flow::lang::tests::chained_callees_keep_only_the_last_link ... ok
+test flow::tests::subsequence_missing_resumes_after_unmatched_step ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\coverage-70a785250148e163.exe`
+
+running 10 tests
+test flow::extra::tests::removes_only_as_many_matching_steps_as_are_allowed ... ok
+test flow::lang::tests::chained_callees_keep_only_the_last_link ... ok
+test flow::tests::subsequence_missing_resumes_after_unmatched_step ... ok
+warning: in the working copy of 'src/A.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/A.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Other.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/A.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/A.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/A.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/A.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/A.cs', LF will be replaced by CRLF the next time Git touches it
+test file_na_is_reported_without_reading_the_file ... ok
+test declared_overload_does_not_cover_another_overload ... ok
+test renamed_base_method_is_outside_delta ... ok
+test whitespace_and_comments_do_not_create_a_finding ... ok
+test method_na_is_unchecked_and_empty_reason_is_cannot ... ok
+test neighboring_method_is_a_shadow_finding ... ok
+test changed_file_omitted_from_spec_is_a_finding ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.67s
+
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\extra-1129a1722029a8f2.exe`
+
+running 7 tests
+test extra::tests::removes_only_as_many_matching_steps_as_are_allowed ... ok
+test flow::extra::tests::removes_only_as_many_matching_steps_as_are_allowed ... ok
+test flow::lang::tests::chained_callees_keep_only_the_last_link ... ok
+test flow::tests::subsequence_missing_resumes_after_unmatched_step ... ok
+test an_inserted_helper_body_is_not_reported ... ok
+test extracting_a_same_file_helper_is_not_an_extra_step ... ok
+test reports_an_undeclared_call_without_failing_the_flow_check ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.33s
+
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\fixture-0bec295730151ddc.exe`
+
+running 28 tests
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+test comment_after_return_still_exits ... ok
+test discarded_result_is_detected_on_the_call_node ... ok
+test fixture_m6_and_cond ... ok
+test fixture_m2_one_branch ... ok
+test fixture_m7_or_enter ... ok
+test fixture_m1_no_getphone ... ok
+test fixture_m4_after_send ... ok
+test expansion_cut_by_depth_is_reported ... ok
+test flow::extra::tests::removes_only_as_many_matching_steps_as_are_allowed ... ok
+test flow::lang::tests::chained_callees_keep_only_the_last_link ... ok
+test flow::tests::subsequence_missing_resumes_after_unmatched_step ... ok
+test fixture_m3_result_dropped ... ok
+test fixture_good ... ok
+test fixture_m5_partial_exit ... ok
+test fixture_m8_wrong_else ... ok
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+test fixture_ok_alias ... ok
+test overload_without_params_is_cannot_not_an_arbitrary_method ... ok
+test fixture_ok_eq_false ... ok
+test fixture_ok_log_block ... ok
+test fixture_ok_or_cond ... ok
+test fixture_ok_positive_if ... ok
+test fixture_ok_ternary_guard ... ok
+test flow_expands_each_sibling_branch ... ok
+test fixture_ok_throw ... ok
+test local_declaration_is_an_after_anchor ... ok
+test preserve_defaults_to_all ... ok
+test same_line_calls_are_checked_individually ... ok
+test shallow_expansion_reports_no_depth_limit ... ok
+
+test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.17s
+
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\render-97f5fd11b387812c.exe`
+
+running 18 tests
+test base_side_is_only_rendered_for_changed_exits ... ok
+test builtin_namespace_calls_are_hidden_unless_the_delta_names_them ... ok
+test flow::extra::tests::removes_only_as_many_matching_steps_as_are_allowed ... ok
+test flow::lang::tests::chained_callees_keep_only_the_last_link ... ok
+test flow::tests::subsequence_missing_resumes_after_unmatched_step ... ok
+test plan_counts_nth_across_the_method_and_closures ... ok
+test plan_keeps_delta_and_omits_field_reads ... ok
+test plan_strikes_a_standalone_removed_call ... ok
+test qualified_c_sharp_builtin_calls_are_hidden ... ok
+test result_keeps_replacement_when_other_calls_shift_its_index ... ok
+test result_marks_missing_planned_call ... ok
+test result_marks_planned_calls_ok ... ok
+test result_respects_nth_when_marking_an_out_of_place_call ... ok
+test split_parts_repeat_the_last_call_as_a_continuation ... ok
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/cli/process/run.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/cli/process/flow-gate.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/cli/process/run.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/cli/process/flow-gate.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+test run_flow_gate_shows_replaced_call_and_hides_builtins ... ok
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+test long_finish_step_is_folded_below_mermaid_limit ... ok
+test notifier_after_send_results_keep_the_guard_and_send_for_csharp_and_js ... ok
+test real_finish_step_is_a_small_top_level_diagram ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 13.09s
+
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\rust-f6504c81b2665605.exe`
+
+running 23 tests
+test flow::extra::tests::removes_only_as_many_matching_steps_as_are_allowed ... ok
+test flow::lang::tests::chained_callees_keep_only_the_last_link ... ok
+test flow::tests::subsequence_missing_resumes_after_unmatched_step ... ok
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+test m4 ... ok
+test eq_false ... ok
+test alias ... ok
+test good ... ok
+test guard_in_closure_does_not_guard_the_method ... ok
+test log ... ok
+test m1 ... ok
+test m3 ... ok
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+test m5 ... ok
+test m6 ... ok
+test m2 ... ok
+test m7 ... ok
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+test m8 ... ok
+test trait_and_impl_methods_and_macros_are_steps ... ok
+test or_cond ... ok
+test positive ... ok
+test ternary ... ok
+test throwing ... ok
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+test result_guards_and_rust_forms_are_accepted ... ok
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+test translated_variants_match_csharp_statuses ... ok
+
+test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.58s
+
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\skeleton-f7094868c1bca6f6.exe`
+
+running 6 tests
+test flow::extra::tests::removes_only_as_many_matching_steps_as_are_allowed ... ok
+test flow::lang::tests::chained_callees_keep_only_the_last_link ... ok
+test flow::tests::subsequence_missing_resumes_after_unmatched_step ... ok
+warning: in the working copy of 'src/finish-step.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/flow-gate.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+test closures_are_not_part_of_the_main_flow ... ok
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+test notifier_exit_branches_are_present_for_every_language ... ok
+test calls_and_exits_remain_in_their_branch ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.56s
+
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\ts-e8d57333d367eaab.exe`
+
+running 13 tests
+test flow::extra::tests::removes_only_as_many_matching_steps_as_are_allowed ... ok
+test flow::lang::tests::chained_callees_keep_only_the_last_link ... ok
+test flow::tests::subsequence_missing_resumes_after_unmatched_step ... ok
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+test await_and_optional_calls_are_calls_and_none_guard_accepts_await ... ok
+test changing_an_argument_in_a_chain_preserves_its_steps ... ok
+test guard_inside_then_callback_does_not_guard_outer_flow ... ok
+test nth_checks_only_the_requested_anchor_occurrence ... ok
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+test arrow_function_object_property_and_new_expression_are_named_steps ... ok
+test none_and_throws_accept_a_call_as_the_only_try_statement ... ok
+test try_guard_must_be_directly_before_the_anchor ... ok
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+test throws_guard_requires_a_bare_call_before_the_anchor ... ok
+test tsx_cjs_and_js_extensions_select_the_javascript_family ... ok
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+test translated_variants_have_csharp_statuses_in_ts_and_js ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.47s
+
+
+*** result: Success

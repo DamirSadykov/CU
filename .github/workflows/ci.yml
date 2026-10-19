@@ -4,9 +4,10 @@ on:
   pull_request:
     branches:
       - master
-  push:
-    branches:
-      - master
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -33,6 +34,9 @@ jobs:
               - 'vite.config.ts'
               - 'index.html'
               - '.github/workflows/ci.yml'
+            rust:
+              - 'src-tauri/**'
+              - '.github/workflows/ci.yml'
             specs:
               - 'docs/specs/**'
               - 'scripts/cli/spec/spec.mjs'
@@ -45,11 +49,11 @@ jobs:
           cache: npm
 
       - name: Setup Rust
-        if: steps.changes.outputs.code == 'true'
+        if: steps.changes.outputs.rust == 'true'
         uses: dtolnay/rust-toolchain@stable
 
       - name: Rust cache
-        if: steps.changes.outputs.code == 'true'
+        if: steps.changes.outputs.rust == 'true'
         uses: swatinem/rust-cache@v2
         with:
           workspaces: src-tauri -> target
@@ -75,7 +79,7 @@ jobs:
         run: npm run build
 
       - name: Rust tests
-        if: steps.changes.outputs.code == 'true'
+        if: steps.changes.outputs.rust == 'true'
         working-directory: src-tauri
         run: cargo test
 

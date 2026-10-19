@@ -1,0 +1,21 @@
+--- src/coverage.rs
++++ replace == with != in na_for
+@@ -187,17 +187,17 @@
+         .any(|s| s.file == file && s.na.is_none() && !s.method.is_empty() && spec_key(s) == key) 
+ } 
+  
+ fn na_for(specs: &[Spec], file: &str, key: Option<&str>) -> Option<String> { 
+     specs.iter().find_map(|s| { 
+         if s.file != file || s.na.is_none() { 
+             return None; 
+         } 
+-        if s.method.is_empty() || key.is_some_and(|k| spec_key(s) == k) { 
++        if s.method.is_empty() || key.is_some_and(|k| spec_key(s) != /* ~ changed by cargo-mutants ~ */ k) { 
+             Some(s.na.clone().unwrap()) 
+         } else { 
+             None 
+         } 
+     }) 
+ }
+ 
+ pub fn inspect(specs: &[Spec], repo: &Path, base: &str, head: Option<&str>) -> Report {

@@ -31,6 +31,7 @@ import { useSettings } from "../kernel/settingsStore";
 import TodoFiltersBar from "../board/TodoFiltersBar.vue";
 import TodoDetailPane from "../board/TodoDetailPane.vue";
 import ChangeDetail from "../process/pipeline/ChangeDetail.vue";
+import { mutationOf } from "../process/pipeline/changeAdapt";
 import ProjectOverview from "../board/ProjectOverview.vue";
 import BoardCrumbs, { type BoardCrumbPath } from "../board/BoardCrumbs.vue";
 import TodoTree, { type TodoTreeDepth } from "../board/TodoTree.vue";
@@ -540,6 +541,19 @@ const overviewChange = computed(() => {
 const overviewRoleCosts = computed(() => sessionRoleCosts(overviewWork.value));
 const overviewReview = computed(() => reviewOutcome(overviewWork.value?.attempts ?? []));
 const overviewAttemptCount = computed(() => overviewWork.value?.attempts?.length ?? 0);
+const overviewMutation = computed(() => mutationOf(detail.value));
+const overviewMutationFindings = computed(() => {
+  const mutation = overviewMutation.value;
+  if (!mutation) return [];
+  return [
+    ...mutation.survived.map((finding) => ({ ...finding, kind: "survived" as const })),
+    ...mutation.noCoverage.map((finding) => ({ ...finding, kind: "noCoverage" as const })),
+  ];
+});
+function mutationFindingLocation(finding: typeof overviewMutationFindings.value[number]) {
+  if (finding.selector) return finding.selector;
+  return [finding.file, finding.line, finding.column].filter((part) => part !== null && part !== "").join(":");
+}
 async function loadOverviewWork(id: string | null) {
   overviewWork.value = null;
   if (!id) return;
@@ -1762,6 +1776,18 @@ onUnmounted(() => {
             <div class="tw-overview">
               <div class="tw-overview-main">
                 <section class="tw-overview-section"><h3>{{ t('todoDescription') }}</h3><div class="tw-overview-description">{{ detail.description || t('todoNoDescription') }}</div></section>
+                <section v-if="overviewMutation" class="tw-overview-section tw-mutation-results">
+                  <h3>{{ t('mutationResults') }} <span class="tw-mutation-status" :class="overviewMutation.status">{{ t(`mutationStatus_${overviewMutation.status}`) }}</span></h3>
+                  <p v-if="overviewMutation.reason" class="tw-overview-empty">{{ overviewMutation.reason }}</p>
+                  <ul v-if="overviewMutationFindings.length" class="tw-mutation-list">
+                    <li v-for="(finding, index) in overviewMutationFindings" :key="`${finding.kind}-${finding.selector || finding.file}-${index}`">
+                      <span class="tw-mutation-kind" :class="finding.kind">{{ t(finding.kind === 'survived' ? 'mutationSurvivedOne' : 'mutationNoCoverageOne') }}</span>
+                      <code>{{ mutationFindingLocation(finding) }}</code>
+                      <span>{{ finding.mutator || '—' }}<template v-if="finding.replacement !== null"> → {{ finding.replacement }}</template></span>
+                    </li>
+                  </ul>
+                  <div v-else-if="overviewMutation.status === 'pass'" class="tw-overview-empty">{{ t('mutationNoSurvivors') }}</div>
+                </section>
                 <section v-if="hasFlowDiagram" class="tw-overview-section tw-flow">
                   <h3>{{ t('todoFlow') }}</h3>
                   <div class="tw-flow-tabs" role="tablist" :aria-label="t('todoFlow')">
@@ -1947,6 +1973,18 @@ onUnmounted(() => {
               <span v-else class="tw-richtext-empty">{{ t("todoNoDescription") }}</span>
             </div>
           </label>
+          <section v-if="overviewMutation" class="tw-field tw-mutation-results">
+            <span>{{ t('mutationResults') }} · {{ t(`mutationStatus_${overviewMutation.status}`) }}</span>
+            <p v-if="overviewMutation.reason" class="tw-overview-empty">{{ overviewMutation.reason }}</p>
+            <ul v-if="overviewMutationFindings.length" class="tw-mutation-list">
+              <li v-for="(finding, index) in overviewMutationFindings" :key="`${finding.kind}-${finding.selector || finding.file}-${index}`">
+                <span class="tw-mutation-kind" :class="finding.kind">{{ t(finding.kind === 'survived' ? 'mutationSurvivedOne' : 'mutationNoCoverageOne') }}</span>
+                <code>{{ mutationFindingLocation(finding) }}</code>
+                <span>{{ finding.mutator || '—' }}<template v-if="finding.replacement !== null"> → {{ finding.replacement }}</template></span>
+              </li>
+            </ul>
+            <div v-else-if="overviewMutation.status === 'pass'" class="tw-overview-empty">{{ t('mutationNoSurvivors') }}</div>
+          </section>
           <!-- The plan (t#253 field roles): HOW only — the STEPS + ORDER part of an
                accepted plan; the vision lives in the description. -->
           <label class="tw-field">
@@ -2858,6 +2896,7 @@ onUnmounted(() => {
 .tw-overview-main, .tw-overview-side { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 .tw-overview-section h3, .tw-overview-card h3 { color: var(--text-2); font-size: var(--fs-xs); margin: 0 0 8px; }
 .tw-overview-description { color: var(--text-2); font-size: var(--fs-xs); line-height: 1.62; max-width: 780px; white-space: pre-wrap; }
+.tw-mutation-status { margin-left: 6px; color: var(--ok); font: 500 var(--fs-xs)/1 var(--mono); text-transform: none; }.tw-mutation-status.cannot { color: var(--crit); }.tw-mutation-status.skipped { color: var(--text-4); }.tw-mutation-list { display: grid; gap: 7px; list-style: none; margin: 0; padding: 0; }.tw-mutation-list li { display: grid; gap: 4px; border-left: 2px solid var(--crit); padding: 6px 9px; background: var(--layer); color: var(--text-3); font-size: var(--fs-xs); }.tw-mutation-list code { overflow-wrap: anywhere; color: var(--text-2); font-family: var(--mono); }.tw-mutation-kind { color: var(--crit); font: 600 var(--fs-xs)/1 var(--segoe); }.tw-mutation-kind.noCoverage { color: var(--warn); }
 .tw-flow-tabs { border-bottom: 1px solid var(--stroke); display: flex; gap: 12px; }
 .tw-flow-tabs button { background: transparent; border: 0; border-bottom: 2px solid transparent; color: var(--text-3); cursor: pointer; font: var(--fs-xs) var(--segoe); padding: 6px 1px; }
 .tw-flow-tabs button.active { border-bottom-color: var(--accent); color: var(--text); }

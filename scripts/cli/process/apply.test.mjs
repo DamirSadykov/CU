@@ -9,11 +9,20 @@ import { loadBoard, withDeferredSave, saveBoard, setField } from "../board/todos
 
 const cli = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "cli.mjs");
 
+function pinCsFlowLanguages(appData) {
+  const dir = path.join(appData, "com.claude-usage-tracker.app");
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(path.join(dir, "settings.json"), JSON.stringify({
+    flowLanguages: { fixture: ["cs"], [path.basename(process.cwd())]: ["cs"] },
+  }));
+}
+
 let hostAppData;
 let isolatedAppData;
 beforeAll(() => {
   hostAppData = process.env.APPDATA;
   isolatedAppData = mkdtempSync(path.join(os.tmpdir(), "apply-appdata-"));
+  pinCsFlowLanguages(isolatedAppData);
   process.env.APPDATA = isolatedAppData;
 });
 afterAll(() => {
@@ -487,6 +496,7 @@ describe("apply records the graph", () => {
 
   beforeEach(() => {
     dir = mkdtempSync(path.join(os.tmpdir(), "cut-apply-"));
+    pinCsFlowLanguages(dir);
     // The app data directory is the tracker's to create, exactly as in real use.
     mkdirSync(path.join(dir, "com.claude-usage-tracker.app"), { recursive: true });
     writeFileSync(path.join(dir, "graph.yaml"), GRAPH);
@@ -727,6 +737,7 @@ describe("a graph is written all at once or not at all", () => {
 
   beforeEach(() => {
     dir = mkdtempSync(path.join(os.tmpdir(), "cut-defer-"));
+    pinCsFlowLanguages(dir);
     file = path.join(dir, "todos.json");
   });
   afterEach(() => rmSync(dir, { recursive: true, force: true }));
@@ -789,6 +800,7 @@ describe("a step may name the task it IS", () => {
 
   beforeEach(() => {
     dir = mkdtempSync(path.join(os.tmpdir(), "cut-bind-"));
+    pinCsFlowLanguages(dir);
     mkdirSync(path.join(dir, "com.claude-usage-tracker.app"), { recursive: true });
   });
   afterEach(() => {
@@ -913,6 +925,7 @@ describe("apply and a stale description (t#739)", () => {
 
   beforeEach(() => {
     dir = mkdtempSync(path.join(os.tmpdir(), "cut-stale-desc-"));
+    pinCsFlowLanguages(dir);
     mkdirSync(path.join(dir, "com.claude-usage-tracker.app"), { recursive: true });
   });
   afterEach(() => {
@@ -1007,6 +1020,7 @@ describe("apply requires a change for new work", () => {
 
   beforeEach(() => {
     dir = mkdtempSync(path.join(os.tmpdir(), "cut-apply-change-"));
+    pinCsFlowLanguages(dir);
     mkdirSync(path.join(dir, "com.claude-usage-tracker.app"), { recursive: true });
   });
 

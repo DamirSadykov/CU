@@ -1,0 +1,5 @@
+src/coverage.rs:185:5: replace named -> bool with false
+src/coverage.rs:187:25: replace == with != in named
+src/coverage.rs:187:54: delete ! in named
+src/coverage.rs:192:27: replace || with && in na_for
+src/coverage.rs:195:67: replace == with != in na_for
