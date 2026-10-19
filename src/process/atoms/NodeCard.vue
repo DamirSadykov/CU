@@ -111,13 +111,14 @@ const hasIo = computed(
 }
 .node-id {
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
+    line-height: var(--lh-11);
     font-weight: 600;
     color: var(--text);
 }
 .node-auto {
     color: var(--warn);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-12);
     line-height: 1;
 }
 .node-dot {
@@ -128,8 +129,8 @@ const hasIo = computed(
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
     overflow: hidden;
-    font-size: var(--fs-xs);
-    line-height: 1.35;
+    font-size: var(--fs-13);
+    line-height: var(--lh-13);
     color: var(--text-3);
     overflow-wrap: anywhere;
 }

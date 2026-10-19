@@ -120,13 +120,13 @@ watch(() => props.project, load, { immediate: true });
 </template>
 
 <style scoped>
-.pc-label { display: flex; align-items: center; gap: 8px; color: var(--paper-3); font: 600 var(--fs-xs)/1.4 var(--sans); }
+.pc-label { display: flex; align-items: center; gap: 8px; color: var(--paper-3); font: 600 var(--fs-16)/var(--lh-16) var(--sans); }
 .pc-gap { margin-top: 14px; }
 .pc-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 8px; }
 .pc-row.off { opacity: .5; }
-.pc-reset { border: 0; padding: 0; background: transparent; color: var(--paper-3); cursor: pointer; font: var(--fs-xs) var(--sans); text-decoration: underline; }
+.pc-reset { border: 0; padding: 0; background: transparent; color: var(--paper-3); cursor: pointer; font: 400 var(--fs-13)/var(--lh-13) var(--sans); text-decoration: underline; }
 .pc-reset:hover { color: var(--paper); }
-.pc-level { display: inline-flex; align-items: center; gap: 6px; color: var(--paper-2); font: var(--fs-xs) var(--sans); }
-.pc-level select { border: 1.5px solid var(--line-2); border-radius: var(--r-1); background: var(--field); color: var(--paper); font: var(--fs-xs) var(--mono); padding: 2px 4px; }
-.pc-hint { margin: 8px 0 0; color: var(--paper-4); font: var(--fs-xs)/1.4 var(--sans); }
+.pc-level { display: inline-flex; align-items: center; gap: 6px; color: var(--paper-2); font: 400 var(--fs-13)/var(--lh-13) var(--sans); }
+.pc-level select { border: 1.5px solid var(--line-2); border-radius: var(--r-1); background: var(--field); color: var(--paper); font: 400 var(--fs-13)/var(--lh-13) var(--mono); padding: 2px 4px; }
+.pc-hint { margin: 8px 0 0; color: var(--paper-3); font: 400 var(--fs-12)/var(--lh-12) var(--sans); }
 </style>

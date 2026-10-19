@@ -73,11 +73,12 @@ const orderedStages = computed(() => [
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 12px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
 }
 
 .work-mode-flow-head span {
   color: var(--text-2);
+  font-size: var(--fs-12);
   text-align: right;
 }
 
@@ -96,7 +97,7 @@ const orderedStages = computed(() => [
   gap: 5px;
   min-width: 74px;
   color: var(--text-2);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   opacity: 0.55;
 }
 
@@ -123,12 +124,12 @@ const orderedStages = computed(() => [
   flex: 1 0 18px;
   color: var(--stroke-strong);
   text-align: center;
-  font-size: var(--fs-md);
+  font-size: var(--fs-13);
 }
 
 .work-mode-flow-arrow.active {
   color: var(--accent);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .work-mode-flow-legend {
@@ -136,7 +137,7 @@ const orderedStages = computed(() => [
   gap: 16px;
   margin-top: 10px;
   color: var(--text-2);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-12);
 }
 
 .work-mode-flow-legend span {

@@ -4,19 +4,10 @@ import { describe, expect, it } from "vitest";
 
 const srcRoot = new URL("..", import.meta.url);
 const tokensCss = readFileSync(new URL("./cu-tokens.css", import.meta.url), "utf8");
-const TRACE_COMPONENTS = new Set(["board/WorkTree.vue", "board/WorkTraceCharts.vue"]);
-const SCALE = {
-    "--fs-xs": 14,
-    "--fs-sm": 15,
-    "--fs-md": 16,
-    "--fs-lg": 18,
-    "--fs-xl": 20,
-    "--fs-2xl": 24,
-    "--fs-3xl": 26,
-    "--fs-4xl": 30,
-    "--fs-5xl": 34,
-    "--fs-display": 44,
-} as const;
+const ROLE_SIZES = [32, 22, 16, 13, 12, 11] as const;
+const ROLE_TOKENS = ROLE_SIZES.map((size) => `--fs-${size}`);
+const LEGACY_TOKENS = ["trace", "xs", "sm", "md", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "display"];
+const LOGO_FILES = new Set(["styles/cu-kit.css", "windows/KitWindow.vue"]);
 
 function sourceFiles(directory = srcRoot): URL[] {
     return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -32,76 +23,122 @@ function name(file: URL): string {
 
 function styleSources(file: URL, source: string): string[] {
     if (extname(file.pathname) === ".css") return [source];
-    return [...source.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)].map((match) => match[1]);
+    const blocks = [...source.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)].map((match) => match[1]);
+    const inline = [...source.matchAll(/\sstyle\s*=\s*["']([^"']*)["']/g)].map((match) => match[1]);
+    return [...blocks, ...inline];
 }
 
-function allowedFontSize(value: string, fileName: string): boolean {
-    const allowedTokens = new Set<string>(Object.keys(SCALE));
-    if (TRACE_COMPONENTS.has(fileName)) allowedTokens.add("--fs-trace");
-    const referencedTokens = [...value.matchAll(/var\((--fs-[\w-]+)/g)].map((match) => match[1]);
-    if (referencedTokens.length === 0 || referencedTokens.some((token) => !allowedTokens.has(token))) return false;
-    if (/^var\(--fs-[\w-]+\)$/.test(value)) return true;
-    if (/^var\(--[\w-]+,\s*var\(--fs-[\w-]+\)\)$/.test(value)) return true;
-    const floorToken = value.match(/^max\(var\((--fs-[\w-]+)\),.+\)$/)?.[1];
-    return Boolean(floorToken && allowedTokens.has(floorToken));
+function rules(styles: string): Array<{ selector: string; body: string }> {
+    const parsed = [...styles.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((match) => ({
+        selector: match[1].trim(),
+        body: match[2],
+    }));
+    return parsed.length > 0 || !styles.trim() ? parsed : [{ selector: "inline", body: styles }];
 }
 
-describe("interface font scale", () => {
-    it("defines an ascending scale with a 14px floor and one 12px trace token", () => {
-        for (const [token, size] of Object.entries(SCALE)) {
-            expect(tokensCss, `${token} must be defined as ${size}px`).toMatch(
-                new RegExp(`${token.replace("-", "\\-")}\\s*:\\s*${size}px\\b`),
-            );
-        }
-        expect(tokensCss).toMatch(/--fs-trace\s*:\s*12px\b/);
-        expect(Object.values(SCALE).every((size) => size >= 14)).toBe(true);
-    });
+function declarations(body: string, property: string): string[] {
+    const pattern = new RegExp(`(?:^|;)\\s*${property}\\s*:\\s*([^;}]+)`, "g");
+    return [...body.matchAll(pattern)].map((match) => match[1].trim());
+}
 
-    it("uses scale tokens instead of font-size literals in styles and templates", () => {
-        const violations: string[] = [];
+function usesOnlyRoleSize(value: string, allowLogo: boolean): boolean {
+    const tokens = [...value.matchAll(/var\((--fs-[\w-]+)/g)].map((match) => match[1]);
+    const allowed = allowLogo ? [...ROLE_TOKENS, "--fs-logo"] : ROLE_TOKENS;
+    return tokens.length > 0 && tokens.every((token) => allowed.includes(token));
+}
 
-        for (const file of sourceFiles()) {
-            const source = readFileSync(file, "utf8");
-            const fileName = name(file);
-            for (const match of source.matchAll(/font-size\s*:\s*([^;"'}\r\n]+)/g)) {
-                const value = match[1].trim();
-                if (!allowedFontSize(value, fileName)) {
-                    violations.push(`${fileName}: font-size: ${value}`);
-                }
-            }
-            for (const styles of styleSources(file, source)) {
-                for (const match of styles.matchAll(/(?:^|[;{])\s*font\s*:\s*([^;}\r\n]+)/g)) {
-                    const value = match[1].trim();
-                    if (value !== "inherit" && !value.includes("var(--fs-")) {
-                        violations.push(`${fileName}: font: ${value}`);
-                    }
-                }
+function fileViolations(file: URL): string[] {
+    const source = readFileSync(file, "utf8");
+    const fileName = name(file);
+    const allowLogo = LOGO_FILES.has(fileName);
+    const violations: string[] = [];
+
+    if (!allowLogo && source.includes("var(--fs-logo")) {
+        violations.push("--fs-logo is reserved for cu-kit.css and KitWindow.vue");
+    }
+    if (fileName === "windows/KitWindow.vue") {
+        for (const size of ROLE_SIZES) {
+            if (!new RegExp(`class=["'][^"']*\\bt-${size}\\b`).test(source)) {
+                violations.push(`missing t-${size} type specimen`);
             }
         }
+    }
 
-        expect(violations).toEqual([]);
-        expect(allowedFontSize("var(--fs-caption)", "App.vue")).toBe(false);
-        expect(allowedFontSize("var(--fs-trace)", "App.vue")).toBe(false);
-        expect(allowedFontSize("var(--fs-trace)", "board/WorkTree.vue")).toBe(true);
-    });
+    for (const styles of styleSources(file, source)) {
+        for (const rule of rules(styles)) {
+            const context = rule.selector.replace(/\s+/g, " ");
+            const report = (message: string) => violations.push(`${context}: ${message}`);
+            const logoRule = allowLogo && /\.cu-(?:mark|wordmark)\b/.test(rule.selector);
 
-    it("keeps programmatic chart and canvas labels above the same floor", () => {
-        const violations: string[] = [];
+            for (const value of declarations(rule.body, "font-size")) {
+                if (!usesOnlyRoleSize(value, allowLogo)) report(`font-size: ${value}`);
+            }
+            for (const value of declarations(rule.body, "font")) {
+                if (!usesOnlyRoleSize(value, allowLogo)) report(`font: ${value}`);
+            }
 
-        for (const file of sourceFiles()) {
-            if (extname(file.pathname) !== ".vue") continue;
-            const source = readFileSync(file, "utf8");
-            const fileName = name(file);
-            const floor = TRACE_COMPONENTS.has(fileName) ? 12 : 14;
-            const sizes = [
-                ...[...source.matchAll(/font\s*:\s*\{\s*size\s*:\s*(\d+(?:\.\d+)?)/g)].map((match) => Number(match[1])),
-                ...[...source.matchAll(/\.font\s*=\s*["'](\d+(?:\.\d+)?)px\b/g)].map((match) => Number(match[1])),
+            const weights = [
+                ...declarations(rule.body, "font-weight"),
+                ...declarations(rule.body, "font").flatMap(
+                    (value) => value.match(/\b(?:[1-9]00|normal|bold(?:er)?)\b/g) ?? [],
+                ),
             ];
-            for (const size of sizes) {
-                if (size < floor) violations.push(`${fileName}: ${size}px is below ${floor}px`);
+            for (const weight of weights) {
+                if (!["400", "600", "700"].includes(weight)) report(`font weight ${weight}`);
+                if (weight === "700" && !logoRule && !/var\(--fs-(?:32|logo)\)/.test(rule.body)) {
+                    report("font weight 700 requires --fs-32 or --fs-logo");
+                }
+            }
+
+            for (const value of declarations(rule.body, "text-transform")) {
+                if (value === "uppercase" && !logoRule && !/var\(--fs-(?:11|logo)\)/.test(rule.body)) {
+                    report("uppercase requires --fs-11 or --fs-logo");
+                }
+            }
+            for (const value of declarations(rule.body, "color")) {
+                if (/var\(--(?:paper-4|text-4)\b/.test(value)) report(`color: ${value}`);
             }
         }
+    }
 
-        expect(violations).toEqual([]);
+    if (extname(file.pathname) === ".vue") {
+        const chartSizes = [
+            ...[...source.matchAll(/font\s*:\s*\{\s*size\s*:\s*(\d+(?:\.\d+)?)/g)].map((match) => Number(match[1])),
+            ...[...source.matchAll(/\.font\s*=\s*["'`]\s*(\d+(?:\.\d+)?)px\b/g)].map((match) => Number(match[1])),
+        ];
+        for (const size of chartSizes) {
+            if (size < 11) violations.push(`chart label: ${size}px is below 11px`);
+        }
+    }
+
+    return violations;
+}
+
+describe("interface type roles", () => {
+    it("role tokens", () => {
+        const expected = {
+            32: [32, 1.1],
+            22: [22, 1.2],
+            16: [16, 1.3],
+            13: [13, 1.45],
+            12: [12, 1.4],
+            11: [11, 1.2],
+        } as const;
+
+        for (const [role, [size, lineHeight]] of Object.entries(expected)) {
+            expect(tokensCss, `--fs-${role}`).toMatch(new RegExp(`--fs-${role}\\s*:\\s*${size}px\\b`));
+            expect(tokensCss, `--lh-${role}`).toMatch(new RegExp(`--lh-${role}\\s*:\\s*${lineHeight}\\b`));
+        }
+        expect(tokensCss).toMatch(/--fs-logo\s*:\s*\d+(?:\.\d+)?px\b/);
+        for (const token of LEGACY_TOKENS) {
+            expect(tokensCss, `legacy --fs-${token}`).not.toMatch(new RegExp(`--fs-${token}\\s*:`));
+        }
     });
+
+    for (const file of sourceFiles()) {
+        const fileName = name(file);
+        it(`type roles: ${fileName}`, () => {
+            expect(fileViolations(file)).toEqual([]);
+        });
+    }
 });

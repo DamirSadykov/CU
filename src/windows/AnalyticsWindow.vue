@@ -726,7 +726,7 @@ function renderCharts() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { display: true, labels: { color: tick, font: { size: 14 } } },
+          legend: { display: true, labels: { color: tick, font: { size: 12 } } },
           tooltip: { ...chartTooltip(),
             callbacks: { label: (c) => `${c.dataset.label}: ${fmtTokens(Number(c.parsed.y) || 0)}` },
           },
@@ -2047,7 +2047,7 @@ onUnmounted(() => {
 }
 .aw-head h1 {
   margin: 0;
-  font-size: var(--fs-lg);
+  font-size: var(--fs-16);
   font-weight: 600;
 }
 .aw-filters {
@@ -2061,7 +2061,7 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-12);
   color: var(--text-3, color-mix(in srgb, var(--paper) 70%, transparent));
 }
 .aw-filters input,
@@ -2071,7 +2071,7 @@ onUnmounted(() => {
   color: var(--text);
   border-radius: var(--card-radius);
   padding: 5px 8px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-family: var(--segoe);
   /* Hints the platform to render the dropdown in a dark colour scheme so the
      OS popup menu (which the WebView can't fully restyle) picks dark fg/bg. */
@@ -2099,7 +2099,7 @@ onUnmounted(() => {
   background: transparent;
   color: var(--text-2);
   padding: 5px 12px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-family: var(--segoe);
   cursor: pointer;
   transition: background 120ms, color 120ms;
@@ -2123,7 +2123,7 @@ onUnmounted(() => {
   color: var(--on-accent);
   border-radius: var(--card-radius);
   padding: 5px 12px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-family: var(--segoe);
   cursor: pointer;
   transition: filter 120ms;
@@ -2166,9 +2166,9 @@ onUnmounted(() => {
   border-bottom: 2px solid transparent;
   color: var(--text-3);
   padding: 10px 14px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-family: var(--segoe);
-  font-weight: 500;
+  font-weight: 400;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -2188,8 +2188,8 @@ onUnmounted(() => {
   color: var(--accent);
   border-radius: 10px;
   padding: 1px 7px;
-  font-size: var(--fs-xs);
-  font-weight: 700;
+  font-size: var(--fs-13);
+  font-weight: 600;
   min-width: 18px;
   text-align: center;
 }
@@ -2210,11 +2210,12 @@ onUnmounted(() => {
 }
 /* Small uppercase group label inside a tab panel (e.g. "KPI summary"). */
 .aw-group-hd {
-  font-size: var(--fs-xs);
+  font-family: var(--mono);
+  font-size: var(--fs-11);
   font-weight: 600;
   color: var(--text-3, color-mix(in srgb, var(--paper) 70%, transparent));
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   margin-bottom: -6px;
 }
 /* Outcome header row: title on the left, integration-guide link on the right. */
@@ -2233,8 +2234,8 @@ onUnmounted(() => {
   background: none;
   cursor: pointer;
   font-family: inherit;
-  font-size: var(--fs-xs);
-  font-weight: 500;
+  font-size: var(--fs-13);
+  font-weight: 400;
   text-transform: none;
   letter-spacing: 0;
   color: var(--next);
@@ -2281,13 +2282,13 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
-  font-size: var(--fs-xs);
+  color: var(--text-3, color-mix(in srgb, var(--paper) 50%, transparent));
+  font-size: var(--fs-12);
 }
 /* Inline empty state inside a tab panel (e.g. Tools tab with no data). */
 .aw-empty-inline {
-  color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
-  font-size: var(--fs-xs);
+  color: var(--text-3, color-mix(in srgb, var(--paper) 50%, transparent));
+  font-size: var(--fs-12);
   font-style: italic;
   padding: 24px 4px;
   text-align: center;
@@ -2301,8 +2302,8 @@ onUnmounted(() => {
 }
 .aw-proj-desc {
   margin: 0;
-  font-size: var(--fs-xs);
-  color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
+  font-size: var(--fs-12);
+  color: var(--text-3, color-mix(in srgb, var(--paper) 50%, transparent));
   max-width: 64ch;
   line-height: 1.5;
 }
@@ -2320,7 +2321,7 @@ onUnmounted(() => {
   flex-wrap: wrap;
 }
 .aw-merge-arrow {
-  color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
+  color: var(--text-3, color-mix(in srgb, var(--paper) 50%, transparent));
 }
 .aw-merge-btn {
   border: 1px solid transparent;
@@ -2328,7 +2329,7 @@ onUnmounted(() => {
   color: var(--on-accent);
   border-radius: var(--card-radius);
   padding: 5px 14px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-family: var(--segoe);
   cursor: pointer;
   transition: filter 120ms;
@@ -2341,7 +2342,7 @@ onUnmounted(() => {
   cursor: default;
 }
 .aw-merge-err {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   color: var(--crit);
 }
 .aw-merge-list {
@@ -2356,14 +2357,14 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
 }
 .aw-merge-alias {
   color: var(--text-2, color-mix(in srgb, var(--paper) 85%, transparent));
 }
 .aw-merge-canon {
   color: var(--text);
-  font-weight: 500;
+  font-weight: 400;
   flex: 1;
 }
 
@@ -2374,7 +2375,7 @@ onUnmounted(() => {
   color: var(--text);
   border-radius: var(--card-radius, 6px);
   padding: 7px 10px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-family: var(--segoe);
   width: 220px;
 }
@@ -2403,10 +2404,11 @@ onUnmounted(() => {
 }
 .aw-group-name {
   font-weight: 600;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
 }
 .aw-group-total {
-  font-size: var(--fs-xs);
+  font-family: var(--mono);
+  font-size: var(--fs-12);
   color: var(--text-3, color-mix(in srgb, var(--paper) 70%, transparent));
   font-variant-numeric: tabular-nums;
   margin-left: auto;
@@ -2424,7 +2426,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 4px;
   padding: 2px 4px 2px 8px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   color: var(--text-2, color-mix(in srgb, var(--paper) 85%, transparent));
   background: color-mix(in srgb, var(--paper) 6%, transparent);
   border: 1px solid var(--stroke-strong, color-mix(in srgb, var(--paper) 10%, transparent));
@@ -2433,8 +2435,8 @@ onUnmounted(() => {
 .aw-chip-x {
   border: none;
   background: transparent;
-  color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
-  font-size: var(--fs-xs);
+  color: var(--text-3, color-mix(in srgb, var(--paper) 50%, transparent));
+  font-size: var(--fs-13);
   line-height: 1;
   cursor: pointer;
   padding: 0 2px;
@@ -2453,7 +2455,7 @@ onUnmounted(() => {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .aw-kpis.aw-headline .aw-kpi-val {
-  font-size: var(--fs-4xl);
+  font-size: var(--fs-32);
 }
 .aw-kpi {
   position: relative;
@@ -2474,7 +2476,7 @@ onUnmounted(() => {
   background: transparent;
   border: 1px solid color-mix(in srgb, var(--paper) 20%, transparent);
   color: color-mix(in srgb, var(--paper) 45%, transparent);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-weight: 600;
   line-height: 1;
   width: 16px;
@@ -2518,15 +2520,17 @@ onUnmounted(() => {
   margin-top: 0;
 }
 .aw-kpi-val {
-  font-size: var(--fs-2xl);
+  font-family: var(--mono);
+  font-size: var(--fs-22);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 .aw-kpi-lbl {
-  font-size: var(--fs-xs);
-  color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
+  font-family: var(--mono);
+  font-size: var(--fs-11);
+  color: var(--text-3, color-mix(in srgb, var(--paper) 50%, transparent));
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   margin-top: 4px;
 }
 /* Fault split under the "Candidates" tile label (LLM · ambiguous). */
@@ -2535,7 +2539,8 @@ onUnmounted(() => {
   margin-top: 2px;
   text-transform: none;
   letter-spacing: 0;
-  font-size: var(--fs-xs);
+  font-family: var(--sans);
+  font-size: var(--fs-12);
   color: var(--text-3, color-mix(in srgb, var(--paper) 40%, transparent));
 }
 
@@ -2546,14 +2551,15 @@ onUnmounted(() => {
   align-items: center;
   gap: 3px;
   margin-top: 6px;
-  font-size: var(--fs-xs);
+  font-family: var(--mono);
+  font-size: var(--fs-12);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   line-height: 1;
   padding: 2px 6px;
   border-radius: 10px;
   background: color-mix(in srgb, var(--paper) 5%, transparent);
-  color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
+  color: var(--text-3, color-mix(in srgb, var(--paper) 50%, transparent));
 }
 .aw-trend.t-good {
   background: color-mix(in srgb, var(--ok) 16%, transparent);
@@ -2596,10 +2602,11 @@ onUnmounted(() => {
   display: inline-block;
   margin-top: 6px;
   margin-left: 6px;
-  font-size: var(--fs-xs);
-  font-weight: 700;
+  font-family: var(--mono);
+  font-size: var(--fs-11);
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   padding: 2px 7px;
   border-radius: 10px;
 }
@@ -2632,11 +2639,12 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: var(--fs-xs);
+  font-family: var(--mono);
+  font-size: var(--fs-11);
   font-weight: 600;
   color: var(--text-3);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 /* Solid-green count pill next to the RECOMMENDATIONS title. */
 .aw-tab-count {
@@ -2644,14 +2652,14 @@ onUnmounted(() => {
   color: var(--on-next);
   border-radius: 10px;
   padding: 1px 8px;
-  font-size: var(--fs-xs);
-  font-weight: 700;
+  font-size: var(--fs-13);
+  font-weight: 600;
   min-width: 18px;
   text-align: center;
 }
 .aw-insights-empty {
-  color: var(--text-4);
-  font-size: var(--fs-xs);
+  color: var(--text-3);
+  font-size: var(--fs-13);
   padding: 10px 4px;
   font-style: italic;
 }
@@ -2670,7 +2678,7 @@ onUnmounted(() => {
   border: 1px solid var(--stroke);
   border-radius: 8px;
   padding: 11px 12px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
 }
 .aw-insight-body {
   flex: 1;
@@ -2680,7 +2688,7 @@ onUnmounted(() => {
   gap: 6px;
 }
 .aw-insight-text {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   line-height: 1.5;
   color: var(--text-2);
   text-wrap: pretty;
@@ -2696,7 +2704,7 @@ onUnmounted(() => {
 }
 .aw-insight-help-body {
   color: color-mix(in srgb, var(--paper) 78%, transparent);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   line-height: 1.55;
   padding: 4px 4px 2px;
   border-top: 1px dashed color-mix(in srgb, var(--paper) 10%, transparent);
@@ -2704,7 +2712,7 @@ onUnmounted(() => {
 }
 .aw-insight-help-body h4 {
   margin: 10px 0 4px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-weight: 600;
   color: color-mix(in srgb, var(--paper) 95%, transparent);
 }
@@ -2725,7 +2733,7 @@ onUnmounted(() => {
   background: color-mix(in srgb, var(--paper) 8%, transparent);
   padding: 1px 5px;
   border-radius: 3px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 .aw-insight-help-body strong {
@@ -2738,7 +2746,7 @@ onUnmounted(() => {
   border-radius: 4px;
   border: none;
   background: transparent;
-  color: var(--text-4);
+  color: var(--text-3);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -2765,7 +2773,7 @@ onUnmounted(() => {
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   padding: 3px 8px;
   background: color-mix(in srgb, var(--hard) 15%, transparent);
   border-radius: 5px;
@@ -2779,7 +2787,7 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 .aw-cold-fix {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   line-height: 1.45;
   color: var(--text-3, color-mix(in srgb, var(--paper) 60%, transparent));
   margin-top: 8px;
@@ -2803,7 +2811,7 @@ onUnmounted(() => {
 .aw-ignored {
   border-top: 1px dashed color-mix(in srgb, var(--paper) 10%, transparent);
   padding-top: 8px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
 }
 .aw-ignored summary {
   cursor: pointer;
@@ -2838,7 +2846,7 @@ onUnmounted(() => {
   color: inherit;
   border-radius: var(--card-radius);
   padding: 4px 10px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   min-width: 180px;
 }
 .aw-search:focus {
@@ -2852,16 +2860,17 @@ onUnmounted(() => {
   color: var(--warn);
   border-radius: 4px;
   padding: 2px 7px;
-  font-size: var(--fs-xs);
+  font-family: var(--mono);
+  font-size: var(--fs-11);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 700;
+  letter-spacing: 0.06em;
+  font-weight: 600;
 }
 .aw-link-btn {
   background: transparent;
   border: none;
   color: var(--accent);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   padding: 8px 0 0;
   cursor: pointer;
   text-align: left;
@@ -2882,11 +2891,12 @@ onUnmounted(() => {
   padding: 12px;
 }
 .aw-card-hd {
-  font-size: var(--fs-xs);
+  font-family: var(--mono);
+  font-size: var(--fs-11);
   font-weight: 600;
   color: var(--text-3, color-mix(in srgb, var(--paper) 70%, transparent));
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   margin-bottom: 10px;
   display: flex;
   justify-content: space-between;
@@ -2897,8 +2907,8 @@ onUnmounted(() => {
   text-transform: none;
   letter-spacing: 0;
   font-weight: 400;
-  font-size: var(--fs-xs);
-  color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
+  font-size: var(--fs-13);
+  color: var(--text-3, color-mix(in srgb, var(--paper) 50%, transparent));
 }
 .aw-chart {
   height: 220px;
@@ -2908,13 +2918,16 @@ onUnmounted(() => {
 .aw-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
 }
 .aw-table th {
   text-align: left;
-  font-weight: 500;
-  color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
-  font-size: var(--fs-xs);
+  font-weight: 400;
+  color: var(--text-3, color-mix(in srgb, var(--paper) 50%, transparent));
+  font-family: var(--mono);
+  font-size: var(--fs-11);
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   padding: 6px 8px;
   border-bottom: 1px solid var(--stroke-strong, color-mix(in srgb, var(--paper) 8%, transparent));
@@ -2934,7 +2947,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
 }
 .aw-row-line {
   display: flex;
@@ -2942,7 +2955,8 @@ onUnmounted(() => {
   gap: 8px;
 }
 .aw-row-when {
-  color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
+  font-family: var(--mono);
+  color: var(--text-3, color-mix(in srgb, var(--paper) 50%, transparent));
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
@@ -2957,9 +2971,10 @@ onUnmounted(() => {
 /* Click-to-copy session id chip. Filter-active rows have no project span, so
    the chip takes the slack via flex:1 to keep the bar full-width. */
 .aw-row-id {
-  font-family: ui-monospace, Consolas, monospace;
-  font-size: var(--fs-xs);
-  letter-spacing: 0.02em;
+  font-family: var(--mono);
+  font-size: var(--fs-11);
+  font-weight: 600;
+  letter-spacing: 0.06em;
   color: var(--text-3, color-mix(in srgb, var(--paper) 70%, transparent));
   background: color-mix(in srgb, var(--paper) 5%, transparent);
   border: 1px solid var(--stroke-strong, color-mix(in srgb, var(--paper) 12%, transparent));
@@ -2982,6 +2997,7 @@ onUnmounted(() => {
   text-align: left;
 }
 .aw-row-val {
+  font-family: var(--mono);
   text-align: right;
   font-variant-numeric: tabular-nums;
   color: var(--text-3, color-mix(in srgb, var(--paper) 70%, transparent));
@@ -3037,7 +3053,7 @@ onUnmounted(() => {
   border-radius: 5px;
   color: var(--text);
   padding: 5px 12px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   cursor: pointer;
 }
 .aw-modal-actions button:hover {
@@ -3045,8 +3061,8 @@ onUnmounted(() => {
 }
 .aw-modal-hint {
   margin: 0;
-  font-size: var(--fs-xs);
-  color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
+  font-size: var(--fs-12);
+  color: var(--text-3, color-mix(in srgb, var(--paper) 50%, transparent));
 }
 .aw-modal-box textarea {
   flex: 1;
@@ -3056,8 +3072,9 @@ onUnmounted(() => {
   border: 1px solid var(--stroke-strong, color-mix(in srgb, var(--paper) 12%, transparent));
   border-radius: 6px;
   padding: 10px;
-  font-family: ui-monospace, Consolas, monospace;
-  font-size: var(--fs-xs);
+  font-family: var(--mono);
+  font-size: var(--fs-13);
   resize: vertical;
 }
 </style>
+  font-family: var(--mono);

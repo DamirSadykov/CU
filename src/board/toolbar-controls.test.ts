@@ -23,7 +23,7 @@ describe("task toolbar controls", () => {
             expect(rule(todoWindow, selector), selector).toContain("border-radius: var(--r-ctl)");
         }
         for (const selector of [".tw-search-input", ".tw-guide", ".tw-vt", ".tw-add", ".tw-mode"]) {
-            expect(rule(todoWindow, selector), selector).toContain("font-size: var(--fs-xs)");
+            expect(rule(todoWindow, selector), selector).toContain("font-size: var(--fs-13)");
         }
     });
 
@@ -33,19 +33,19 @@ describe("task toolbar controls", () => {
             expect(rule(filtersBar, selector), selector).toContain("height: var(--tw-toolbar-control-height)");
             expect(rule(filtersBar, selector), selector).toContain("border-radius: var(--r-ctl)");
         }
-        expect(rule(filtersBar, ".tw-search-input")).toContain("font: var(--fs-xs)/1 var(--segoe)");
-        expect(rule(filtersBar, ".tw-filter-chip")).toContain("font: var(--fs-xs)/1 var(--segoe)");
+        expect(rule(filtersBar, ".tw-search-input")).toContain("font: 400 var(--fs-13)/var(--lh-13) var(--segoe)");
+        expect(rule(filtersBar, ".tw-filter-chip")).toContain("font: 400 var(--fs-13)/var(--lh-13) var(--segoe)");
 
         for (const selector of [".tw-facet-option", ".tw-sort-option", ".tw-pop-reset"]) {
             expect(rule(filtersBar, selector), selector).toContain("border-radius: var(--r-ctl)");
-            expect(rule(filtersBar, selector), selector).toContain("font: var(--fs-xs)/");
+            expect(rule(filtersBar, selector), selector).toContain("var(--fs-13)/");
         }
         expect(filtersBar.match(/class="tw-filter-chip"/g)).toHaveLength(2);
 
         const input = rule(projectAutocomplete, ".pa-input");
         expect(input).toContain("height: var(--pa-control-height, auto)");
         expect(input).toContain("border-radius: var(--pa-control-radius, var(--card-radius, 6px))");
-        expect(input).toContain("font-size: var(--pa-control-font-size, var(--fs-xs))");
+        expect(input).toContain("font-size: var(--pa-control-font-size, var(--fs-13))");
     });
 
     it("keeps the description editor toggle separate from toolbar modes", () => {

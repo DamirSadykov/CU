@@ -37,9 +37,10 @@ const missing = computed(() => props.exists === false);
     border-radius: 3px;
     background: color-mix(in srgb, var(--paper) 5%, transparent);
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
+    font-weight: 600;
     font-style: normal;
-    line-height: 1.4;
+    line-height: var(--lh-11);
     color: var(--text-3);
 }
 .port-chip.dir-w {
@@ -64,7 +65,7 @@ const missing = computed(() => props.exists === false);
 }
 .port-chip b {
     flex: none;
-    color: var(--text-4);
+    color: var(--text-3);
     font-weight: 600;
 }
 .port-chip.missing b,

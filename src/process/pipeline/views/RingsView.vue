@@ -1048,8 +1048,8 @@ watch(
 <style scoped>
 .rings-field {
     margin-left: 6px;
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    color: var(--text-3);
 }
 .rings-focus {
     min-width: 0;
@@ -1073,7 +1073,7 @@ watch(
 .rings-focus-close {
     flex: none;
     margin-left: 2px;
-    font-size: var(--fs-xs);
+    font-size: var(--fs-13);
     opacity: 0.75;
     cursor: pointer;
 }
@@ -1087,12 +1087,12 @@ watch(
     padding: 0 11px;
     border: 1px solid var(--stroke-strong);
     border-radius: var(--r-ctl);
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    color: var(--text-3);
 }
 .rings-hints {
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    color: var(--text-3);
 }
 
 .rings-canvas {
@@ -1121,12 +1121,12 @@ watch(
 }
 .rings-empty-title {
     margin-bottom: 8px;
-    font-size: var(--fs-xs);
+    font-size: var(--fs-16);
     font-weight: 600;
 }
 .rings-empty-text {
     margin: 0;
-    font-size: var(--fs-xs);
+    font-size: var(--fs-13);
     line-height: 1.5;
     color: var(--text-3);
 }
@@ -1185,14 +1185,14 @@ watch(
 }
 .rings-plaque-title {
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
     color: var(--text-2);
     overflow: hidden;
     text-overflow: ellipsis;
 }
 .rings-plaque-close {
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-13);
+    color: var(--text-3);
     cursor: pointer;
 }
 .rings-plaque-close:hover {
@@ -1201,8 +1201,8 @@ watch(
 .rings-plaque-note {
     display: block;
     margin-top: 3px;
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    color: var(--text-3);
 }
 .rings-plaque-action {
     margin-top: 7px;
@@ -1210,8 +1210,8 @@ watch(
     border: 0;
     background: none;
     color: var(--accent);
-    font: inherit;
-    font-size: var(--fs-xs);
+    font: 400 var(--fs-13)/var(--lh-13) var(--segoe);
+    font-size: var(--fs-13);
     cursor: pointer;
 }
 .rings-side {
@@ -1247,22 +1247,22 @@ watch(
     gap: 10px;
     margin-top: 8px;
     padding: 0 6px;
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    color: var(--text-3);
 }
 .rings-more-action {
     padding: 0;
     border: 0;
     background: none;
     color: var(--accent);
-    font: inherit;
-    font-size: var(--fs-xs);
+    font: 400 var(--fs-13)/var(--lh-13) var(--segoe);
+    font-size: var(--fs-13);
     cursor: pointer;
 }
 .rings-empty {
-    font-size: var(--fs-xs);
+    font-size: var(--fs-12);
     line-height: 1.45;
-    color: var(--text-4);
+    color: var(--text-3);
 }
 .rings-empty-more {
     display: block;
@@ -1282,11 +1282,11 @@ watch(
 }
 .rings-pick-id {
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
     color: var(--accent);
 }
 .rings-pick-title {
-    font-size: var(--fs-xs);
+    font-size: var(--fs-13);
     line-height: 1.35;
     color: var(--text);
 }
@@ -1296,12 +1296,12 @@ watch(
     justify-content: space-between;
     gap: 10px;
     margin-top: 8px;
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    color: var(--text-3);
 }
 .rings-pick-value {
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
     color: var(--text-2);
     text-align: right;
 }

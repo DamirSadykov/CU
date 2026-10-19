@@ -24,17 +24,24 @@ defineProps<{
     align-items: center;
     gap: 10px;
     padding: 12px 24px 6px;
-    font-size: var(--fs-xs);
-    line-height: 1.4;
-    color: var(--text-4);
+    font-family: var(--sans);
+    font-size: var(--fs-12);
+    line-height: var(--lh-12);
+    color: var(--text-3);
 }
 .project-kicker {
+    font-family: var(--mono);
+    font-size: var(--fs-11);
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.13em;
+    letter-spacing: 0.06em;
+    line-height: var(--lh-11);
 }
 .project-name {
     font-family: var(--mono);
+    font-size: var(--fs-11);
+    font-weight: 600;
+    line-height: var(--lh-11);
     color: var(--text-3);
 }
 .project-sep {

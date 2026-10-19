@@ -35,10 +35,10 @@ withDefaults(
     border-radius: var(--r-pill);
     background: color-mix(in srgb, var(--ink-1) 98%, transparent);
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
     font-weight: 600;
-    line-height: 1.5;
-    color: var(--text-4);
+    line-height: var(--lh-11);
+    color: var(--text-3);
     transform: translate(-50%, -50%);
     pointer-events: none;
 }

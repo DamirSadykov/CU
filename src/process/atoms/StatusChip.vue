@@ -38,8 +38,10 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
     border: 1px solid var(--stroke-strong);
     border-radius: var(--r-ctl);
     color: var(--text-2);
-    font: inherit;
-    font-size: var(--fs-xs);
+    font-family: var(--sans);
+    font-size: var(--fs-13);
+    font-weight: 400;
+    line-height: var(--lh-13);
     white-space: nowrap;
     cursor: pointer;
 }
@@ -48,6 +50,9 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
 }
 .status-chip.mono {
     font-family: var(--mono);
+    font-size: var(--fs-11);
+    font-weight: 600;
+    line-height: var(--lh-11);
 }
 .status-chip-icon {
     display: inline-flex;
@@ -55,12 +60,14 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
     line-height: 1;
 }
 .status-chip-caret {
-    color: var(--text-4);
+    color: var(--text-3);
 }
 .status-chip.tone-cost {
     color: var(--high);
     border-color: color-mix(in srgb, var(--ag-claude) 40%, transparent);
     background: color-mix(in srgb, var(--ag-claude) 10%, transparent);
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
 }
 .status-chip.tone-warn {
     color: var(--warn);

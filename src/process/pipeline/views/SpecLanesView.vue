@@ -374,9 +374,9 @@ function reset() {
 <style scoped>
 .spec-lanes-empty {
     padding: 12px 28px;
-    font-size: var(--fs-xs);
+    font-size: var(--fs-12);
     line-height: 1.5;
-    color: var(--text-4);
+    color: var(--text-3);
 }
 .spec-stack {
     display: flex;
@@ -405,7 +405,7 @@ function reset() {
 }
 .rail-address {
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
     font-weight: 600;
     line-height: 1.3;
     color: var(--accent);
@@ -414,21 +414,21 @@ function reset() {
     color: var(--warn);
 }
 .rail-title {
-    font-size: var(--fs-xs);
+    font-size: var(--fs-16);
     font-weight: 600;
     line-height: 1.32;
     color: var(--text);
 }
 .rail-note {
-    font-size: var(--fs-xs);
+    font-size: var(--fs-12);
     line-height: 1.4;
-    color: var(--text-4);
+    color: var(--text-3);
 }
 .rail-lint {
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: var(--fs-xs);
+    font-size: var(--fs-13);
     line-height: 1.4;
     color: var(--ok);
 }
@@ -444,7 +444,7 @@ function reset() {
 }
 .rail-tri {
     flex: none;
-    font-size: var(--fs-xs);
+    font-size: var(--fs-13);
     line-height: 1;
 }
 .rail-metrics {
@@ -452,8 +452,8 @@ function reset() {
     align-items: center;
     gap: 6px;
     font-family: var(--mono);
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    color: var(--text-3);
 }
 .rail-metrics .accent {
     color: var(--accent);
@@ -464,9 +464,9 @@ function reset() {
 .orphan-more {
     align-self: center;
     padding-top: 4px;
-    font-size: var(--fs-xs);
+    font-size: var(--fs-12);
     line-height: 1.4;
-    color: var(--text-4);
+    color: var(--text-3);
 }
 .orphan-more a {
     color: var(--accent);

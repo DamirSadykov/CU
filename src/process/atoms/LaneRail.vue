@@ -58,14 +58,16 @@ const fill = computed(() => {
     background: var(--theme-bg-2);
 }
 .rail-kicker {
-    font-size: var(--fs-xs);
+    font-family: var(--mono);
+    font-size: var(--fs-11);
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.13em;
+    letter-spacing: 0.06em;
+    line-height: var(--lh-11);
     color: var(--theme);
 }
 .lane-rail.tone-plain .rail-kicker {
-    color: var(--text-4);
+    color: var(--text-3);
 }
 .rail-title {
     display: -webkit-box;
@@ -73,9 +75,9 @@ const fill = computed(() => {
     -webkit-line-clamp: 2;
     overflow: hidden;
     overflow-wrap: anywhere;
-    font-size: var(--fs-xs);
+    font-size: var(--fs-16);
     font-weight: 600;
-    line-height: 1.32;
+    line-height: var(--lh-16);
     color: var(--text);
 }
 .rail-note {
@@ -84,9 +86,9 @@ const fill = computed(() => {
     -webkit-line-clamp: 2;
     overflow: hidden;
     overflow-wrap: anywhere;
-    font-size: var(--fs-xs);
-    line-height: 1.4;
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    line-height: var(--lh-12);
+    color: var(--text-3);
 }
 .rail-progress {
     height: 3px;
@@ -103,19 +105,21 @@ const fill = computed(() => {
     background: var(--accent);
 }
 .rail-meta {
-    font-size: var(--fs-xs);
-    line-height: 1.4;
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    line-height: var(--lh-12);
+    color: var(--text-3);
 }
 .rail-cost {
     display: flex;
     align-items: center;
     gap: 8px;
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-13);
+    line-height: var(--lh-13);
+    font-variant-numeric: tabular-nums;
     color: var(--high);
 }
 .rail-cost span {
-    color: var(--text-4);
+    color: var(--text-3);
 }
 </style>

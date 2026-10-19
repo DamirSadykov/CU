@@ -1166,7 +1166,7 @@ function handleSave() {
       <!-- Auto-start toggle -->
       <div class="card toggle-card" @click="localAutoStart = !localAutoStart">
         <div style="flex: 1; min-width: 0">
-          <div class="card-title" style="font-size: var(--fs-xs)">{{ t('autoStartSession') }}</div>
+          <div class="card-title" style="font-size: var(--fs-16)">{{ t('autoStartSession') }}</div>
           <div class="card-sub">{{ t('autoStartDesc') }}</div>
         </div>
         <div class="toggle" :class="{ on: localAutoStart }">
@@ -1177,7 +1177,7 @@ function handleSave() {
       <!-- Mini panel: whole-machine CPU + RAM (compact 2×2 vs original bars) -->
       <div class="card toggle-card" @click="localSystemInfo = !localSystemInfo">
         <div style="flex: 1; min-width: 0">
-          <div class="card-title" style="font-size: var(--fs-xs)">{{ t('miniSystemInfo') }}</div>
+          <div class="card-title" style="font-size: var(--fs-16)">{{ t('miniSystemInfo') }}</div>
           <div class="card-sub">{{ t('miniSystemInfoDesc') }}</div>
         </div>
         <div class="toggle" :class="{ on: localSystemInfo }">
@@ -1187,7 +1187,7 @@ function handleSave() {
 
       <div class="card toggle-card" @click="toggleKeepAwake">
         <div style="flex: 1; min-width: 0">
-          <div class="card-title" style="font-size: var(--fs-xs)">{{ t('keepAwakeTitle') }}</div>
+          <div class="card-title" style="font-size: var(--fs-16)">{{ t('keepAwakeTitle') }}</div>
           <div class="card-sub">{{ t('keepAwakeDesc') }}</div>
         </div>
         <div class="toggle" :class="{ on: localKeepAwakeEnabled }">
@@ -1228,7 +1228,7 @@ function handleSave() {
       <div class="card">
         <div class="card-row" style="align-items: center">
           <div class="field-label" style="margin-bottom: 0">{{ t('refreshInterval') }}</div>
-          <span class="pct muted" style="font-size: var(--fs-xs)">{{ localInterval }}s</span>
+          <span class="pct muted" style="font-size: var(--fs-12)">{{ localInterval }}s</span>
         </div>
         <input
           v-model.number="localInterval"
@@ -1243,7 +1243,7 @@ function handleSave() {
       <!-- Install the cc-todos CLI + the SessionStart/Stop hooks into ~/.claude/settings.json -->
       <div class="card" style="display: flex; align-items: center; gap: 12px">
         <div style="flex: 1; min-width: 0">
-          <div class="card-title" style="font-size: var(--fs-xs)">{{ t('installCcHook') }}</div>
+          <div class="card-title" style="font-size: var(--fs-16)">{{ t('installCcHook') }}</div>
           <div class="card-sub">{{ t('installCcHookDesc') }}</div>
           <div v-if="ccHookStatus" class="card-sub" style="margin-top: 6px">
             {{ ccHookStatus.installed ? t('installCcHookOn') : t('installCcHookOff') }}
@@ -1280,7 +1280,7 @@ function handleSave() {
       <div class="provider-title">Codex</div>
       <div class="card" style="display: flex; align-items: center; gap: 12px">
         <div style="flex: 1; min-width: 0">
-          <div class="card-title" style="font-size: var(--fs-xs)">{{ t('installCodexHook') }}</div>
+          <div class="card-title" style="font-size: var(--fs-16)">{{ t('installCodexHook') }}</div>
           <div class="card-sub">{{ t('installCodexHookDesc') }}</div>
           <div v-if="codexHookStatus" class="card-sub" style="margin-top: 6px">
             {{ codexHookStatus.installed ? t('installCcHookOn') : t('installCcHookOff') }}
@@ -1360,7 +1360,7 @@ function handleSave() {
       <div class="card">
         <div class="card-row" style="align-items: center">
           <div class="field-label" style="margin-bottom: 0">{{ t('forecastWindow') }}</div>
-          <span class="pct muted" style="font-size: var(--fs-xs)">{{ localForecastWindow }} {{ t('minutesShort') }}</span>
+          <span class="pct muted" style="font-size: var(--fs-12)">{{ localForecastWindow }} {{ t('minutesShort') }}</span>
         </div>
         <input
           v-model.number="localForecastWindow"
@@ -1379,7 +1379,7 @@ function handleSave() {
       <!-- Notifications toggle -->
       <div class="card toggle-card" @click="localNotify = !localNotify">
         <div style="flex: 1; min-width: 0">
-          <div class="card-title" style="font-size: var(--fs-xs)">{{ t('notifications') }}</div>
+          <div class="card-title" style="font-size: var(--fs-16)">{{ t('notifications') }}</div>
           <div class="card-sub">{{ t('notificationsDesc') }}</div>
         </div>
         <div class="toggle" :class="{ on: localNotify }">
@@ -1425,7 +1425,7 @@ function handleSave() {
         <div class="card">
           <div class="card-row" style="align-items: center">
             <div class="field-label" style="margin-bottom: 0">{{ t('notifyForecast') }}</div>
-            <span class="pct muted" style="font-size: var(--fs-xs)">{{ localForecast }} {{ t('minutesShort') }}</span>
+            <span class="pct muted" style="font-size: var(--fs-12)">{{ localForecast }} {{ t('minutesShort') }}</span>
           </div>
           <input
             v-model.number="localForecast"
@@ -1441,7 +1441,7 @@ function handleSave() {
         <!-- Quiet hours toggle -->
         <div class="card toggle-card" @click="localQuiet = !localQuiet">
           <div style="flex: 1; min-width: 0">
-            <div class="card-title" style="font-size: var(--fs-xs)">{{ t('quietHours') }}</div>
+            <div class="card-title" style="font-size: var(--fs-16)">{{ t('quietHours') }}</div>
             <div class="card-sub">{{ t('quietHoursDesc') }}</div>
           </div>
           <div class="toggle" :class="{ on: localQuiet }">
@@ -1467,7 +1467,7 @@ function handleSave() {
       <!-- Claude service status (status.claude.com) — independent of usage alerts -->
       <div class="card toggle-card" @click="localSvcEnabled = !localSvcEnabled">
         <div style="flex: 1; min-width: 0">
-          <div class="card-title" style="font-size: var(--fs-xs)">{{ t('serviceStatus') }}</div>
+          <div class="card-title" style="font-size: var(--fs-16)">{{ t('serviceStatus') }}</div>
           <div class="card-sub">{{ t('serviceStatusDesc') }}</div>
         </div>
         <div class="toggle" :class="{ on: localSvcEnabled }">
@@ -1478,7 +1478,7 @@ function handleSave() {
         <div class="card">
           <div class="card-row" style="align-items: center">
             <div class="field-label" style="margin-bottom: 0">{{ t('serviceStatusInterval') }}</div>
-            <span class="pct muted" style="font-size: var(--fs-xs)">{{ localSvcInterval }}s</span>
+            <span class="pct muted" style="font-size: var(--fs-12)">{{ localSvcInterval }}s</span>
           </div>
           <input
             v-model.number="localSvcInterval"
@@ -1491,7 +1491,7 @@ function handleSave() {
         </div>
         <div class="card toggle-card" @click="localSvcNotify = !localSvcNotify">
           <div style="flex: 1; min-width: 0">
-            <div class="card-title" style="font-size: var(--fs-xs)">{{ t('serviceStatusNotify') }}</div>
+            <div class="card-title" style="font-size: var(--fs-16)">{{ t('serviceStatusNotify') }}</div>
             <div class="card-sub">{{ t('serviceStatusNotifyDesc') }}</div>
           </div>
           <div class="toggle" :class="{ on: localSvcNotify }">
@@ -1503,7 +1503,7 @@ function handleSave() {
       <!-- Todo status notifications — independent of the usage-alert toggle above -->
       <div class="card toggle-card" @click="localTodoNotify = !localTodoNotify">
         <div style="flex: 1; min-width: 0">
-          <div class="card-title" style="font-size: var(--fs-xs)">{{ t('todoNotifications') }}</div>
+          <div class="card-title" style="font-size: var(--fs-16)">{{ t('todoNotifications') }}</div>
           <div class="card-sub">{{ t('todoNotificationsDesc') }}</div>
         </div>
         <div class="toggle" :class="{ on: localTodoNotify }">
@@ -1514,7 +1514,7 @@ function handleSave() {
       <!-- Memory-bloat watch (#33) — sudden-growth notification for the active project -->
       <div class="card toggle-card" @click="localMemBloat = !localMemBloat">
         <div style="flex: 1; min-width: 0">
-          <div class="card-title" style="font-size: var(--fs-xs)">{{ t('memBloatSetting') }}</div>
+          <div class="card-title" style="font-size: var(--fs-16)">{{ t('memBloatSetting') }}</div>
           <div class="card-sub">{{ t('memBloatSettingDesc') }}</div>
         </div>
         <div class="toggle" :class="{ on: localMemBloat }">
@@ -1528,7 +1528,7 @@ function handleSave() {
       <!-- Local Claude Code + Codex analytics (opt-in, off by default) -->
       <div class="card toggle-card" @click="localCc = !localCc">
         <div style="flex: 1; min-width: 0">
-          <div class="card-title" style="font-size: var(--fs-xs)">{{ t('ccAnalytics') }}</div>
+          <div class="card-title" style="font-size: var(--fs-16)">{{ t('ccAnalytics') }}</div>
           <div class="card-sub">{{ t('ccAnalyticsDesc') }}</div>
         </div>
         <div class="toggle" :class="{ on: localCc }">
@@ -1545,7 +1545,7 @@ function handleSave() {
            default — deterministic, LLM-free, but reads every transcript). -->
       <div class="card toggle-card" @click="localCorrections = !localCorrections">
         <div style="flex: 1; min-width: 0">
-          <div class="card-title" style="font-size: var(--fs-xs)">{{ t('correctionsMetric') }}</div>
+          <div class="card-title" style="font-size: var(--fs-16)">{{ t('correctionsMetric') }}</div>
           <div class="card-sub">{{ t('correctionsMetricDesc') }}</div>
         </div>
         <div class="toggle" :class="{ on: localCorrections }">
@@ -1556,7 +1556,7 @@ function handleSave() {
       <!-- Daily budget -->
       <div class="card toggle-card" @click="localBudgetEnabled = !localBudgetEnabled">
         <div style="flex: 1; min-width: 0">
-          <div class="card-title" style="font-size: var(--fs-xs)">{{ t('dailyBudget') }}</div>
+          <div class="card-title" style="font-size: var(--fs-16)">{{ t('dailyBudget') }}</div>
           <div class="card-sub">{{ t('dailyBudgetDesc') }}</div>
         </div>
         <div class="toggle" :class="{ on: localBudgetEnabled }">
@@ -1635,7 +1635,7 @@ function handleSave() {
       <!-- Runtime master opt-in -->
       <div class="card toggle-card" @click="toggleRuntimeMaster">
         <div style="flex: 1; min-width: 0">
-          <div class="card-title" style="font-size: var(--fs-xs)">{{ t('runtimeInsightsTitle') }}</div>
+          <div class="card-title" style="font-size: var(--fs-16)">{{ t('runtimeInsightsTitle') }}</div>
           <div class="card-sub">{{ t('runtimeInsightsDesc') }}</div>
         </div>
         <div class="toggle" :class="{ on: localRuntimeEnabled }">
@@ -1695,7 +1695,7 @@ function handleSave() {
       <div class="card">
         <div class="card-row" style="align-items: center">
           <div class="field-label" style="margin-bottom: 0">{{ t('updates') }}</div>
-          <span class="pct muted" style="font-size: var(--fs-xs)">v{{ currentVersion }}</span>
+          <span class="pct muted" style="font-size: var(--fs-12)">v{{ currentVersion }}</span>
         </div>
         <button
           type="button"
@@ -1742,7 +1742,7 @@ function handleSave() {
       <div class="card">
         <div class="card-row" style="align-items: center">
           <div class="field-label" style="margin-bottom: 0">{{ t('updateCheckInterval') }}</div>
-          <span class="pct muted" style="font-size: var(--fs-xs)">{{ updateCheckHours }} {{ t('hoursShort') }}</span>
+          <span class="pct muted" style="font-size: var(--fs-12)">{{ updateCheckHours }} {{ t('hoursShort') }}</span>
         </div>
         <input
           v-model.number="updateCheckHours"
@@ -1859,7 +1859,7 @@ function handleSave() {
       <!-- Master switch: does the SessionStart hook inject task context? -->
       <div class="card toggle-card" @click="toggleHookContext">
         <div style="flex: 1; min-width: 0">
-          <div class="card-title" style="font-size: var(--fs-xs)">{{ t('hookContextSetting') }}</div>
+          <div class="card-title" style="font-size: var(--fs-16)">{{ t('hookContextSetting') }}</div>
           <div class="card-sub">{{ t('hookContextSettingDesc') }}</div>
         </div>
         <div class="toggle" :class="{ on: hookContextEnabled }">
@@ -1873,7 +1873,7 @@ function handleSave() {
         @click="hookContextEnabled && toggleWorkflowContext()"
       >
         <div style="flex: 1; min-width: 0">
-          <div class="card-title" style="font-size: var(--fs-xs)">{{ t('workflowContextSetting') }}</div>
+          <div class="card-title" style="font-size: var(--fs-16)">{{ t('workflowContextSetting') }}</div>
           <div class="card-sub">{{ t('workflowContextSettingDesc') }}</div>
         </div>
         <div class="toggle" :class="{ on: workflowContextEnabled }">
@@ -1887,7 +1887,7 @@ function handleSave() {
         @click="hookContextEnabled && workflowContextEnabled && toggleRunner()"
       >
         <div style="flex: 1; min-width: 0">
-          <div class="card-title" style="font-size: var(--fs-xs)">{{ t('runnerSetting') }}</div>
+          <div class="card-title" style="font-size: var(--fs-16)">{{ t('runnerSetting') }}</div>
           <div class="card-sub">{{ t('runnerSettingDesc') }}</div>
         </div>
         <div class="toggle" :class="{ on: runnerEnabled }">
@@ -1898,7 +1898,7 @@ function handleSave() {
       <!-- Master switch: does a change carry the spec registry (t#361)? -->
       <div class="card toggle-card" @click="toggleSpecsEnabled">
         <div style="flex: 1; min-width: 0">
-          <div class="card-title" style="font-size: var(--fs-xs)">{{ t('specsEnabledSetting') }}</div>
+          <div class="card-title" style="font-size: var(--fs-16)">{{ t('specsEnabledSetting') }}</div>
           <div class="card-sub">{{ t('specsEnabledSettingDesc') }}</div>
         </div>
         <div class="toggle" :class="{ on: specsEnabled }">
@@ -2063,11 +2063,11 @@ function handleSave() {
   background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 .work-mode-name {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-weight: 600;
 }
 .work-mode-desc {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-12);
   color: var(--text-2);
   line-height: 1.35;
 }
@@ -2076,11 +2076,12 @@ function handleSave() {
 }
 
 .provider-title {
-  font-size: var(--fs-xs);
+  font-family: var(--mono);
+  font-size: var(--fs-11);
   font-weight: 600;
   color: var(--text-2);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   margin: 8px 2px -2px;
 }
 .provider-title:first-child {
@@ -2111,7 +2112,7 @@ function handleSave() {
   border-radius: 6px;
   background: transparent;
   color: var(--text-3);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-family: var(--segoe);
   white-space: nowrap;
   text-align: left;
@@ -2157,7 +2158,7 @@ function handleSave() {
 .thr-dot.tier-red { background: var(--crit); }
 
 .thr-label {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   color: var(--text-3);
   width: 64px;
   flex-shrink: 0;
@@ -2169,7 +2170,8 @@ function handleSave() {
 }
 
 .thr-val {
-  font-size: var(--fs-xs);
+  font-family: var(--mono);
+  font-size: var(--fs-13);
   font-variant-numeric: tabular-nums;
   color: var(--text-2);
   width: 36px;
@@ -2205,7 +2207,7 @@ function handleSave() {
   width: 22px;
   height: 14px;
   border-radius: 3px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   line-height: 1;
   cursor: pointer;
   padding: 0;
@@ -2228,9 +2230,9 @@ function handleSave() {
 }
 
 .cc-note-row {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-12);
   line-height: 1.4;
-  color: var(--text-4);
+  color: var(--text-3);
   padding-left: 14px;
   position: relative;
 }
@@ -2243,7 +2245,7 @@ function handleSave() {
 }
 
 .tier-name {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   color: var(--text-2);
 }
 
@@ -2261,18 +2263,19 @@ function handleSave() {
   margin-bottom: 2px;
 }
 .insight-name {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   color: var(--text-2);
 }
 .insight-col {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--fs-xs);
+  font-family: var(--mono);
+  font-size: var(--fs-11);
   font-weight: 600;
   color: var(--text-3);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 .insight-col .toggle {
   cursor: pointer;
@@ -2282,15 +2285,16 @@ function handleSave() {
   cursor: not-allowed;
 }
 .insight-na {
-  color: var(--text-4);
+  color: var(--text-3);
 }
 
 .field-label {
-  font-size: var(--fs-xs);
+  font-family: var(--mono);
+  font-size: var(--fs-11);
   font-weight: 600;
   color: var(--text-3);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   margin-bottom: 8px;
 }
 
@@ -2301,7 +2305,7 @@ function handleSave() {
   border-radius: 4px;
   background: color-mix(in srgb, var(--paper) 4%, transparent);
   color: var(--text);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-family: var(--segoe);
   outline: none;
   /* Render native controls (e.g. the <select> dropdown list) in dark theme so
@@ -2321,12 +2325,12 @@ function handleSave() {
 }
 
 .field-input::placeholder {
-  color: var(--text-4);
+  color: var(--text-3);
 }
 
 .field-hint {
-  font-size: var(--fs-xs);
-  color: var(--text-4);
+  font-size: var(--fs-12);
+  color: var(--text-3);
   margin-top: 6px;
 }
 
@@ -2358,8 +2362,8 @@ function handleSave() {
   flex-direction: column;
   gap: 2px;
 }
-.agent-duty strong { font-size: var(--fs-xs); color: var(--text); }
-.agent-duty span { font-size: var(--fs-xs); color: var(--text-4); }
+.agent-duty strong { font-size: var(--fs-13); color: var(--text); }
+.agent-duty span { font-size: var(--fs-12); color: var(--text-3); }
 .agent-profile .field-label {
   display: block;
   margin-bottom: 4px;
@@ -2377,7 +2381,7 @@ function handleSave() {
   padding: 2px 8px;
   border: 1px solid currentColor;
   border-radius: 999px;
-  font: 600 var(--fs-xs) ui-monospace, Consolas, monospace;
+  font: 600 var(--fs-11)/var(--lh-11) var(--mono);
   background: color-mix(in srgb, currentColor 12%, transparent);
 }
 .model-openai-sol { color: var(--ok); }
@@ -2392,15 +2396,15 @@ function handleSave() {
   grid-column: 1 / -1;
   align-self: end;
   padding-bottom: 8px;
-  font-size: var(--fs-xs);
-  font-weight: 700;
+  font-size: var(--fs-13);
+  font-weight: 600;
   color: var(--text-3);
 }
 .agent-mode-field { grid-column: 1 / -1; }
 .guard-state { margin-top: 4px; }
 .guard-state-active { color: var(--ok); }
 .guard-state-absent { color: var(--warn); }
-.model-unknown { color: var(--text-4); }
+.model-unknown { color: var(--text-3); }
 
 .field-range {
   -webkit-appearance: none;
@@ -2488,7 +2492,7 @@ function handleSave() {
   flex-wrap: wrap;
 }
 .appearance-label {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   color: var(--text-2);
 }
 .appearance-kit {
@@ -2507,7 +2511,7 @@ function handleSave() {
   border: none;
   background: transparent;
   color: var(--text-3);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-weight: 600;
   font-family: var(--segoe);
   cursor: pointer;
@@ -2535,8 +2539,8 @@ function handleSave() {
   border-radius: var(--card-radius);
   background: var(--accent);
   color: var(--on-accent);
-  font-size: var(--fs-xs);
-  font-weight: 500;
+  font-size: var(--fs-13);
+  font-weight: 400;
   font-family: var(--segoe);
   cursor: pointer;
   transition: filter 120ms;
@@ -2586,8 +2590,8 @@ function handleSave() {
   border-radius: 4px;
   background: color-mix(in srgb, var(--paper) 4%, transparent);
   color: var(--text-2);
-  font-size: var(--fs-xs);
-  font-weight: 500;
+  font-size: var(--fs-13);
+  font-weight: 400;
   font-family: var(--segoe);
   cursor: pointer;
   transition: background 120ms, border-color 120ms;
@@ -2618,7 +2622,7 @@ function handleSave() {
   border-radius: 4px;
   background: transparent;
   color: var(--accent);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-family: var(--segoe);
   cursor: pointer;
   transition: background 120ms;
@@ -2638,7 +2642,7 @@ function handleSave() {
 }
 
 .io-preview-head {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-weight: 600;
   margin-bottom: 6px;
 }
@@ -2646,7 +2650,7 @@ function handleSave() {
 .io-preview-stats {
   margin: 0 0 8px;
   padding-left: 18px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-12);
   color: var(--muted);
 }
 
@@ -2659,7 +2663,7 @@ function handleSave() {
   display: flex;
   align-items: baseline;
   gap: 8px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   padding: 2px 0;
 }
 
@@ -2667,9 +2671,10 @@ function handleSave() {
   flex-shrink: 0;
   padding: 1px 6px;
   border-radius: 3px;
-  font-size: var(--fs-xs);
+  font-family: var(--mono);
+  font-size: var(--fs-11);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.06em;
 }
 
 /* Plain add vs the two outcomes the user must actually notice. */
@@ -2690,7 +2695,9 @@ function handleSave() {
 
 .io-num {
   flex-shrink: 0;
-  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-family: var(--mono);
+  font-size: var(--fs-11);
+  font-variant-numeric: tabular-nums;
   color: var(--muted);
 }
 
@@ -2702,8 +2709,8 @@ function handleSave() {
 
 .prompt-editor {
   margin-top: 8px;
-  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
-  font-size: var(--fs-xs);
+  font-family: var(--mono);
+  font-size: var(--fs-13);
   line-height: 1.45;
   resize: vertical;
   min-height: 200px;

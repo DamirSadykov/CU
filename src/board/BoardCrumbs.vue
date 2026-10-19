@@ -30,9 +30,9 @@ const { t } = useI18n();
 
 <style scoped>
 .crumbs { align-items: center; border-bottom: 1px solid var(--stroke); display: flex; flex: 0 0 30px; gap: 6px; min-height: 30px; min-width: 0; }
-.crumb { background: transparent; border: 0; color: var(--text-3); cursor: pointer; font-family: var(--mono); font-size: var(--fs-xs); overflow: hidden; padding: 3px 0; text-overflow: ellipsis; white-space: nowrap; }
+.crumb { background: transparent; border: 0; color: var(--text-3); cursor: pointer; font-family: var(--mono); font-size: var(--fs-11); font-weight: 600; letter-spacing: .06em; line-height: var(--lh-11); overflow: hidden; padding: 3px 0; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
 .crumb:hover { background: var(--layer); color: var(--text); }
 .crumb.change { color: var(--theme); max-width: 45%; }
 .crumb.current { color: var(--text); }
-.sep { color: var(--text-4); }
+.sep { color: var(--text-3); }
 </style>

@@ -34,7 +34,8 @@ defineEmits<{ (e: "click", value: MouseEvent): void }>();
     border: 1px solid var(--stroke-strong);
     border-radius: var(--r-pill);
     background: color-mix(in srgb, var(--ink-1) 96%, transparent);
-    font: inherit;
+    font-family: var(--sans);
+    font-weight: 400;
     text-align: left;
     cursor: pointer;
 }
@@ -54,14 +55,14 @@ defineEmits<{ (e: "click", value: MouseEvent): void }>();
     border: 1px solid var(--stroke-strong);
     background: var(--layer);
     color: var(--text-3);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-13);
     line-height: 1;
 }
 .lane-port-label {
     min-width: 0;
-    font-size: var(--fs-xs);
-    line-height: 1.3;
-    color: var(--text-4);
+    font-size: var(--fs-13);
+    line-height: var(--lh-13);
+    color: var(--text-3);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -69,7 +70,8 @@ defineEmits<{ (e: "click", value: MouseEvent): void }>();
 .lane-port-label b {
     display: block;
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
+    line-height: var(--lh-11);
     font-weight: 600;
     color: var(--text-2);
 }

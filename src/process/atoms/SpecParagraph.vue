@@ -63,8 +63,10 @@ withDefaults(
 }
 .spec-para-mark {
     font-family: var(--mono);
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-11);
+    font-weight: 600;
+    line-height: var(--lh-11);
+    color: var(--text-3);
 }
 .spec-para-task {
     padding: 1px 5px;
@@ -72,14 +74,16 @@ withDefaults(
     background: color-mix(in srgb, var(--next) 12%, transparent);
     color: var(--accent);
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
+    font-weight: 600;
+    line-height: var(--lh-11);
 }
 .spec-para-body {
     min-width: 0;
 }
 .spec-para-text {
-    font-size: var(--fs-xs);
-    line-height: 1.68;
+    font-size: var(--fs-13);
+    line-height: var(--lh-13);
     color: var(--text-2);
 }
 .spec-para-note {
@@ -99,7 +103,8 @@ withDefaults(
     background: color-mix(in srgb, var(--next) 12%, transparent);
     color: var(--accent);
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
+    line-height: var(--lh-11);
     font-weight: 600;
 }
 .spec-para.tone-conflict .spec-para-badge {
@@ -109,8 +114,10 @@ withDefaults(
 .spec-para-caption {
     min-width: 0;
     font-family: var(--mono);
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-11);
+    font-weight: 600;
+    line-height: var(--lh-11);
+    color: var(--text-3);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

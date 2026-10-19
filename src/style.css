@@ -10,7 +10,7 @@
     --text: var(--paper);
     --text-2: var(--paper-2);
     --text-3: var(--paper-3);
-    --text-4: var(--paper-4);
+    --text-4: var(--paper-3);
     --card-bg: var(--ink-1);
     --card-bg-hover: var(--ink-2);
     --flyout-bg: var(--ink-0);
@@ -26,7 +26,10 @@ body {
     margin: 0;
     padding: 0;
     height: 100%;
-    font-family: var(--segoe);
+    font-family: var(--sans);
+    font-size: var(--fs-13);
+    font-weight: 400;
+    line-height: var(--lh-13);
     color: var(--text);
     background: var(--ink-0);
     overflow: hidden;
@@ -124,7 +127,7 @@ body,
     gap: 6px;
     border-radius: 4px;
     cursor: default;
-    font-size: var(--fs-xs);
+    font-size: var(--fs-13);
     transition: background 120ms;
     position: relative;
 }
@@ -140,8 +143,11 @@ body,
 }
 .tb-clock {
     text-align: right;
-    line-height: 1.15;
-    font-size: var(--fs-xs);
+    font-family: var(--mono);
+    font-size: var(--fs-12);
+    font-weight: 400;
+    line-height: var(--lh-12);
+    font-variant-numeric: tabular-nums;
     color: var(--text);
     padding: 0 12px 0 6px;
     cursor: default;
@@ -156,7 +162,7 @@ body,
 }
 .tb-clock .d {
     color: var(--text-2);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-12);
 }
 
 /* ─── Flyout ──────────────────────────────────────────────── */
@@ -219,8 +225,10 @@ body,
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-size: var(--fs-sm);
+    font-family: var(--sans);
+    font-size: var(--fs-16);
     font-weight: 600;
+    line-height: var(--lh-16);
     letter-spacing: -0.01em;
     color: var(--text);
     padding: 4px 8px 4px 6px;
@@ -323,26 +331,30 @@ body,
     gap: 10px;
 }
 .card-title {
-    font-size: var(--fs-xs);
+    font-family: var(--sans);
+    font-size: var(--fs-16);
     font-weight: 600;
+    line-height: var(--lh-16);
     letter-spacing: -0.005em;
     color: var(--text);
-    line-height: 1.2;
     display: inline-flex;
     align-items: center;
     gap: 6px;
 }
 .card-sub {
-    font-size: var(--fs-xs);
+    font-family: var(--sans);
+    font-size: var(--fs-12);
+    font-weight: 400;
     color: var(--text-3);
     margin-top: 2px;
-    line-height: 1.35;
+    line-height: var(--lh-12);
 }
 .pct {
-    font-size: var(--fs-lg);
+    font-family: var(--mono);
+    font-size: var(--fs-16);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
-    line-height: 1;
+    line-height: var(--lh-16);
     letter-spacing: -0.01em;
 }
 .pct.tier-green {
@@ -417,7 +429,10 @@ body,
 }
 .pace-row {
     margin-top: 6px;
-    font-size: var(--fs-xs);
+    font-family: var(--sans);
+    font-size: var(--fs-12);
+    font-weight: 400;
+    line-height: var(--lh-12);
 }
 .pace-ok {
     color: var(--success);
@@ -433,7 +448,10 @@ body,
     justify-content: space-between;
     align-items: center;
     margin-top: 10px;
-    font-size: var(--fs-xs);
+    font-family: var(--mono);
+    font-size: var(--fs-12);
+    font-weight: 400;
+    line-height: var(--lh-12);
     color: var(--text-3);
     font-variant-numeric: tabular-nums;
 }
@@ -442,14 +460,15 @@ body,
 }
 
 .badge {
-    font-size: var(--fs-xs);
-    font-weight: 500;
+    font-family: var(--sans);
+    font-size: var(--fs-13);
+    font-weight: 400;
     color: var(--text-2);
     background: color-mix(in srgb, var(--paper) 8%, transparent);
     border: 1px solid color-mix(in srgb, var(--paper) 5%, transparent);
     padding: 2px 8px;
     border-radius: 999px;
-    line-height: 1.5;
+    line-height: var(--lh-13);
     letter-spacing: 0;
 }
 
@@ -485,8 +504,12 @@ body,
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-family: var(--mono);
+    font-size: var(--fs-11);
+    font-weight: 600;
+    line-height: var(--lh-11);
+    letter-spacing: 0.06em;
+    color: var(--text-3);
     font-variant-numeric: tabular-nums;
 }
 .bars {
@@ -521,8 +544,12 @@ body,
     grid-template-columns: repeat(10, 1fr);
     gap: 4px;
     padding: 0 2px;
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-family: var(--mono);
+    font-size: var(--fs-11);
+    font-weight: 600;
+    line-height: var(--lh-11);
+    letter-spacing: 0.06em;
+    color: var(--text-3);
     text-align: center;
     font-variant-numeric: tabular-nums;
 }
@@ -531,12 +558,15 @@ body,
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: var(--fs-xs);
+    font-family: var(--sans);
+    font-size: var(--fs-12);
+    font-weight: 400;
+    line-height: var(--lh-12);
     color: var(--text-3);
 }
 .chart-foot .right {
     color: var(--text);
-    font-weight: 500;
+    font-weight: 600;
 }
 
 /* Footer */
@@ -545,8 +575,11 @@ body,
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-family: var(--sans);
+    font-size: var(--fs-12);
+    font-weight: 400;
+    line-height: var(--lh-12);
+    color: var(--text-3);
     letter-spacing: 0;
 }
 .fly-foot .seg {
@@ -583,7 +616,10 @@ body,
     background: var(--ink-1);
     border: 1px solid color-mix(in srgb, var(--paper) 8%, transparent);
     color: var(--text);
-    font-size: var(--fs-xs);
+    font-family: var(--sans);
+    font-size: var(--fs-12);
+    font-weight: 400;
+    line-height: var(--lh-12);
     padding: 6px 10px;
     border-radius: 4px;
     white-space: nowrap;
@@ -637,10 +673,10 @@ body,
     padding: 8px;
 }
 .density-compact .pct {
-    font-size: var(--fs-md);
+    font-size: var(--fs-16);
 }
 .density-compact .card-title {
-    font-size: var(--fs-xs);
+    font-size: var(--fs-16);
 }
 
 .density-comfy .card {
@@ -679,7 +715,10 @@ body,
     left: 18px;
     bottom: 60px;
     color: color-mix(in srgb, var(--paper) 50%, transparent);
-    font-size: var(--fs-xs);
+    font-family: var(--sans);
+    font-size: var(--fs-12);
+    font-weight: 400;
+    line-height: var(--lh-12);
     letter-spacing: 0.02em;
     display: flex;
     align-items: center;
@@ -691,8 +730,10 @@ body,
     backdrop-filter: blur(20px);
 }
 .kbd {
-    font-family: var(--segoe);
-    font-size: var(--fs-xs);
+    font-family: var(--mono);
+    font-size: var(--fs-11);
+    font-weight: 600;
+    line-height: var(--lh-11);
     padding: 1px 5px;
     border: 1px solid color-mix(in srgb, var(--paper) 18%, transparent);
     border-bottom-width: 2px;
@@ -708,9 +749,10 @@ body,
     border-radius: var(--card-radius);
     background: var(--accent);
     color: var(--on-accent);
-    font-size: var(--fs-xs);
-    font-weight: 500;
-    font-family: var(--segoe);
+    font-size: var(--fs-13);
+    font-weight: 400;
+    font-family: var(--sans);
+    line-height: var(--lh-13);
     cursor: pointer;
     transition: filter 120ms;
 }
@@ -728,8 +770,10 @@ body,
     border-radius: var(--card-radius);
     background: transparent;
     color: var(--text-2);
-    font-size: var(--fs-xs);
-    font-family: var(--segoe);
+    font-size: var(--fs-13);
+    font-weight: 400;
+    font-family: var(--sans);
+    line-height: var(--lh-13);
     cursor: pointer;
     transition: background 120ms;
 }

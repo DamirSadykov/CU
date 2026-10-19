@@ -24,11 +24,13 @@ defineProps<{ title?: string }>();
     box-shadow: 0 8px 28px color-mix(in srgb, var(--hard) 45%, transparent);
 }
 .side-panel-title {
-    font-size: var(--fs-xs);
+    font-family: var(--mono);
+    font-size: var(--fs-11);
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.13em;
-    color: var(--text-4);
+    letter-spacing: 0.06em;
+    line-height: var(--lh-11);
+    color: var(--text-3);
 }
 .side-panel-body {
     margin-top: 10px;

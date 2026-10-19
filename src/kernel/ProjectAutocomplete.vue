@@ -187,7 +187,7 @@ defineExpose({ focus });
   border: 1px solid var(--stroke-strong, color-mix(in srgb, var(--paper) 12%, transparent));
   border-radius: var(--pa-control-radius, var(--card-radius, 6px));
   padding: 7px 10px;
-  font-size: var(--pa-control-font-size, var(--fs-xs));
+  font-size: var(--pa-control-font-size, var(--fs-13));
   font-family: var(--segoe);
   /* Dark popup hint for the platform-painted parts. */
 }
@@ -205,8 +205,8 @@ defineExpose({ focus });
   transform: translateY(-50%);
   border: none;
   background: transparent;
-  color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
-  font-size: var(--fs-sm);
+  color: var(--text-3, color-mix(in srgb, var(--paper) 50%, transparent));
+  font-size: var(--fs-13);
   line-height: 1;
   cursor: pointer;
   padding: 0 2px;
@@ -237,7 +237,7 @@ defineExpose({ focus });
 }
 .pa-item {
   padding: 6px 8px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   color: var(--text-2, color-mix(in srgb, var(--paper) 85%, transparent));
   border-radius: 4px;
   cursor: pointer;

@@ -664,7 +664,7 @@ const legendItems = computed(() => [
         mark: "line" as const,
     },
     { text: "пунктир — ссылка на другой уровень", mark: "dash" as const },
-    { text: "петля у края — ссылки внутри раздела", color: "var(--text-4)" },
+    { text: "петля у края — ссылки внутри раздела", color: "var(--text-3)" },
 ]);
 
 const pick = computed(() => {
@@ -1211,12 +1211,12 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
     padding: 0 11px;
     border: 1px solid var(--stroke-strong);
     border-radius: var(--r-ctl);
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    color: var(--text-3);
 }
 .bub-hints {
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    color: var(--text-3);
 }
 
 .bub-canvas {
@@ -1284,7 +1284,7 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
     border-radius: var(--r-pill);
     background: var(--ink-1);
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
     line-height: 1.5;
     color: var(--text-3);
     text-align: center;
@@ -1352,7 +1352,7 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
 .bub-loop-text {
     fill: var(--text-3);
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
 }
 
 .bub-head {
@@ -1372,7 +1372,7 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
 .bub-address {
     margin-top: 4px;
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
     line-height: 1.3;
     color: var(--accent);
     overflow-wrap: anywhere;
@@ -1382,12 +1382,12 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
 }
 .bub-counts {
     margin-top: 4px;
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    color: var(--text-3);
 }
 .bub-fold {
     margin-top: 6px;
-    font-size: var(--fs-xs);
+    font-size: var(--fs-13);
     color: var(--accent);
 }
 
@@ -1418,7 +1418,7 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
     border-radius: var(--r-pill);
     background: var(--node-bg);
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
     line-height: 1.4;
     color: var(--text-2);
     white-space: nowrap;
@@ -1443,8 +1443,8 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
     white-space: nowrap;
 }
 .bub-chip-ext {
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-11);
+    color: var(--text-3);
 }
 .bub-chip-dots {
     display: inline-flex;
@@ -1467,8 +1467,8 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
     border: 1px dashed var(--stroke-strong);
     border-radius: var(--r-pill);
     font-family: var(--mono);
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-11);
+    color: var(--text-3);
 }
 
 .bub-empty {
@@ -1486,12 +1486,12 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
 }
 .bub-empty-title {
     margin-bottom: 6px;
-    font-size: var(--fs-xs);
+    font-size: var(--fs-16);
     font-weight: 600;
 }
 .bub-empty-text {
     margin: 0;
-    font-size: var(--fs-xs);
+    font-size: var(--fs-13);
     line-height: 1.5;
     color: var(--text-3);
 }
@@ -1521,12 +1521,12 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
     padding-bottom: 10px;
     border-bottom: 1px solid var(--stroke);
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
     color: var(--text-2);
     overflow-wrap: anywhere;
 }
 .bub-pair-arrow {
-    color: var(--text-4);
+    color: var(--text-3);
 }
 .bub-pair-to {
     color: var(--accent);
@@ -1540,11 +1540,11 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
 }
 .bub-pick-id {
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
     color: var(--accent);
 }
 .bub-pick-title {
-    font-size: var(--fs-xs);
+    font-size: var(--fs-13);
     line-height: 1.35;
     color: var(--text);
 }
@@ -1554,12 +1554,12 @@ watch([bounds, () => size.value.w, () => size.value.h], fit, { immediate: true }
     justify-content: space-between;
     gap: 10px;
     margin-top: 8px;
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    color: var(--text-3);
 }
 .bub-pick-value {
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
     color: var(--text-2);
     text-align: right;
     overflow-wrap: anywhere;

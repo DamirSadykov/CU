@@ -186,13 +186,16 @@ function hide() {
   border-left-color: var(--text-2, color-mix(in srgb, var(--paper) 85%, transparent));
 }
 .pl-pop-lbl {
-  font-size: var(--fs-xs);
+  font-family: var(--mono);
+  font-size: var(--fs-11);
+  font-weight: 600;
+  line-height: var(--lh-11);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-4, color-mix(in srgb, var(--paper) 50%, transparent));
+  letter-spacing: 0.06em;
+  color: var(--text-3, color-mix(in srgb, var(--paper) 50%, transparent));
 }
 .pl-pop-items {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   color: var(--text);
   word-break: break-word;
 }

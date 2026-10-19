@@ -53,15 +53,17 @@ withDefaults(
     align-items: center;
     gap: 5px;
     margin-bottom: 7px;
-    font-size: var(--fs-xs);
+    font-family: var(--mono);
+    font-size: var(--fs-11);
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.13em;
-    color: var(--text-4);
+    letter-spacing: 0.06em;
+    line-height: var(--lh-11);
+    color: var(--text-3);
 }
 .mini-map-count {
     font-family: var(--mono);
-    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
 }
 .mini-map-sep {
     opacity: 0.6;

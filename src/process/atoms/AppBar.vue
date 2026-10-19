@@ -24,9 +24,9 @@ defineProps<{ title?: string }>();
 }
 .app-bar h1 {
     margin: 0;
-    font-size: var(--fs-lg);
+    font-size: var(--fs-16);
+    line-height: var(--lh-16);
     font-weight: 600;
-    letter-spacing: -0.01em;
 }
 .app-bar-spacer {
     flex: 1;

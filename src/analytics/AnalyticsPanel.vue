@@ -476,14 +476,14 @@ function renderCharts() {
           x: {
             stacked: !isCost,
             grid: { display: false },
-            ticks: { color: tickColor, font: { size: 14 } },
+            ticks: { color: tickColor, font: { size: 11, family: "IBM Plex Mono", weight: 600 } },
           },
           y: {
             stacked: !isCost,
             grid: { color: gridColor },
             ticks: {
               color: tickColor,
-              font: { size: 14 },
+              font: { size: 11, family: "IBM Plex Mono", weight: 600 },
               callback: (v) => (isCost ? "$" + v : fmtTokens(Number(v))),
             },
           },
@@ -772,7 +772,7 @@ onUnmounted(() => {
   border-radius: 6px;
   background: transparent;
   color: var(--text-3);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-family: var(--segoe);
   cursor: pointer;
   transition: background 120ms, color 120ms, border-color 120ms;
@@ -794,7 +794,7 @@ onUnmounted(() => {
   border: none;
   background: transparent;
   color: var(--text-3);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-family: var(--segoe);
   cursor: pointer;
   transition: background 120ms, color 120ms;
@@ -820,19 +820,24 @@ onUnmounted(() => {
   text-align: center;
 }
 .stat-val {
-  font-size: var(--fs-xl);
+  font-family: var(--mono);
+  font-size: var(--fs-22);
   font-weight: 600;
+  line-height: var(--lh-22);
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
 .stat-val.up { color: var(--crit); }
 .stat-val.down { color: var(--ok); }
 .stat-lbl {
-  font-size: var(--fs-xs);
-  color: var(--text-4);
+  font-family: var(--mono);
+  font-size: var(--fs-11);
+  font-weight: 600;
+  line-height: var(--lh-11);
+  color: var(--text-3);
   margin-top: 3px;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.06em;
 }
 
 .block {
@@ -841,11 +846,13 @@ onUnmounted(() => {
   gap: 8px;
 }
 .block-title {
-  font-size: var(--fs-xs);
+  font-family: var(--mono);
+  font-size: var(--fs-11);
   font-weight: 600;
+  line-height: var(--lh-11);
   color: var(--text-3);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 .block-head {
   display: flex;
@@ -855,7 +862,7 @@ onUnmounted(() => {
 }
 .seg-sm button {
   padding: 4px 10px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
 }
 .chart-wrap {
   height: 160px;
@@ -882,7 +889,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 9px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
 }
 .legend-item .dot {
   width: 11px;
@@ -896,13 +903,15 @@ onUnmounted(() => {
 }
 .legend-val {
   color: var(--text-3);
+  font-family: var(--mono);
   font-variant-numeric: tabular-nums;
 }
 
 /* Clickable token-type chips that toggle their layer in the daily chart. */
 .tok-hint {
-  font-size: var(--fs-xs);
-  color: var(--text-4);
+  font-size: var(--fs-12);
+  line-height: var(--lh-12);
+  color: var(--text-3);
 }
 .tok-filters {
   display: flex;
@@ -918,7 +927,7 @@ onUnmounted(() => {
   border-radius: 8px;
   background: var(--card-bg, color-mix(in srgb, var(--paper) 3%, transparent));
   font-family: var(--segoe);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   cursor: pointer;
   transition: background 120ms, border-color 120ms, opacity 120ms;
 }
@@ -947,14 +956,15 @@ onUnmounted(() => {
   color: var(--text-2);
 }
 .tok-val {
-  color: var(--text-4);
+  color: var(--text-3);
+  font-family: var(--mono);
   font-variant-numeric: tabular-nums;
 }
 
 .tok-note {
-  font-size: var(--fs-xs);
-  line-height: 1.45;
-  color: var(--text-4);
+  font-size: var(--fs-12);
+  line-height: var(--lh-12);
+  color: var(--text-3);
   margin-top: 2px;
 }
 
@@ -970,9 +980,14 @@ onUnmounted(() => {
 }
 .heat-day {
   width: 30px;
-  font-size: var(--fs-xs);
-  color: var(--text-4);
+  font-family: var(--mono);
+  font-size: var(--fs-11);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: var(--lh-11);
+  color: var(--text-3);
   flex-shrink: 0;
+  text-transform: uppercase;
 }
 .heat-cells {
   display: grid;
@@ -988,8 +1003,13 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   margin-left: 36px;
-  font-size: var(--fs-xs);
-  color: var(--text-4);
+  font-family: var(--mono);
+  font-size: var(--fs-11);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: var(--lh-11);
+  color: var(--text-3);
+  text-transform: uppercase;
 }
 
 /* Anomalous-spend warning card */
@@ -1006,7 +1026,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-weight: 600;
   color: var(--crit);
 }
@@ -1016,12 +1036,12 @@ onUnmounted(() => {
   border-radius: 50%;
   background: var(--crit);
   color: var(--ink-0);
-  font-weight: 700;
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
 }
 .anomaly-list {
   display: flex;
@@ -1032,10 +1052,11 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
 }
 .anomaly-when {
-  color: var(--text-4);
+  color: var(--text-3);
+  font-family: var(--mono);
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
@@ -1049,12 +1070,14 @@ onUnmounted(() => {
 }
 .anomaly-mult {
   color: var(--crit);
+  font-family: var(--mono);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
 .anomaly-val {
   color: var(--text-3);
+  font-family: var(--mono);
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
@@ -1070,7 +1093,7 @@ onUnmounted(() => {
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   margin-bottom: 3px;
 }
 .pbar-name {
@@ -1104,8 +1127,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-4);
-  font-size: var(--fs-sm);
+  color: var(--text-3);
+  font-size: var(--fs-13);
   padding: 40px 0;
 }
 </style>

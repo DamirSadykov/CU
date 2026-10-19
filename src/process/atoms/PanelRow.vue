@@ -29,15 +29,16 @@ withDefaults(
 .panel-row-icon {
     flex: none;
     width: 12px;
-    font-size: var(--fs-xs);
+    font-size: var(--fs-13);
     line-height: 1;
     text-align: center;
-    color: var(--text-4);
+    color: var(--text-3);
 }
 .panel-row-text {
     flex: 1;
     min-width: 0;
-    font-size: var(--fs-xs);
+    font-size: var(--fs-13);
+    line-height: var(--lh-13);
     color: var(--text-2);
     white-space: nowrap;
     overflow: hidden;
@@ -45,12 +46,15 @@ withDefaults(
 }
 .panel-row-text.mono {
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
+    font-weight: 600;
+    line-height: var(--lh-11);
 }
 .panel-row-meta {
     flex: none;
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    line-height: var(--lh-12);
+    color: var(--text-3);
 }
 .panel-row.tone-ok .panel-row-icon,
 .panel-row.tone-ok .panel-row-text {

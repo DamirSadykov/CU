@@ -2360,7 +2360,10 @@ onUnmounted(() => {
   flex-direction: column;
   background: var(--flyout-bg, var(--ink-0));
   color: var(--text);
-  font-family: var(--segoe);
+  font-family: var(--sans);
+  font-size: var(--fs-13);
+  font-weight: 400;
+  line-height: var(--lh-13);
   overflow: hidden;
 }
 .tw-head {
@@ -2379,7 +2382,7 @@ onUnmounted(() => {
 }
 .tw-title h1 {
   margin: 0;
-  font-size: var(--fs-lg);
+  font-size: var(--fs-16);
   font-weight: 600;
 }
 .tw-detail-num {
@@ -2389,7 +2392,7 @@ onUnmounted(() => {
   font-variant-numeric: tabular-nums;
 }
 .tw-open {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   color: var(--text-3);
 }
 .tw-spacer {
@@ -2417,8 +2420,8 @@ onUnmounted(() => {
   border: none;
   outline: none;
   color: var(--text);
-  font-size: var(--fs-xs);
-  font-family: var(--segoe);
+  font-size: var(--fs-13);
+  font-family: var(--sans);
   padding: 6px 0;
   width: 150px;
 }
@@ -2435,8 +2438,8 @@ onUnmounted(() => {
   border: 1px solid var(--stroke-strong);
   border-radius: 6px;
   padding: 3px 6px;
-  font-size: var(--fs-xs);
-  font-family: var(--segoe);
+  font-size: var(--fs-13);
+  font-family: var(--sans);
 }
 .tw-more {
   width: 100%;
@@ -2453,16 +2456,16 @@ onUnmounted(() => {
   border: 1px solid var(--stroke-strong);
   border-radius: 6px;
   padding: 5px 8px;
-  font-size: var(--fs-xs);
-  font-family: var(--segoe);
+  font-size: var(--fs-13);
+  font-family: var(--sans);
 }
 .tw-select.sm {
   padding: 3px 6px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   max-width: 110px;
 }
 .tw-toggle {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   color: var(--text-3);
   display: flex;
   align-items: center;
@@ -2480,9 +2483,9 @@ onUnmounted(() => {
   color: var(--text-3);
   border-radius: var(--r-ctl);
   padding: 6px 10px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   cursor: pointer;
-  font-family: var(--segoe);
+  font-family: var(--sans);
   transition: color 120ms, border-color 120ms;
 }
 .tw-guide:hover {
@@ -2510,8 +2513,8 @@ onUnmounted(() => {
   background: var(--card-bg);
   color: var(--text-3);
   padding: 6px 10px;
-  font-size: var(--fs-xs);
-  font-family: var(--segoe);
+  font-size: var(--fs-13);
+  font-family: var(--sans);
   cursor: pointer;
   transition: color 120ms, background 120ms;
 }
@@ -2536,17 +2539,17 @@ onUnmounted(() => {
   color: var(--on-accent);
   border-radius: var(--r-ctl);
   padding: 6px 12px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-weight: 600;
   cursor: pointer;
-  font-family: var(--segoe);
+  font-family: var(--sans);
 }
 .tw-add:hover {
   filter: brightness(1.1);
 }
 .tw-error {
   color: var(--crit);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   word-break: break-word;
   padding: 8px 16px 0;
   flex-shrink: 0;
@@ -2559,7 +2562,7 @@ onUnmounted(() => {
   background: color-mix(in srgb, var(--warn) 10%, transparent);
   border: 1px solid color-mix(in srgb, var(--warn) 30%, transparent);
   border-radius: 6px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   word-break: break-word;
   margin: 8px 16px 0;
   padding: 8px 10px;
@@ -2575,9 +2578,9 @@ onUnmounted(() => {
   color: inherit;
   border-radius: 4px;
   padding: 4px 10px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   cursor: pointer;
-  font-family: var(--segoe);
+  font-family: var(--sans);
 }
 .tw-recovery-restore:disabled {
   opacity: 0.5;
@@ -2588,7 +2591,7 @@ onUnmounted(() => {
 }
 .tw-empty {
   color: var(--text-3);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   text-align: center;
   padding: 40px 0;
 }
@@ -2614,8 +2617,8 @@ onUnmounted(() => {
   border-radius: var(--r-ctl);
   height: 100%;
   padding: 4px 10px;
-  font-size: var(--fs-xs);
-  font-family: var(--segoe);
+  font-size: var(--fs-13);
+  font-family: var(--sans);
   cursor: pointer;
   transition: background 120ms, color 120ms;
 }
@@ -2644,14 +2647,14 @@ onUnmounted(() => {
   border-radius: 8px;
   background: color-mix(in srgb, var(--paper) 14%, transparent);
   color: inherit;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 /* External (readonly mirror) — kanban board */
 .tw-ext-poll {
-  font-size: var(--fs-xs);
-  color: var(--text-4);
+  font-size: var(--fs-13);
+  color: var(--text-3);
   white-space: nowrap;
 }
 .tw-ext-empty {
@@ -2703,18 +2706,20 @@ onUnmounted(() => {
 .tw-ext-source-badge {
   flex: 1;
   min-width: 0;
-  font-size: var(--fs-xs);
+  font-family: var(--mono);
+  font-size: var(--fs-11);
   font-weight: 600;
-  color: var(--text-4);
+  line-height: var(--lh-11);
+  color: var(--text-3);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .tw-ext-changed {
   flex-shrink: 0;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   line-height: 1;
   color: var(--accent);
 }
@@ -2722,7 +2727,7 @@ onUnmounted(() => {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  color: var(--text-4);
+  color: var(--text-3);
   cursor: pointer;
   transition: color 120ms;
 }
@@ -2731,7 +2736,7 @@ onUnmounted(() => {
 }
 .tw-ext-card-title {
   margin: 6px 0 8px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   line-height: 1.35;
   color: var(--text);
 }
@@ -2742,10 +2747,12 @@ onUnmounted(() => {
 }
 .tw-ext-status {
   flex-shrink: 0;
-  font-size: var(--fs-xs);
+  font-family: var(--mono);
+  font-size: var(--fs-11);
   font-weight: 600;
+  line-height: var(--lh-11);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.06em;
   padding: 2px 7px;
   border-radius: 10px;
   background: color-mix(in srgb, var(--paper) 6%, transparent);
@@ -2765,7 +2772,7 @@ onUnmounted(() => {
   color: var(--paper-2);
 }
 .tw-ext-assignee {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   color: var(--text-3);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2774,11 +2781,13 @@ onUnmounted(() => {
 
 /* External detail (readonly metadata + provenance) */
 .tw-ext-detail-source {
-  font-size: var(--fs-xs);
+  font-family: var(--mono);
+  font-size: var(--fs-11);
   font-weight: 600;
+  line-height: var(--lh-11);
   color: var(--text-3);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 .tw-ext-detail {
   flex: 1;
@@ -2801,7 +2810,7 @@ onUnmounted(() => {
   margin-bottom: 10px;
 }
 .tw-ext-detail-title {
-  font-size: var(--fs-lg);
+  font-size: var(--fs-16);
   font-weight: 600;
   color: var(--text);
   line-height: 1.35;
@@ -2818,14 +2827,14 @@ onUnmounted(() => {
   gap: 12px;
   padding: 7px 0;
   border-bottom: 1px solid var(--stroke-weak, color-mix(in srgb, var(--paper) 5%, transparent));
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
 }
 .tw-ext-detail-row:last-child {
   border-bottom: none;
 }
 .tw-ext-detail-row dt {
   flex: 0 0 120px;
-  color: var(--text-4);
+  color: var(--text-3);
 }
 .tw-ext-detail-row dd {
   flex: 1;
@@ -2833,7 +2842,7 @@ onUnmounted(() => {
   color: var(--text-2);
 }
 .tw-ext-detail-dim {
-  color: var(--text-4);
+  color: var(--text-3);
 }
 .tw-ext-detail-desc {
   margin: 0 0 16px;
@@ -2841,16 +2850,16 @@ onUnmounted(() => {
   background: color-mix(in srgb, var(--paper) 3%, transparent);
   border: 1px solid var(--stroke-strong);
   border-radius: 6px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   line-height: 1.5;
   color: var(--text-2);
   white-space: pre-wrap;
 }
 .tw-ext-detail-note {
   margin: 14px 0 0;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   line-height: 1.5;
-  color: var(--text-4);
+  color: var(--text-3);
 }
 .tw-ext-detail-card .tw-btn {
   display: inline-flex;
@@ -2871,58 +2880,58 @@ onUnmounted(() => {
 .tw-project-crumbs { padding: 0 28px; }
 .tw-tree-detail { display: flex; flex-direction: column; gap: 10px; }
 .tw-tree-detail > .tw-back { align-self: flex-start; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tw-detail-pager { align-items: center; display: flex; gap: 5px; margin-left: auto; font-family: var(--mono); font-size: var(--fs-xs); white-space: nowrap; }
+.tw-detail-pager { align-items: center; display: flex; gap: 5px; margin-left: auto; font-family: var(--mono); font-size: var(--fs-13); white-space: nowrap; }
 .tw-detail-pager button, .tw-detail-menu-button { background: var(--layer); border: 1px solid var(--stroke); border-radius: 4px; color: var(--text-2); cursor: pointer; height: 24px; min-width: 26px; }
-.tw-detail-pager button:disabled { color: var(--text-4); cursor: default; }
+.tw-detail-pager button:disabled { color: var(--text-3); cursor: default; }
 .tw-detail-pane-head { align-items: flex-start; display: flex; gap: 12px; justify-content: space-between; }
 .tw-detail-pane-head h2 { margin: 0; }
 .tw-detail-menu-wrap { position: relative; }
 .tw-detail-menu { background: var(--layer); border: 1px solid var(--stroke-strong); border-radius: 6px; padding: 4px; position: absolute; right: 0; top: 28px; z-index: 2; }
-.tw-detail-menu button { background: transparent; border: 0; color: var(--crit); cursor: pointer; font-family: var(--segoe); padding: 6px 10px; text-align: left; white-space: nowrap; }
+.tw-detail-menu button { background: transparent; border: 0; color: var(--crit); cursor: pointer; font-family: var(--sans); padding: 6px 10px; text-align: left; white-space: nowrap; }
 .tw-detail-meta { align-items: center; display: flex; flex-wrap: wrap; gap: 7px; }
 .tw-status-segments { display: flex; flex-wrap: wrap; }
-.tw-status-segment { background: var(--layer); border: 1px solid var(--stroke); color: var(--text-3); cursor: pointer; font-family: var(--segoe); font-size: var(--fs-xs); padding: 5px 8px; }
+.tw-status-segment { background: var(--layer); border: 1px solid var(--stroke); color: var(--text-3); cursor: pointer; font-family: var(--sans); font-size: var(--fs-13); padding: 5px 8px; }
 .tw-status-segment:first-child { border-radius: 5px 0 0 5px; }
 .tw-status-segment:last-child { border-radius: 0 5px 5px 0; }
 .tw-status-segment.active { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
 .tw-status-segment.active.done { background: var(--theme-bg-2); border-color: var(--ok); }
-.tw-detail-chip { background: var(--layer); border: 1px solid var(--stroke); border-radius: 999px; color: var(--text-2); font-size: var(--fs-xs); padding: 4px 8px; }
+.tw-detail-chip { background: var(--layer); border: 1px solid var(--stroke); border-radius: 999px; color: var(--text-2); font-size: var(--fs-13); padding: 4px 8px; }
 .tw-detail-cost { color: var(--tree-cost); font-family: var(--mono); }
 .tw-detail-tabs { border-bottom: 1px solid var(--stroke); display: flex; gap: 16px; }
-.tw-detail-tabs button { background: transparent; border: 0; border-bottom: 2px solid transparent; color: var(--text-3); cursor: pointer; font-family: var(--segoe); padding: 8px 1px; }
+.tw-detail-tabs button { background: transparent; border: 0; border-bottom: 2px solid transparent; color: var(--text-3); cursor: pointer; font-family: var(--sans); padding: 8px 1px; }
 .tw-detail-tabs button.active { border-bottom-color: var(--accent); color: var(--text); }
-.tw-detail-tabs span { color: var(--text-4); font-family: var(--mono); }
+.tw-detail-tabs span { color: var(--text-3); font-family: var(--mono); }
 .tw-overview { display: grid; gap: 22px; grid-template-columns: minmax(0, 1fr) 300px; padding-top: 8px; }
 .tw-overview-main, .tw-overview-side { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
-.tw-overview-section h3, .tw-overview-card h3 { color: var(--text-2); font-size: var(--fs-xs); margin: 0 0 8px; }
-.tw-overview-description { color: var(--text-2); font-size: var(--fs-xs); line-height: 1.62; max-width: 780px; white-space: pre-wrap; }
-.tw-mutation-status { margin-left: 6px; color: var(--ok); font: 500 var(--fs-xs)/1 var(--mono); text-transform: none; }.tw-mutation-status.cannot { color: var(--crit); }.tw-mutation-status.skipped { color: var(--text-4); }.tw-mutation-list { display: grid; gap: 7px; list-style: none; margin: 0; padding: 0; }.tw-mutation-list li { display: grid; gap: 4px; border-left: 2px solid var(--crit); padding: 6px 9px; background: var(--layer); color: var(--text-3); font-size: var(--fs-xs); }.tw-mutation-list code { overflow-wrap: anywhere; color: var(--text-2); font-family: var(--mono); }.tw-mutation-kind { color: var(--crit); font: 600 var(--fs-xs)/1 var(--segoe); }.tw-mutation-kind.noCoverage { color: var(--warn); }
+.tw-overview-section h3, .tw-overview-card h3 { color: var(--text-2); font-size: var(--fs-13); margin: 0 0 8px; }
+.tw-overview-description { color: var(--text-2); font-size: var(--fs-13); line-height: 1.62; max-width: 780px; white-space: pre-wrap; }
+.tw-mutation-status { margin-left: 6px; color: var(--ok); font: 400 var(--fs-12)/var(--lh-12) var(--sans); text-transform: none; }.tw-mutation-status.cannot { color: var(--crit); }.tw-mutation-status.skipped { color: var(--text-3); }.tw-mutation-list { display: grid; gap: 7px; list-style: none; margin: 0; padding: 0; }.tw-mutation-list li { display: grid; gap: 4px; border-left: 2px solid var(--crit); padding: 6px 9px; background: var(--layer); color: var(--text-3); font-size: var(--fs-12); }.tw-mutation-list code { overflow-wrap: anywhere; color: var(--text-2); font-family: var(--mono); }.tw-mutation-kind { color: var(--crit); font: 600 var(--fs-11)/var(--lh-11) var(--mono); }.tw-mutation-kind.noCoverage { color: var(--warn); }
 .tw-flow-tabs { border-bottom: 1px solid var(--stroke); display: flex; gap: 12px; }
-.tw-flow-tabs button { background: transparent; border: 0; border-bottom: 2px solid transparent; color: var(--text-3); cursor: pointer; font: var(--fs-xs) var(--segoe); padding: 6px 1px; }
+.tw-flow-tabs button { background: transparent; border: 0; border-bottom: 2px solid transparent; color: var(--text-3); cursor: pointer; font: 400 var(--fs-13)/var(--lh-13) var(--sans); padding: 6px 1px; }
 .tw-flow-tabs button.active { border-bottom-color: var(--accent); color: var(--text); }
 .tw-flow-diagram { background: var(--layer); border: 1px solid var(--stroke); border-radius: var(--r-card); margin-top: 8px; min-height: 48px; overflow: auto; padding: 10px; }
 .tw-flow-svg { min-width: max-content; }.tw-flow-svg svg { display: block; max-width: none; }
-.tw-flow-title { color: var(--text-2); font: var(--fs-xs) var(--mono); margin: 10px 0 4px; }
-.tw-flow-pending { color: var(--text-4); font-family: var(--mono); padding: 8px; }
-.tw-flow-error { color: var(--text-2); font-size: var(--fs-xs); line-height: 1.5; }.tw-flow-error p { margin: 0 0 8px; }.tw-flow-error summary { color: var(--text-3); cursor: pointer; }.tw-flow-source { color: var(--text-2); font-family: var(--mono); font-size: var(--fs-xs); line-height: 1.5; margin: 8px 0 0; white-space: pre-wrap; }
+.tw-flow-title { color: var(--text-2); font: 600 var(--fs-11)/var(--lh-11) var(--mono); letter-spacing: .06em; margin: 10px 0 4px; text-transform: uppercase; }
+.tw-flow-pending { color: var(--text-3); font-family: var(--mono); padding: 8px; }
+.tw-flow-error { color: var(--text-2); font-size: var(--fs-13); line-height: 1.5; }.tw-flow-error p { margin: 0 0 8px; }.tw-flow-error summary { color: var(--text-3); cursor: pointer; }.tw-flow-source { color: var(--text-2); font-family: var(--mono); font-size: var(--fs-13); line-height: 1.5; margin: 8px 0 0; white-space: pre-wrap; }
 .tw-handoff-card, .tw-overview-card { background: var(--layer); border: 1px solid var(--stroke); border-radius: var(--r-card); padding: 10px 12px; }
 .tw-handoff-row { display: grid; gap: 10px; grid-template-columns: 78px minmax(0, 1fr); padding: 5px 0; }
-.tw-handoff-row b { color: var(--text-3); font-size: var(--fs-xs); }
-.tw-handoff-row span { color: var(--text-2); font-size: var(--fs-xs); white-space: pre-wrap; }
-.tw-overview-empty { color: var(--text-4); font-size: var(--fs-xs); }
+.tw-handoff-row b { color: var(--text-3); font-size: var(--fs-13); }
+.tw-handoff-row span { color: var(--text-2); font-size: var(--fs-13); white-space: pre-wrap; }
+.tw-overview-empty { color: var(--text-3); font-size: var(--fs-13); }
 .tw-overview-comments { display: flex; flex-direction: column; gap: 8px; list-style: none; margin: 0; padding: 0; }
 .tw-overview-comments li { border-left: 2px solid var(--stroke-strong); padding: 7px 10px; }
-.tw-overview-comments b { color: var(--text-2); font-size: var(--fs-xs); }
-.tw-overview-comments p { color: var(--text-3); font-size: var(--fs-xs); line-height: 1.45; margin: 5px 0 0; white-space: pre-wrap; }
-.tw-severity, .tw-attempt-chip { border-radius: var(--r-pill); display: inline-block; font-family: var(--mono); font-size: var(--fs-xs); margin-left: 6px; padding: 2px 5px; }
+.tw-overview-comments b { color: var(--text-2); font-size: var(--fs-13); }
+.tw-overview-comments p { color: var(--text-3); font-size: var(--fs-13); line-height: 1.45; margin: 5px 0 0; white-space: pre-wrap; }
+.tw-severity, .tw-attempt-chip { border-radius: var(--r-pill); display: inline-block; font-family: var(--mono); font-size: var(--fs-13); margin-left: 6px; padding: 2px 5px; }
 .tw-severity { background: var(--layer-2); color: var(--text-3); }
 .tw-severity.critical { color: var(--crit); }.tw-severity.high { color: var(--high); }.tw-severity.medium { color: var(--warn); }.tw-severity.low { color: var(--accent-2); }
 .tw-attempt-chip { background: var(--accent-soft); color: var(--text-3); }
-.tw-overview-stat, .tw-role-cost { color: var(--text-3); display: flex; font-family: var(--mono); font-size: var(--fs-xs); justify-content: space-between; }
+.tw-overview-stat, .tw-role-cost { color: var(--text-3); display: flex; font-family: var(--mono); font-size: var(--fs-13); justify-content: space-between; }
 .tw-overview-stat { margin-bottom: 8px; }.tw-role-cost + .tw-role-cost { margin-top: 6px; }.tw-role-cost b { color: var(--tree-cost); font-weight: 400; }
 .tw-overview-bar, .tw-role-bar { background: var(--track); border-radius: var(--r-pill); height: 5px; overflow: hidden; }
 .tw-overview-bar i, .tw-role-bar i { background: var(--ok); display: block; height: 100%; }.tw-role-bar i { background: var(--accent-2); }
-.tw-relation { align-items: center; background: transparent; border: 0; color: var(--text-3); cursor: pointer; display: flex; font-family: var(--segoe); font-size: var(--fs-xs); gap: 7px; padding: 4px 0; text-align: left; width: 100%; }.tw-relation:hover { color: var(--text); }
+.tw-relation { align-items: center; background: transparent; border: 0; color: var(--text-3); cursor: pointer; display: flex; font-family: var(--sans); font-size: var(--fs-13); gap: 7px; padding: 4px 0; text-align: left; width: 100%; }.tw-relation:hover { color: var(--text); }
 .tw-relation i { background: var(--text-4); border-radius: 50%; height: 6px; width: 6px; }.tw-relation i.done { background: var(--ok); }.tw-relation i.in_progress { background: var(--accent-2); }.tw-relation i.review { background: var(--tree-review); }
 .tw-tree-resize { cursor: col-resize; margin-left: -3px; position: relative; width: 6px; z-index: 1; }
 .tw-tree-resize::after { background: var(--stroke-strong); content: ""; inset: 0 2px; position: absolute; }
@@ -2971,12 +2980,12 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 .tw-col-name {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-weight: 600;
   color: var(--text-2);
 }
 .tw-col-count {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   color: var(--text-3);
   background: var(--track);
   border-radius: 9px;
@@ -3009,8 +3018,8 @@ onUnmounted(() => {
   gap: 8px;
 }
 .tw-col-empty {
-  color: var(--text-4);
-  font-size: var(--fs-xs);
+  color: var(--text-3);
+  font-size: var(--fs-13);
   text-align: center;
   padding: 18px 6px;
   border: 1px dashed var(--stroke-strong);
@@ -3042,8 +3051,8 @@ onUnmounted(() => {
   color: var(--text-3);
 }
 .tw-card-title {
-  font-size: var(--fs-md);
-  font-weight: 500;
+  font-size: var(--fs-16);
+  font-weight: 400;
   line-height: 1.35;
   word-break: break-word;
 }
@@ -3055,7 +3064,7 @@ onUnmounted(() => {
 }
 .tw-card-desc {
   margin: 0;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   color: var(--text-3);
   line-height: 1.4;
   display: -webkit-box;
@@ -3070,10 +3079,12 @@ onUnmounted(() => {
   gap: 6px;
 }
 .tw-handoff-in-hd {
-  font-size: var(--fs-xs);
+  font-family: var(--mono);
+  font-size: var(--fs-11);
   font-weight: 600;
+  line-height: var(--lh-11);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   color: var(--text-3);
 }
 .tw-handoff-item {
@@ -3086,20 +3097,20 @@ onUnmounted(() => {
   margin-top: 4px;
 }
 .tw-handoff-item-hd {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-weight: 600;
   color: var(--text-2);
 }
 .tw-handoff-item-body {
   margin: 3px 0 0;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   line-height: 1.45;
   color: var(--text-2);
   white-space: pre-wrap;
 }
 .tw-handoff-item-empty {
   margin: 3px 0 0;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-style: italic;
   color: var(--text-3);
 }
@@ -3110,7 +3121,7 @@ onUnmounted(() => {
   align-items: center;
 }
 .tw-tag {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   color: var(--text-2);
   background: var(--track);
   padding: 1px 7px;
@@ -3130,7 +3141,7 @@ onUnmounted(() => {
   overflow-wrap: anywhere;
 }
 .tw-chip {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   color: var(--text-3);
   max-width: 100%;
   overflow-wrap: anywhere;
@@ -3173,7 +3184,7 @@ onUnmounted(() => {
   border-radius: 8px;
 }
 .tw-from-note {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   color: var(--text-3);
 }
 .tw-from-note strong {
@@ -3238,7 +3249,7 @@ onUnmounted(() => {
   box-shadow: 0 16px 48px color-mix(in srgb, var(--hard) 50%, transparent);
 }
 .tw-form-title {
-  font-size: var(--fs-md);
+  font-size: var(--fs-16);
   font-weight: 600;
   color: var(--text-2);
   margin-bottom: 2px;
@@ -3249,8 +3260,8 @@ onUnmounted(() => {
   border: 1px solid var(--stroke-strong);
   border-radius: 5px;
   padding: 9px 11px;
-  font-size: var(--fs-xs);
-  font-family: var(--segoe);
+  font-size: var(--fs-13);
+  font-family: var(--sans);
   width: 100%;
   /* Render native controls in dark theme so the <input type="date"> calendar
      picker icon (and its popup) isn't a dark-on-dark, near-invisible glyph on
@@ -3274,20 +3285,20 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   color: var(--text-3);
   flex: 1;
   min-width: 140px;
 }
 .tw-hint {
-  color: var(--text-4);
+  color: var(--text-3);
   font-style: italic;
   font-weight: 400;
 }
 .tw-subject-counter {
   align-self: flex-end;
-  font-size: var(--fs-xs);
-  color: var(--text-4);
+  font-size: var(--fs-13);
+  color: var(--text-3);
 }
 .tw-subject-counter.crit {
   color: var(--crit);
@@ -3304,10 +3315,10 @@ onUnmounted(() => {
   color: var(--on-accent);
   border-radius: 5px;
   padding: 7px 16px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-weight: 600;
   cursor: pointer;
-  font-family: var(--segoe);
+  font-family: var(--sans);
 }
 .tw-btn:disabled {
   opacity: 0.45;
@@ -3331,7 +3342,7 @@ onUnmounted(() => {
 }
 .tw-confirm-body {
   margin: 0;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   line-height: 1.5;
   color: var(--text-2);
   word-break: break-word;
@@ -3339,20 +3350,21 @@ onUnmounted(() => {
 
 /* AI-authored badge — violet so it can't be mistaken for a status colour. */
 .tw-ai {
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-family: var(--mono);
+  font-size: var(--fs-11);
+  font-weight: 600;
+  line-height: var(--lh-11);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ag-codex);
   background: color-mix(in srgb, var(--ag-codex) 16%, transparent);
   border: 1px solid color-mix(in srgb, var(--ag-codex) 50%, transparent);
   border-radius: 6px;
   padding: 1px 6px;
-  line-height: 1.5;
   flex-shrink: 0;
 }
 .tw-ai.sm {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-11);
   padding: 0 5px;
 }
 
@@ -3362,7 +3374,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 5px;
   color: var(--success, var(--ok));
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -3385,8 +3397,8 @@ onUnmounted(() => {
   color: var(--text-2);
   border-radius: 6px;
   padding: 5px 11px 5px 8px;
-  font-size: var(--fs-xs);
-  font-family: var(--segoe);
+  font-size: var(--fs-13);
+  font-family: var(--sans);
   cursor: pointer;
 }
 .tw-back:hover {
@@ -3414,10 +3426,12 @@ onUnmounted(() => {
   padding: 8px;
 }
 .tw-detail-list-hd {
-  font-size: var(--fs-xs);
+  font-family: var(--mono);
+  font-size: var(--fs-11);
   font-weight: 600;
+  line-height: var(--lh-11);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   color: var(--text-3);
   padding: 4px 6px 8px;
   overflow: hidden;
@@ -3436,8 +3450,8 @@ onUnmounted(() => {
   padding: 8px;
   color: var(--text-2);
   cursor: pointer;
-  font-family: var(--segoe);
-  font-size: var(--fs-xs);
+  font-family: var(--sans);
+  font-size: var(--fs-13);
 }
 .tw-detail-item:hover {
   background: var(--card-bg-hover);
@@ -3487,8 +3501,8 @@ onUnmounted(() => {
 .tw-detail-empty {
   align-items: center;
   justify-content: center;
-  color: var(--text-4);
-  font-size: var(--fs-xs);
+  color: var(--text-3);
+  font-size: var(--fs-13);
 }
 
 /* Comments thread */
@@ -3501,7 +3515,7 @@ onUnmounted(() => {
   gap: 8px;
 }
 .tw-blocks-hd {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-weight: 600;
   color: var(--text-2);
   display: flex;
@@ -3521,7 +3535,7 @@ onUnmounted(() => {
   display: flex;
   align-items: baseline;
   gap: 10px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   color: var(--text-3);
   padding: 4px 8px;
   border-radius: 7px;
@@ -3550,7 +3564,7 @@ onUnmounted(() => {
 }
 .tw-block-kind {
   margin-left: auto;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   padding: 1px 7px;
   border-radius: 9px;
   background: var(--card-bg);
@@ -3564,7 +3578,7 @@ onUnmounted(() => {
 .tw-blocks-foot {
   display: flex;
   gap: 16px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   color: var(--text-3);
   padding: 0 8px;
 }
@@ -3580,7 +3594,7 @@ onUnmounted(() => {
   gap: 10px;
 }
 .tw-comments-hd {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-weight: 600;
   color: var(--text-2);
   display: flex;
@@ -3588,7 +3602,7 @@ onUnmounted(() => {
   gap: 7px;
 }
 .tw-comments-n {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   color: var(--text-3);
   background: var(--track);
   border-radius: 9px;
@@ -3597,8 +3611,8 @@ onUnmounted(() => {
   text-align: center;
 }
 .tw-comments-empty {
-  font-size: var(--fs-xs);
-  color: var(--text-4);
+  font-size: var(--fs-13);
+  color: var(--text-3);
 }
 .tw-comment-list {
   list-style: none;
@@ -3626,7 +3640,7 @@ onUnmounted(() => {
   margin-bottom: 4px;
 }
 .tw-comment-author {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-weight: 600;
   color: var(--text-2);
 }
@@ -3634,14 +3648,14 @@ onUnmounted(() => {
   color: var(--ag-codex);
 }
 .tw-comment-time {
-  font-size: var(--fs-xs);
-  color: var(--text-4);
+  font-size: var(--fs-13);
+  color: var(--text-3);
 }
 .tw-comment-del {
   margin-left: auto;
   background: transparent;
   border: none;
-  color: var(--text-4);
+  color: var(--text-3);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -3659,7 +3673,7 @@ onUnmounted(() => {
 }
 .tw-comment-body {
   margin: 0;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   line-height: 1.65;
   color: var(--text);
   white-space: pre-wrap;
@@ -3695,8 +3709,8 @@ onUnmounted(() => {
   background: transparent;
   border: none;
   color: var(--accent);
-  font-family: var(--segoe);
-  font-size: var(--fs-xs);
+  font-family: var(--sans);
+  font-size: var(--fs-13);
   cursor: pointer;
   padding: 1px 4px;
   border-radius: 4px;
@@ -3709,7 +3723,7 @@ onUnmounted(() => {
   border: 1px solid var(--stroke-strong);
   border-radius: 5px;
   padding: 9px 11px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   line-height: 1.7;
   color: var(--text);
   white-space: pre-wrap;
@@ -3717,7 +3731,7 @@ onUnmounted(() => {
   min-height: 36px;
 }
 .tw-richtext-empty {
-  color: var(--text-4);
+  color: var(--text-3);
   font-style: italic;
 }
 
@@ -3783,17 +3797,124 @@ onUnmounted(() => {
   background: var(--accent-soft);
 }
 .tw-mention-key {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-weight: 600;
   color: var(--accent);
   flex-shrink: 0;
 }
 .tw-mention-sub {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   color: var(--text-3);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Six semantic type roles from the design handoff. */
+.tw-title h1,
+.tw-card-title,
+.tw-form-title,
+.tw-overview-section h3,
+.tw-overview-card h3,
+.tw-blocks-hd,
+.tw-comments-hd {
+  font-family: var(--sans);
+  font-size: var(--fs-16);
+  font-weight: 600;
+  line-height: var(--lh-16);
+}
+.tw-ext-detail-title {
+  font-family: var(--cond);
+  font-size: var(--fs-22);
+  font-weight: 600;
+  line-height: var(--lh-22);
+}
+.tw-open,
+.tw-empty,
+.tw-ext-poll,
+.tw-ext-changed,
+.tw-ext-assignee,
+.tw-ext-detail-note,
+.tw-flow-pending,
+.tw-flow-source,
+.tw-overview-empty,
+.tw-overview-comments p,
+.tw-col-count,
+.tw-col-empty,
+.tw-card-desc,
+.tw-handoff-item-empty,
+.tw-from-note,
+.tw-hint,
+.tw-subject-counter,
+.tw-detail-empty,
+.tw-blocks-foot,
+.tw-comments-n,
+.tw-comments-empty,
+.tw-comment-time,
+.tw-mention-sub {
+  font-family: var(--sans);
+  font-size: var(--fs-12);
+  font-weight: 400;
+  line-height: var(--lh-12);
+}
+.tw-col-name,
+.tw-ext-detail-row dt,
+.tw-handoff-row b,
+.tw-field > span {
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-size: var(--fs-11);
+  font-weight: 600;
+  letter-spacing: .06em;
+  line-height: var(--lh-11);
+  text-transform: uppercase;
+}
+.tw-hint {
+  letter-spacing: normal;
+  text-transform: none;
+}
+.tw-detail-num,
+.tw-card-num,
+.tw-detail-item-num {
+  font-family: var(--mono);
+  font-size: var(--fs-11);
+  font-weight: 600;
+  line-height: var(--lh-11);
+  font-variant-numeric: tabular-nums;
+}
+.tw-mode-count,
+.tw-detail-pager,
+.tw-detail-cost,
+.tw-detail-tabs span,
+.tw-overview-stat,
+.tw-role-cost,
+.tw-block,
+.tw-blocks-foot,
+.tw-comments-n,
+.tw-subject-counter {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+.tw-detail-pager,
+.tw-detail-tabs span,
+.tw-overview-stat,
+.tw-role-cost {
+  font-size: var(--fs-12);
+  font-weight: 400;
+  line-height: var(--lh-12);
+}
+.tw-ext-card-title,
+.tw-ext-detail-row,
+.tw-ext-detail-desc,
+.tw-overview-description,
+.tw-handoff-item-body,
+.tw-confirm-body,
+.tw-comment-body,
+.tw-richtext {
+  font-family: var(--sans);
+  font-size: var(--fs-13);
+  font-weight: 400;
+  line-height: var(--lh-13);
 }
 
 </style>

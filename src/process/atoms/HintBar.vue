@@ -22,12 +22,12 @@ withDefaults(
     padding: 9px 13px;
     border: 1px solid var(--stroke-strong);
     border-radius: var(--r-card);
-    font-size: var(--fs-xs);
-    line-height: 1.45;
+    font-size: var(--fs-12);
+    line-height: var(--lh-12);
 }
 .hint-bar-icon {
     flex: none;
-    font-size: var(--fs-xs);
+    font-size: var(--fs-12);
     line-height: 1;
 }
 .hint-bar-text {

@@ -49,14 +49,15 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
 }
 .ring-label {
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
+    line-height: var(--lh-11);
     font-weight: 600;
     color: var(--text);
 }
 .ring-title {
     margin-top: 4px;
-    font-size: var(--fs-xs);
-    line-height: 1.35;
+    font-size: var(--fs-13);
+    line-height: var(--lh-13);
     color: var(--text-3);
 }
 .ring-foot {
@@ -66,12 +67,15 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
     margin-top: 8px;
 }
 .ring-badge {
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    line-height: var(--lh-12);
+    color: var(--text-3);
 }
 .ring-cost {
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-12);
+    line-height: var(--lh-12);
+    font-variant-numeric: tabular-nums;
     color: var(--high);
 }
 .ring-counter {
@@ -79,15 +83,18 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
     right: 8px;
     bottom: 6px;
     font-family: var(--mono);
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    line-height: var(--lh-12);
+    color: var(--text-3);
+    font-variant-numeric: tabular-nums;
 }
 
 .ring-card.tone-plain:hover {
     background: var(--node-bg-2);
 }
 .ring-card.tone-plain .ring-title {
-    font-size: var(--fs-xs);
+    font-size: var(--fs-13);
+    line-height: var(--lh-13);
 }
 
 .ring-card.tone-hub {
@@ -112,18 +119,19 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
     background: color-mix(in srgb, var(--warn) 11%, transparent);
 }
 .ring-card.tone-focus .ring-label {
-    font-family: var(--segoe);
-    font-size: var(--fs-xs);
+    font-family: var(--mono);
+    font-size: var(--fs-11);
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.13em;
+    letter-spacing: 0.06em;
+    line-height: var(--lh-11);
     color: var(--theme);
 }
 .ring-card.tone-focus .ring-title {
     margin-top: 6px;
-    font-size: var(--fs-xs);
+    font-size: var(--fs-16);
     font-weight: 600;
-    line-height: 1.3;
+    line-height: var(--lh-16);
     color: var(--text);
 }
 </style>

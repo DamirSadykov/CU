@@ -154,7 +154,10 @@ function stopFocus(completed: boolean) {
   gap: 8px;
 }
 .focus-head {
-  font-size: var(--fs-xs);
+  font-family: var(--sans);
+  font-size: var(--fs-16);
+  font-weight: 600;
+  line-height: var(--lh-16);
   color: var(--text-3);
 }
 .focus-divider {
@@ -179,7 +182,7 @@ function stopFocus(completed: boolean) {
   border-radius: var(--card-radius);
   background: color-mix(in srgb, var(--paper) 4%, transparent);
   color: var(--text-2);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-family: var(--segoe);
   cursor: pointer;
   transition: background 120ms;
@@ -193,11 +196,13 @@ function stopFocus(completed: boolean) {
   border-color: transparent;
 }
 .focus-status {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-12);
+  line-height: var(--lh-12);
   color: var(--text-2);
 }
 .focus-countdown {
-  font-size: var(--fs-lg);
+  font-family: var(--mono);
+  font-size: var(--fs-13);
   font-variant-numeric: tabular-nums;
   color: var(--text-2);
 }
@@ -205,7 +210,7 @@ function stopFocus(completed: boolean) {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   color: var(--text-3);
 }
 .focus-dur input {
@@ -215,7 +220,7 @@ function stopFocus(completed: boolean) {
   border-radius: var(--card-radius);
   background: color-mix(in srgb, var(--paper) 4%, transparent);
   color: var(--text-2);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-family: var(--segoe);
 }
 </style>

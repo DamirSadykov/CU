@@ -31,17 +31,24 @@ const fill = computed(() => {
     padding: 6px 10px;
     background: color-mix(in srgb, var(--hard) 28%, transparent);
     border-radius: 0 0 8px 8px;
-    font-family: var(--mono);
-    font-size: var(--fs-xs);
-    line-height: 1.4;
+    font-family: var(--sans);
+    font-size: var(--fs-13);
+    line-height: var(--lh-13);
+    font-variant-numeric: tabular-nums;
     color: var(--high);
+}
+.cost-value {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
 }
 .cost-note {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: var(--text-4);
+    color: var(--text-3);
+    font-size: var(--fs-12);
+    line-height: var(--lh-12);
 }
 .cost-bar {
     flex: none;

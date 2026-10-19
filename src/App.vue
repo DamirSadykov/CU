@@ -1046,7 +1046,12 @@ onUnmounted(() => {
             >
                 <CodexUsageCards v-if="codexLimits" :limits="codexLimits" />
                 <div style="padding: 22px 4px; text-align: center">
-                    <p style="color: var(--text-3); font-size: var(--fs-xs)">
+                    <p
+                        style="
+                            color: var(--text-3);
+                            font: 400 var(--fs-12) / var(--lh-12) var(--sans);
+                        "
+                    >
                         {{ t("configureClaude") }}
                     </p>
                     <button
@@ -1067,7 +1072,7 @@ onUnmounted(() => {
                 >
                     <p
                         style="
-                            font-size: var(--fs-xs);
+                            font-size: var(--fs-13);
                             color: var(--crit);
                             word-break: break-all;
                         "
@@ -1140,7 +1145,7 @@ onUnmounted(() => {
                     <p
                         style="
                             color: var(--text-3);
-                            font-size: var(--fs-xs);
+                            font: 400 var(--fs-12) / var(--lh-12) var(--sans);
                             margin-top: 12px;
                         "
                     >
@@ -1167,7 +1172,7 @@ onUnmounted(() => {
 }
 
 .update-text {
-    font-size: var(--fs-xs);
+    font-size: var(--fs-13);
     color: var(--text-2);
 }
 
@@ -1182,9 +1187,10 @@ onUnmounted(() => {
     border-radius: 4px;
     background: var(--accent);
     color: var(--on-accent);
-    font-size: var(--fs-xs);
-    font-weight: 500;
-    font-family: var(--segoe);
+    font-size: var(--fs-13);
+    font-weight: 400;
+    font-family: var(--sans);
+    line-height: var(--lh-13);
     cursor: pointer;
     transition: filter 120ms;
 }
@@ -1228,7 +1234,7 @@ onUnmounted(() => {
 }
 
 .diag-text {
-    font-size: var(--fs-xs);
+    font-size: var(--fs-13);
     color: var(--text-2);
 }
 
@@ -1244,9 +1250,10 @@ onUnmounted(() => {
     border-radius: 4px;
     background: var(--crit);
     color: var(--on-close);
-    font-size: var(--fs-xs);
-    font-weight: 500;
-    font-family: var(--segoe);
+    font-size: var(--fs-13);
+    font-weight: 400;
+    font-family: var(--sans);
+    line-height: var(--lh-13);
     cursor: pointer;
     transition: filter 120ms;
 }
@@ -1266,10 +1273,12 @@ onUnmounted(() => {
     background: transparent;
     border: none;
     color: var(--text-3);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-12);
     text-decoration: underline;
     cursor: pointer;
-    font-family: var(--segoe);
+    font-family: var(--sans);
+    font-weight: 400;
+    line-height: var(--lh-12);
 }
 
 .link-btn:hover {
@@ -1281,9 +1290,11 @@ onUnmounted(() => {
     margin-left: 6px;
     padding: 1px 5px;
     border-radius: 4px;
-    font-size: var(--fs-xs);
-    font-weight: 700;
-    letter-spacing: 0.04em;
+    font-family: var(--mono);
+    font-size: var(--fs-11);
+    font-weight: 600;
+    line-height: var(--lh-11);
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--accent);
     border: 1px solid var(--accent);
