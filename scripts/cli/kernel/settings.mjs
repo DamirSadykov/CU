@@ -175,13 +175,15 @@ export function flowcheckExeCandidates(appData, repoRoot = REPO_ROOT) {
 }
 
 export function flowcheckExe(appData, { exists = existsSync, repoRoot = REPO_ROOT } = {}) {
-  const v = readSettings(appData).flowcheckExe;
-  if (typeof v === "string" && v.trim()) return v.trim();
   return flowcheckExeCandidates(appData, repoRoot).find((candidate) => exists(candidate)) ?? "";
 }
 
-export function mutations(appData) {
-  const v = readSettings(appData).mutations;
+export const DEFAULT_MUTATIONS = Object.freeze({ enabled: false, step: true, plan: true, stepMaxLevel: 1 });
+
+export function mutations(project, appData) {
+  const all = readSettings(appData).mutations;
+  const map = all && typeof all === "object" && !Array.isArray(all) ? all : {};
+  const v = map[String(project || "")];
   const value = v && typeof v === "object" && !Array.isArray(v) ? v : {};
   return {
     enabled: typeof value.enabled === "boolean" ? value.enabled : false,
@@ -201,8 +203,6 @@ export function mutscopeDirCandidates(appData, repoRoot = REPO_ROOT) {
 }
 
 export function mutscopeDir(appData, { exists = existsSync, repoRoot = REPO_ROOT } = {}) {
-  const v = readSettings(appData).mutscopeDir;
-  if (typeof v === "string" && v.trim()) return v.trim();
   return mutscopeDirCandidates(appData, repoRoot).find((candidate) =>
     exists(path.join(candidate, "stryker.mjs")) && exists(path.join(candidate, "node_modules", "@stryker-mutator", "core"))) ?? "";
 }

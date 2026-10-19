@@ -5,6 +5,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { BoardChange } from "../contracts/board";
 import { useSettings } from "../kernel/settingsStore";
 import type { BoardTreeRow } from "./boardTree";
+import ProjectChecks from "./ProjectChecks.vue";
 import { localToday } from "./todoFilter";
 import { formatRef } from "../../scripts/cli/kernel/terms.mjs";
 import {
@@ -225,6 +226,7 @@ function openAttention(item: AttentionItem) {
             </div>
             <div v-if="!overview.attention.length" class="po-empty">{{ t("poAttentionEmpty") }}</div>
           </section>
+          <ProjectChecks :project="project" />
         </aside>
       </div>
     </div>

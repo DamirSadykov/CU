@@ -74,7 +74,7 @@
 | `specRoot` | shared | — нет поля; вручную в JSON | Rust spec reader; CLI spec registry | `"docs/specs"` | **keep** — переносимый project-relative root нужен обоим реализациям реестра. |
 | `specDeltaGuard` | hook | — нет поля; вручную в JSON | CLI Stop hook | `"on"` | **merge** → `specs`/`specsEnabled`; это подрежим одной opt-in capability, отдельно он скрыт и инертен. |
 | `matchPlanCli` | hook | — нет поля; вручную в JSON | CLI plan hook; todo event matcher | `""` | **keep** — необязательный adapter path сохраняет отсутствие жёсткой зависимости от KB. |
-| `flowcheckExe` | shared | Задачи → «Проверки / Путь к flowcheck.exe» | UI; CLI `process/run.mjs`, `apply.mjs` | `""` (flowcheck не запускается) | **keep** — путь к внешнему инструменту машинно-зависим, но без него выключены ворота раннера и схема плана. |
+| `flowcheckExe` | — | — удалён | — | — | **removed** — путь вычисляется: `%APPDATA%/com.cu.app/tools/flowcheck.exe` или сборка `tools/flowcheck` репозитория CU; инструмент собирается из этого репозитория, своему пути взяться неоткуда. |
 | `specRepos` | hook | — нет поля; вручную в JSON, map repo → path | CLI spec registry | `{}` | **keep** — локальные пути внешних repo машинно-зависимы и не подходят UI sync. |
 
 ## Дрейф контракта

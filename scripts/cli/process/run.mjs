@@ -726,7 +726,7 @@ export function liveEffects({ cwd } = {}) {
       return runFlowGate({ task, cwd, timeoutMs, exe });
     },
     mutationGate: async ({ task, cwd, timeoutMs }) => {
-      const configured = mutationSettings();
+      const configured = mutationSettings(task.project);
       const mutation = !configured.enabled
         ? { levels: [], killed: 0, survived: [], noCoverage: [], quarantined: [], duration_ms: 0, status: "skipped", reason: "mutation checks are disabled" }
         : !configured.step
@@ -745,7 +745,7 @@ export function liveEffects({ cwd } = {}) {
       return write.written ? mutation : { ...mutation, write_error: write.error };
     },
     planMutationGate: async ({ change, members, cwd, timeoutMs }) => {
-      const configured = mutationSettings();
+      const configured = mutationSettings(change.project ?? members.find((member) => member?.project)?.project);
       const mutation = !configured.enabled
         ? emptyMutation("skipped", "mutation checks are disabled")
         : !configured.plan
