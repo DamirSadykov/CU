@@ -2,6 +2,7 @@ import { access, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promi
 import { execFileSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
+import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 import { parseUnifiedDiff, strykerMutatePatterns } from "./diff.mjs";
@@ -16,6 +17,14 @@ import {
   strykerMutantSelector, summarizeTrace, vitestConfigSource } from "./stryker.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+const strykerInstalled = (() => {
+  try {
+    createRequire(import.meta.url).resolve("@stryker-mutator/core/package.json");
+    return true;
+  } catch {
+    return false;
+  }
+})();
 
 function report(status, {
   id = "1", mutatorName = "ConditionalExpression", testId = "10", testName = "kills it",
@@ -66,7 +75,7 @@ describe("unified diff ranges", () => {
 });
 
 describe("Stryker adapter", () => {
-  it("resolves and launches the repository-installed Stryker CLI by default", async () => {
+  it.skipIf(!strykerInstalled)("resolves and launches the repository-installed Stryker CLI by default", async () => {
     let launched;
     const runner = createStrykerRunner({
       runCommand: async (command, args) => {
@@ -96,6 +105,7 @@ describe("Stryker adapter", () => {
     ].join("\n");
     const runner = createStrykerRunner({
       ignorePatterns: [],
+      commandPrefix: ["stryker.js"],
       runCommand: async () => ({ code: 1, stdout, stderr: "" }),
     });
     const error = await runner({ mutate: ["src/value.ts:4-4"], tests: ["test/value.test.ts"] }).catch((caught) => caught);
@@ -105,6 +115,7 @@ describe("Stryker adapter", () => {
   it("leaves other Stryker failures without failed tests", async () => {
     const runner = createStrykerRunner({
       ignorePatterns: [],
+      commandPrefix: ["stryker.js"],
       runCommand: async () => ({ code: 1, stdout: "ERROR config broken", stderr: "" }),
     });
     const error = await runner({ mutate: ["src/value.ts:4-4"], tests: ["test/value.test.ts"] }).catch((caught) => caught);
