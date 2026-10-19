@@ -87,7 +87,7 @@ function measureCommand(how: string) { return how.trim().replace(/^\$\s*/, ""); 
 function outRows(): ChangeOut[] { return current.value?.out ?? []; }
 function measureRows(): ChangeMeasure[] { return current.value?.measure ?? []; }
 const proposalRows = computed(() => current.value?.ext?.retro?.proposals ?? []);
-const changeTab = ref<"overview" | "proposals">("overview");
+const changeTab = ref<"overview" | "mutations" | "proposals">("overview");
 watch(() => current.value?.id, () => { changeTab.value = "overview"; });
 function proposalStatus(status: RetroProposal["status"]) {
     return t(status === "accepted" ? "changeProposalAccepted" : status === "rejected" ? "changeProposalRejected" : "changeProposalProposed");
@@ -168,6 +168,10 @@ const remainingTasks = computed(() => taskRows.value.filter((row) => !isDone(row
 const expensiveTasks = computed(() => taskRows.value.filter((row) => row.cost !== null).sort((a, b) => (b.cost ?? 0) - (a.cost ?? 0)).slice(0, 3));
 const mutationRows = computed(() => stepMutationsFor(cc.members.value));
 const planMutation = computed(() => mutationOf(current.value));
+const hasMutations = computed(() => mutationRows.value.length > 0 || !!planMutation.value);
+const mutationSurvivors = computed(() => planMutation.value
+  ? mutationFindings(planMutation.value)
+  : mutationRows.value.reduce((sum, row) => sum + mutationFindings(row.mutation), 0));
 function mutationDuration(ms: number) {
     if (!Number.isFinite(ms) || ms < 0) return "—";
     return ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(ms < 10_000 ? 1 : 0)} s`;
@@ -217,9 +221,10 @@ const changeLinks = computed(() => {
       </header>
       <div class="change-body">
         <div class="change-main">
-      <div v-if="proposalRows.length" class="change-tabs" role="tablist">
+      <div v-if="proposalRows.length || hasMutations" class="change-tabs" role="tablist">
         <button type="button" role="tab" :aria-selected="changeTab === 'overview'" :class="{ active: changeTab === 'overview' }" @click="changeTab = 'overview'">{{ t('changeTabOverview') }}</button>
-        <button type="button" role="tab" :aria-selected="changeTab === 'proposals'" :class="{ active: changeTab === 'proposals' }" @click="changeTab = 'proposals'">{{ t('changeProposals') }} <span>{{ proposalRows.length }}</span></button>
+        <button v-if="hasMutations" type="button" role="tab" :aria-selected="changeTab === 'mutations'" :class="{ active: changeTab === 'mutations' }" @click="changeTab = 'mutations'">{{ t('changeTabMutations') }} <span>{{ mutationSurvivors }}</span></button>
+        <button v-if="proposalRows.length" type="button" role="tab" :aria-selected="changeTab === 'proposals'" :class="{ active: changeTab === 'proposals' }" @click="changeTab = 'proposals'">{{ t('changeProposals') }} <span>{{ proposalRows.length }}</span></button>
       </div>
       <section v-if="briefVisible && changeTab === 'overview'" class="change-brief brief" :aria-label="t('changeBrief')">
         <div v-if="current.delta" class="brief-delta"><div class="brief-heading bh">{{ t("changeWhy") }}</div><div class="brief-prose prose" v-html="deltaHtml" /></div>
@@ -271,7 +276,7 @@ const changeLinks = computed(() => {
             />
           </div>
         </section>
-        <section v-if="changeTab === 'overview' && (mutationRows.length || planMutation)" class="change-mutations" :aria-label="t('mutationResults')">
+        <section v-if="changeTab === 'mutations' && hasMutations" class="change-mutations" :aria-label="t('mutationResults')">
           <div class="brief-heading">{{ t('mutationResults') }}</div>
           <div class="mutation-table-wrap">
             <table class="mutation-table">
