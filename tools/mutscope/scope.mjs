@@ -72,7 +72,13 @@ function importedSpecifiers(source = "") {
 function resolveJsImport(importer, specifier, fileSet) {
   const unresolved = slash(path.posix.normalize(path.posix.join(path.posix.dirname(importer), specifier)));
   const candidates = [unresolved];
-  if (!path.posix.extname(unresolved)) {
+  const extension = path.posix.extname(unresolved);
+  const typescript = { ".js": [".ts", ".tsx"], ".jsx": [".tsx"], ".mjs": [".mts"], ".cjs": [".cts"] }[extension];
+  if (typescript) {
+    const stem = unresolved.slice(0, -extension.length);
+    candidates.push(...typescript.map((replacement) => `${stem}${replacement}`));
+  }
+  if (!extension) {
     for (const extension of JS_SOURCE_EXTENSIONS) {
       candidates.push(`${unresolved}${extension}`);
       candidates.push(`${unresolved}/index${extension}`);
@@ -81,13 +87,13 @@ function resolveJsImport(importer, specifier, fileSet) {
   return candidates.find((candidate) => fileSet.has(candidate));
 }
 
-function jsLevelZero(changedFile, tests) {
+function jsLevelZero(changedFile, tests, importsByFile) {
   const directory = path.posix.dirname(changedFile);
   const stem = path.posix.basename(changedFile, path.posix.extname(changedFile));
   return tests.filter((test) => {
-    if (path.posix.dirname(test) !== directory) return false;
     const name = path.posix.basename(test);
-    return name.startsWith(`${stem}.test.`) || name.startsWith(`${stem}.spec.`);
+    if (!name.startsWith(`${stem}.test.`) && !name.startsWith(`${stem}.spec.`)) return false;
+    return path.posix.dirname(test) === directory || (importsByFile.get(test) ?? []).includes(changedFile);
   });
 }
 
@@ -115,7 +121,7 @@ function jsCandidates(changedFile, files, sources) {
     importsByFile.set(file, resolved);
   }
 
-  const level0 = jsLevelZero(changedFile, tests);
+  const level0 = jsLevelZero(changedFile, tests, importsByFile);
   const level1 = tests.filter((test) => reachesChangedFile(test, changedFile, importsByFile));
   const layer = path.posix.dirname(changedFile);
   return [level0, level1, tests.filter((test) => within(layer, test)), tests];

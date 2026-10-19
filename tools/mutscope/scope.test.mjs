@@ -31,6 +31,19 @@ describe("JavaScript and TypeScript test ladder", () => {
     expect(levels[1].tests).toEqual(["test/value.test.cjs"]);
   });
 
+  it("resolves TypeScript sources imported with .js specifiers and finds mirrored neighbor tests", () => {
+    const sources = {
+      "src/core/geometry.ts": "export const x = 1;",
+      "src/core/tree.ts": "import { x } from './geometry.js';",
+      "test/geometry.test.ts": "import { x } from '../src/core/geometry.js';",
+      "test/tree.test.ts": "import { y } from '../src/core/tree.js';",
+      "test/other/geometry.test.ts": "export const unrelated = true;",
+    };
+    const levels = buildTestLadder({ changedFile: "src/core/geometry.ts", sources });
+    expect(levels[0].tests).toEqual(["test/geometry.test.ts"]);
+    expect(levels[1].tests).toEqual(["test/tree.test.ts"]);
+  });
+
   it("treats the project root as a valid layer", () => {
     const sources = {
       "value.js": "export const value = 1;",
