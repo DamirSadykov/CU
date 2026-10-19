@@ -33,6 +33,7 @@ import {
   architectGateState,
   planReviewStore,
   parallelismBlock,
+  flowBlock,
   planFormatDoc,
   planFormatIssuesDoc,
   planFormatCuttingDoc,
@@ -650,6 +651,37 @@ describe("parallelismBlock · the rules the runner actually keeps", () => {
       gate: { mode: "agent", available: true, candidate: { label: "x" }, candidates: [] },
     });
     expect(prompt).toContain("PARALLELISM — the runner builds each wave");
+  });
+});
+
+describe("flowBlock · the declared delta matches the task", () => {
+  it("puts the flow rules into the architect prompt", () => {
+    const block = flowBlock();
+    expect(block).toContain("Every name in `insert`");
+    expect(block).toContain("Declare `after` only when");
+    expect(block).toContain("Every method the task materially changes");
+    expect(block).toContain("`flow: n/a <concrete reason>`");
+
+    let prompt = "";
+    architectDecision(exitPlan(VALID), (_d, p) => { prompt = p; return { ok: true, text: "VERDICT: approve" }; }, {
+      gate: { mode: "agent", available: true, candidate: { label: "x" }, candidates: [] },
+    });
+    expect(prompt).toContain("FLOW — compare each task's declared `flow`");
+  });
+
+  it("blocks a finding for an insert absent from both code and the task description", () => {
+    const plan = VALID.replace(
+      "    produces: [migrations/007_events.sql]",
+      "    produces: [migrations/007_events.sql]\n    flow:\n      file: src/webhooks.mjs\n      method: receiveWebhook\n      change:\n        insert: inventedWebhookCall",
+    );
+    const seen = architectDecision(exitPlan(plan), () => ({
+      ok: true,
+      text: "- [high] step 1 — flow invents `inventedWebhookCall` — the name exists neither in workspace code nor in the task description\nVERDICT: issue",
+    }), {
+      gate: { mode: "agent", available: true, candidate: { label: "x" }, candidates: [] },
+    });
+    expect(seen.permissionDecision).toBe("deny");
+    expect(seen.permissionDecisionReason).toContain("inventedWebhookCall");
   });
 });
 

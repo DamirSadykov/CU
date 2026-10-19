@@ -529,6 +529,16 @@ export function parallelismBlock() {
   ].join("\n");
 }
 
+export function flowBlock() {
+  return [
+    "FLOW — compare each task's declared `flow` with its description and the workspace code:",
+    "- Every name in `insert` must either already exist in the workspace code, or be explicitly named in the task description as a new function the task introduces. `insert` still means a call: a variable, property read or inline expression does not count.",
+    "- Declare `after` only when that execution order is itself a task requirement. Mere source order or a preferred implementation order does not justify it.",
+    "- Every method the task materially changes must be represented by a method delta; when the description decides no honest, checkable named-call delta, use `flow: n/a <concrete reason>` instead of inventing one.",
+    "A violation of any of these flow rules is a finding of kind (a) or (b).",
+  ].join("\n");
+}
+
 export function buildArchitectPrompt(plan, { prior = null, changed = [], rejections = [], bar = null } = {}) {
   const lines = [
     "You are the architect hook reviewing a plan before it reaches the user.",
@@ -536,6 +546,7 @@ export function buildArchitectPrompt(plan, { prior = null, changed = [], rejecti
     "Do not edit files.",
     reviewBarText({ subject: "plan", anchor: STEP_ANCHOR, bar }),
     parallelismBlock(),
+    flowBlock(),
     verdictInstruction(STEP_ANCHOR, { repair: true }),
   ];
   if (prior) {

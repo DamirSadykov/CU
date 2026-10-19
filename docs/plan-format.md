@@ -35,7 +35,7 @@ Task fields:
 `budget` — exceptional node spend ceiling; declare only with the reason in `why`, otherwise history translates `size` into dollars.
 `red` — command that must fail on the base state; include the regression-test path in the command.
 `red-tests` — regression-test paths protected during the red gate; omit to extract them from `red`, or declare explicitly.
-`flow` — required for code in configured languages: method delta (`file`, `method`, `params`, `change`, `preserve`; `nth` = 1-based anchor) or `n/a <reason>`.
+`flow` — required for code in configured languages: [method delta](flow-delta.md) (`file`, `method`, `params`, `change`, `preserve`, `nth`) or `n/a <reason>`.
 `risk` — exceptional routing; declare only `high` or `sensitive`.
 
 `why` is the task's durable reasoning: its basis and risk. A refusal explains
