@@ -223,7 +223,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
 .ni-id {
     flex: 1;
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
     font-weight: 600;
     color: var(--text);
 }
@@ -231,9 +231,9 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
     padding: 0 2px;
     border: 0;
     background: none;
-    color: var(--text-4);
-    font: inherit;
-    font-size: var(--fs-xs);
+    color: var(--text-3);
+    font: 400 var(--fs-13)/var(--lh-13) var(--segoe);
+    font-size: var(--fs-13);
     line-height: 1;
     cursor: pointer;
 }
@@ -242,7 +242,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
 }
 .ni-title {
     margin-top: 5px;
-    font-size: var(--fs-xs);
+    font-size: var(--fs-13);
     line-height: 1.4;
     color: var(--text-3);
 }
@@ -253,29 +253,29 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
     gap: 4px 10px;
     margin-top: 10px;
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
     color: var(--text-2);
 }
 .ni-sum.dim {
     margin-top: 5px;
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    color: var(--text-3);
 }
 .ni-money {
     font-weight: 600;
     color: var(--text);
 }
 .ni-unknown {
-    color: var(--text-4);
+    color: var(--text-3);
 }
 .ni-err {
     color: var(--crit);
 }
 .ni-reason {
     margin-top: 4px;
-    font-size: var(--fs-xs);
+    font-size: var(--fs-12);
     line-height: 1.4;
-    color: var(--text-4);
+    color: var(--text-3);
 }
 .ni-sec {
     display: flex;
@@ -286,15 +286,15 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
 }
 .ni-count {
     font-family: var(--mono);
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-11);
+    color: var(--text-3);
 }
 .ni-empty {
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    color: var(--text-3);
 }
 .ni-line {
-    font-size: var(--fs-xs);
+    font-size: var(--fs-13);
     color: var(--text-2);
 }
 .ni-agent {
@@ -316,7 +316,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
 .ni-who {
     flex: 1;
     min-width: 0;
-    font-size: var(--fs-xs);
+    font-size: var(--fs-13);
     color: var(--text-3);
     white-space: nowrap;
     overflow: hidden;
@@ -325,11 +325,11 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
 .ni-num {
     flex: none;
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
     color: var(--text-2);
 }
 .ni-num.dim {
-    color: var(--text-4);
+    color: var(--text-3);
 }
 .ni-port {
     display: flex;
@@ -344,8 +344,8 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
     border-radius: var(--r-pill);
     background: color-mix(in srgb, var(--paper) 6%, transparent);
     font-family: var(--mono);
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-11);
+    color: var(--text-3);
 }
 .ni-dir.write {
     background: color-mix(in srgb, var(--next) 12%, transparent);
@@ -359,7 +359,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
 .ni-addr {
     min-width: 0;
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
     color: var(--text-3);
     white-space: nowrap;
     overflow: hidden;

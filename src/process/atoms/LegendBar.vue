@@ -42,8 +42,9 @@ function markOf(item: LegendItem) {
     align-items: center;
     gap: 14px;
     padding: 0 16px;
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    line-height: var(--lh-12);
+    color: var(--text-3);
     border-bottom: 1px solid var(--stroke);
 }
 .legend-spacer {
@@ -56,7 +57,7 @@ function markOf(item: LegendItem) {
     white-space: nowrap;
 }
 .legend-text {
-    color: var(--text-4);
+    color: var(--text-3);
 }
 .legend-item.bare .legend-text {
     color: inherit;

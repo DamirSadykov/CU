@@ -394,8 +394,8 @@ function onTab(value: string) {
 <style scoped>
 .spec-scope {
     margin-left: 4px;
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    color: var(--text-3);
 }
 .pipe-canvas.spec-shell {
     display: flex;
@@ -432,13 +432,13 @@ function onTab(value: string) {
 }
 .rail-domain-id {
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
     font-weight: 600;
     color: var(--text-2);
 }
 .rail-domain-meta {
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    color: var(--text-3);
 }
 .spec-doc {
     flex: 1;
@@ -453,15 +453,15 @@ function onTab(value: string) {
 }
 .crumb-path {
     font-family: var(--mono);
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-11);
+    color: var(--text-3);
 }
 .crumb-sep {
-    color: var(--text-4);
+    color: var(--text-3);
 }
 .crumb-addr {
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
     font-weight: 600;
     color: var(--accent);
 }
@@ -470,8 +470,10 @@ function onTab(value: string) {
 }
 .doc-title {
     margin: 10px 0 8px;
-    font-size: var(--fs-3xl);
-    font-weight: 600;
+    font-family: var(--cond);
+    font-size: var(--fs-32);
+    font-weight: 700;
+    line-height: var(--lh-32);
     letter-spacing: -0.01em;
     color: var(--text);
 }
@@ -480,8 +482,8 @@ function onTab(value: string) {
     flex-wrap: wrap;
     align-items: center;
     gap: 6px;
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    color: var(--text-3);
 }
 .doc-lint {
     color: var(--ok);
@@ -503,7 +505,7 @@ function onTab(value: string) {
     border-radius: 4px;
     background: color-mix(in srgb, var(--paper) 6%, transparent);
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
     color: var(--text-2);
 }
 .doc-text :deep(.sp-path) {
@@ -547,14 +549,14 @@ function onTab(value: string) {
 }
 .spec-empty {
     padding: 6px 4px;
-    font-size: var(--fs-xs);
+    font-size: var(--fs-12);
     line-height: 1.5;
-    color: var(--text-4);
+    color: var(--text-3);
 }
 .spec-where {
     margin-top: 4px;
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
     word-break: break-all;
 }
 </style>

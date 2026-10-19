@@ -28,10 +28,12 @@ const style = computed(() => ({ width: `${props.width}px` }));
 }
 .wave-head {
     margin-bottom: 2px;
-    font-size: var(--fs-xs);
+    font-family: var(--mono);
+    font-size: var(--fs-11);
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.13em;
-    color: var(--text-4);
+    letter-spacing: 0.06em;
+    line-height: var(--lh-11);
+    color: var(--text-3);
 }
 </style>

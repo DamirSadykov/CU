@@ -58,12 +58,15 @@ function onInput(event: Event) {
     background: var(--input-bg);
     border: 1px solid var(--stroke-strong);
     border-radius: var(--r-ctl);
-    color: var(--text-4);
-    font-size: var(--fs-xs);
+    color: var(--text-3);
+    font-family: var(--sans);
+    font-size: var(--fs-13);
+    font-weight: 400;
+    line-height: var(--lh-13);
 }
 .search-icon {
     flex: none;
-    color: var(--text-4);
+    color: var(--text-3);
 }
 .search-field input {
     flex: 1;
@@ -71,10 +74,13 @@ function onInput(event: Event) {
     border: 0;
     background: transparent;
     color: var(--text-2);
-    font: inherit;
+    font-family: var(--sans);
+    font-size: var(--fs-13);
+    font-weight: 400;
+    line-height: var(--lh-13);
     outline: none;
 }
 .search-field input::placeholder {
-    color: var(--text-4);
+    color: var(--text-3);
 }
 </style>

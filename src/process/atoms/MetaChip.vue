@@ -29,16 +29,17 @@ withDefaults(
     align-items: center;
     padding: 2px 7px;
     border-radius: var(--r-pill);
-    font-size: var(--fs-xs);
-    line-height: 1.4;
+    font-size: var(--fs-13);
+    line-height: var(--lh-13);
     white-space: nowrap;
 }
 .meta-chip.mono {
     font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
 }
 .meta-chip.tone-muted {
     background: color-mix(in srgb, var(--paper) 6%, transparent);
-    color: var(--text-4);
+    color: var(--text-3);
 }
 .meta-chip.tone-theme {
     background: color-mix(in srgb, var(--warn) 12%, transparent);

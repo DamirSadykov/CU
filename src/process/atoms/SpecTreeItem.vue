@@ -56,7 +56,8 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
     border-radius: 0 var(--r-ctl) var(--r-ctl) 0;
     background: transparent;
     color: inherit;
-    font: inherit;
+    font-family: var(--sans);
+    font-weight: 400;
     text-align: left;
     cursor: pointer;
 }
@@ -82,7 +83,8 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
 .spec-tree-slug {
     min-width: 0;
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
+    line-height: var(--lh-11);
     font-weight: 600;
     color: var(--text);
     white-space: nowrap;
@@ -96,8 +98,8 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
     flex: none;
     padding: 1px 7px;
     border-radius: var(--r-pill);
-    font-size: var(--fs-xs);
-    line-height: 1.4;
+    font-size: var(--fs-13);
+    line-height: var(--lh-13);
     white-space: nowrap;
 }
 .spec-tree-badge.tone-muted {
@@ -128,7 +130,9 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
     background: color-mix(in srgb, var(--paper) 7%, transparent);
     color: var(--text-3);
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-13);
+    line-height: var(--lh-13);
+    font-variant-numeric: tabular-nums;
     text-align: center;
 }
 .spec-tree-item.active .spec-tree-count {
@@ -138,9 +142,9 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
 .spec-tree-title {
     display: block;
     margin-top: 2px;
-    font-size: var(--fs-xs);
-    line-height: 1.35;
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    line-height: var(--lh-12);
+    color: var(--text-3);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

@@ -41,7 +41,9 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
 }
 .focus-row-id {
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
+    font-weight: 600;
+    line-height: var(--lh-11);
     color: var(--text-2);
 }
 .focus-row.kind-spec .focus-row-id {
@@ -49,15 +51,18 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
 }
 .focus-row-title {
     min-width: 0;
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    line-height: var(--lh-12);
+    color: var(--text-3);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 .focus-row-count {
     font-family: var(--mono);
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    line-height: var(--lh-12);
+    color: var(--text-3);
+    font-variant-numeric: tabular-nums;
 }
 </style>

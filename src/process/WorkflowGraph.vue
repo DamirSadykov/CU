@@ -147,10 +147,12 @@ const runnerNodes = computed<FlowNode[]>(() => [
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: var(--fs-xs);
+  font-family: var(--mono);
+  font-size: var(--fs-11);
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
+  line-height: var(--lh-11);
   color: var(--text-3);
   margin: 14px 0 6px;
 }
@@ -167,14 +169,14 @@ const runnerNodes = computed<FlowNode[]>(() => [
   background: var(--text-3);
 }
 .wf-lane-tag {
-  font-size: var(--fs-xs);
-  font-weight: 600;
+  font-size: var(--fs-13);
+  font-weight: 400;
   text-transform: none;
-  letter-spacing: 0;
+  line-height: var(--lh-13);
   padding: 1px 7px;
   border: 1px solid var(--stroke-strong);
   border-radius: 999px;
-  color: var(--text-4);
+  color: var(--text-3);
 }
 .wf-lane-scroll {
   overflow-x: auto;
@@ -197,29 +199,29 @@ const runnerNodes = computed<FlowNode[]>(() => [
   text-align: center;
 }
 .wf-node-label {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
   font-weight: 600;
   color: var(--text);
-  line-height: 1.25;
+  line-height: var(--lh-13);
 }
 .wf-node-sub {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-12);
   color: var(--text-3);
   margin-top: 3px;
-  line-height: 1.25;
+  line-height: var(--lh-12);
   word-break: break-word;
 }
 .wf-node-note {
-  font-size: var(--fs-xs);
-  color: var(--text-4);
+  font-size: var(--fs-12);
+  color: var(--text-3);
   margin-top: 3px;
-  line-height: 1.3;
+  line-height: var(--lh-12);
 }
 .wf-node-warn {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-12);
   color: var(--warning);
   margin-top: 4px;
-  line-height: 1.3;
+  line-height: var(--lh-12);
 }
 .wf-node.dimmed {
   opacity: 0.5;
@@ -227,7 +229,7 @@ const runnerNodes = computed<FlowNode[]>(() => [
   background: transparent;
 }
 .wf-node.dimmed .wf-node-label {
-  color: var(--text-4);
+  color: var(--text-3);
 }
 .wf-node.struck .wf-node-label {
   text-decoration: line-through;
@@ -236,7 +238,7 @@ const runnerNodes = computed<FlowNode[]>(() => [
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  color: var(--text-4);
+  color: var(--text-3);
 }
 .wf-legend {
   display: flex;
@@ -245,8 +247,9 @@ const runnerNodes = computed<FlowNode[]>(() => [
   margin-top: 14px;
   padding-top: 10px;
   border-top: 1px solid var(--stroke);
-  font-size: var(--fs-xs);
-  color: var(--text-4);
+  font-size: var(--fs-12);
+  line-height: var(--lh-12);
+  color: var(--text-3);
 }
 .wf-legend-item {
   display: flex;

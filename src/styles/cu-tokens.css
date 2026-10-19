@@ -14,8 +14,9 @@
 --sans:"IBM Plex Sans","Segoe UI Variable","Segoe UI",system-ui,sans-serif;
 --cond:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif;
 --mono:"IBM Plex Mono","Cascadia Mono",ui-monospace,monospace;
---fs-trace:12px;--fs-xs:14px;--fs-sm:15px;--fs-md:16px;--fs-lg:18px;--fs-xl:20px;
---fs-2xl:24px;--fs-3xl:26px;--fs-4xl:30px;--fs-5xl:34px;--fs-display:44px;
+--fs-32:32px;--lh-32:1.1;--fs-22:22px;--lh-22:1.2;--fs-16:16px;--lh-16:1.3;
+--fs-13:13px;--lh-13:1.45;--fs-12:12px;--lh-12:1.4;--fs-11:11px;--lh-11:1.2;
+--fs-logo:34px;
 --hazard:repeating-linear-gradient(-45deg,var(--bold) 0 6px,#ffcf1f 6px 12px);
 --on-hemp:#161512;--on-next:#fff;--close:#c42b1c;--on-close:#fff;
 color-scheme:light}

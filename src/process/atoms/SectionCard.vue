@@ -51,8 +51,9 @@ withDefaults(
 }
 .section-card-address {
     font-family: var(--mono);
-    font-size: var(--fs-xs);
-    line-height: 1.3;
+    font-size: var(--fs-11);
+    font-weight: 600;
+    line-height: var(--lh-11);
 }
 .section-card.tone-spec .section-card-address {
     color: var(--accent);
@@ -62,9 +63,9 @@ withDefaults(
 }
 .section-card-title {
     margin-top: 5px;
-    font-size: var(--fs-xs);
+    font-size: var(--fs-16);
     font-weight: 600;
-    line-height: 1.3;
+    line-height: var(--lh-16);
     color: var(--text);
 }
 .section-card-part {
@@ -73,16 +74,18 @@ withDefaults(
     gap: 8px;
     margin-top: 6px;
     font-family: var(--mono);
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-11);
+    font-weight: 600;
+    line-height: var(--lh-11);
+    color: var(--text-3);
 }
 .section-card-part .warn {
     color: var(--warn);
 }
 .section-card-prose {
     margin-top: 10px;
-    font-size: var(--fs-xs);
-    line-height: 1.5;
+    font-size: var(--fs-12);
+    line-height: var(--lh-12);
     color: var(--text-3);
 }
 .section-card-chips {

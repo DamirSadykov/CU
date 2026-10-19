@@ -108,12 +108,12 @@ const tree = [
       <section class="cu-box">
         <div class="cu-box-h"><span class="tt">Шрифт</span></div>
         <div class="cu-box-b">
-          <div class="type-row"><span class="cu-t-cap">display</span><span class="cu-t-display">Волна 3 из 5</span></div>
-          <div class="type-row"><span class="cu-t-cap">title</span><span class="cu-t-title">Дерево работы сессий</span></div>
-          <div class="type-row"><span class="cu-t-cap">heading</span><span class="cu-t-h">Готово, когда · 4 / 5</span></div>
-          <div class="type-row"><span class="cu-t-cap">body</span><span class="cu-t-body">Агент разбивает изменение на задачи и проходит их волнами по зависимостям.</span></div>
-          <div class="type-row"><span class="cu-t-cap">number</span><span class="cu-t-num">$9.59</span></div>
-          <div class="type-row"><span class="cu-t-cap">caption</span><span class="cu-t-cap">W3 · 48 min · 312k tok</span></div>
+          <div class="type-row"><span class="t-11">32 · hero</span><span class="t-32">$9.59</span></div>
+          <div class="type-row"><span class="t-11">22 · section</span><span class="t-22">Дерево работы сессий</span></div>
+          <div class="type-row"><span class="t-11">16 · heading</span><span class="t-16">Готово, когда · 4 / 5</span></div>
+          <div class="type-row"><span class="t-11">13 · body</span><span class="t-13">Агент разбивает изменение на задачи и проходит их волнами по зависимостям.</span></div>
+          <div class="type-row"><span class="t-11">12 · caption</span><span class="t-12">Обновлено 2 минуты назад</span></div>
+          <div class="type-row"><span class="t-11">11 · label</span><span class="t-11">W3 · 48 min · 312k tok</span></div>
         </div>
       </section>
 
@@ -225,7 +225,7 @@ const tree = [
   gap: 24px;
   color: var(--paper);
   font-family: var(--sans);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-13);
 }
 .hero {
   padding: 24px;
@@ -271,9 +271,9 @@ const tree = [
 }
 .lbl {
   font-family: var(--mono);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-11);
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--paper-3);
   margin-bottom: 8px;
@@ -297,7 +297,7 @@ const tree = [
 .swatch .n {
   padding: 7px 9px;
   font-family: var(--mono);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-11);
   font-weight: 600;
 }
 .type-row {

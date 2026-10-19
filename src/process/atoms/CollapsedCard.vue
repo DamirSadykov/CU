@@ -35,10 +35,11 @@ const style = computed(() => ({ width: `${props.width}px` }));
     border: 1px dashed var(--stroke-strong);
     border-radius: 9px;
     background: color-mix(in srgb, var(--paper) 1.2%, transparent);
-    color: var(--text-4);
-    font: inherit;
-    font-size: var(--fs-xs);
-    line-height: 1.45;
+    color: var(--text-3);
+    font-family: var(--sans);
+    font-size: var(--fs-12);
+    font-weight: 400;
+    line-height: var(--lh-12);
     text-align: left;
     cursor: pointer;
 }
@@ -49,11 +50,12 @@ const style = computed(() => ({ width: `${props.width}px` }));
     display: block;
     margin-bottom: 4px;
     color: var(--text-3);
-    font-weight: 500;
-    font-size: var(--fs-xs);
+    font-weight: 600;
+    font-size: var(--fs-16);
+    line-height: var(--lh-16);
 }
 .collapsed-caret {
-    color: var(--text-4);
+    color: var(--text-3);
 }
 .collapsed-note {
     display: block;

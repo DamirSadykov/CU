@@ -33,14 +33,14 @@ function scrollSideways(event: WheelEvent) {
 
 <style scoped>
 .tv-views { display: flex; gap: 2px; padding: 8px 10px 0; border-bottom: 1px solid var(--stroke); overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
-.tv-view { position: relative; display: flex; flex: none; white-space: nowrap; align-items: baseline; gap: 6px; padding: 7px 10px 9px; border: 0; background: transparent; color: var(--text-3); font: 500 var(--fs-xs)/1 var(--segoe); cursor: pointer; }
+.tv-view { position: relative; display: flex; flex: none; white-space: nowrap; align-items: baseline; gap: 6px; padding: 7px 10px 9px; border: 0; background: transparent; color: var(--text-3); font: 400 var(--fs-13)/var(--lh-13) var(--segoe); cursor: pointer; }
 .tv-view:hover, .tv-view.on { color: var(--text); }
 .tv-view.on::after { content: ""; position: absolute; left: 6px; right: 6px; bottom: -1px; height: 3px; border-radius: 2px; background: var(--accent); }
-.tv-view em { color: var(--text-4); font: var(--fs-xs)/1 var(--mono); font-style: normal; }
+.tv-view em { color: var(--text-3); font: 600 var(--fs-11)/var(--lh-11) var(--mono); font-style: normal; letter-spacing: .06em; text-transform: uppercase; }
 .tv-view.attention em { color: var(--warn); }
 .tv-applied { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--stroke); }
-.tv-chip { display: inline-flex; gap: 4px; padding: 4px 8px; border: 1px solid var(--accent); border-radius: var(--r-ctl); background: var(--accent-soft); color: var(--accent); font: var(--fs-xs)/1.2 var(--segoe); cursor: pointer; }
+.tv-chip { display: inline-flex; gap: 4px; padding: 4px 8px; border: 1px solid var(--accent); border-radius: var(--r-ctl); background: var(--accent-soft); color: var(--accent); font: 400 var(--fs-13)/var(--lh-13) var(--segoe); cursor: pointer; }
 .tv-chip s { color: var(--text-3); text-decoration: none; }
-.tv-reset { margin-left: auto; padding: 0; border: 0; background: transparent; color: var(--text-3); font: var(--fs-xs)/1.2 var(--segoe); cursor: pointer; }
+.tv-reset { margin-left: auto; padding: 0; border: 0; background: transparent; color: var(--text-3); font: 400 var(--fs-13)/var(--lh-13) var(--segoe); cursor: pointer; }
 .tv-reset:hover { color: var(--text); }
 </style>

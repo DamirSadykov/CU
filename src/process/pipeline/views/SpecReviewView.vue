@@ -566,8 +566,8 @@ const mergeSummary = computed(() => {
 <style scoped>
 .spec-scope {
     margin-left: 4px;
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    color: var(--text-3);
 }
 .pipe-canvas.spec-shell {
     display: flex;
@@ -603,13 +603,13 @@ const mergeSummary = computed(() => {
 }
 .rail-domain-id {
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
     font-weight: 600;
     color: var(--text-2);
 }
 .rail-domain-meta {
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    color: var(--text-3);
 }
 .spec-doc {
     flex: 1;
@@ -624,22 +624,24 @@ const mergeSummary = computed(() => {
 }
 .crumb-path {
     font-family: var(--mono);
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-11);
+    color: var(--text-3);
 }
 .crumb-sep {
-    color: var(--text-4);
+    color: var(--text-3);
 }
 .crumb-addr {
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
     font-weight: 600;
     color: var(--accent);
 }
 .doc-title {
     margin: 10px 0 14px;
-    font-size: var(--fs-3xl);
-    font-weight: 600;
+    font-family: var(--cond);
+    font-size: var(--fs-32);
+    font-weight: 700;
+    line-height: var(--lh-32);
     letter-spacing: -0.01em;
     color: var(--text);
 }
@@ -649,11 +651,11 @@ const mergeSummary = computed(() => {
 }
 .doc-text {
     display: block;
-    font-size: var(--fs-xs);
+    font-size: var(--fs-13);
     line-height: 1.68;
 }
 .doc-text.cut {
-    color: var(--text-4);
+    color: var(--text-3);
     text-decoration: line-through;
 }
 .doc-text :deep(.sp-code) {
@@ -661,7 +663,7 @@ const mergeSummary = computed(() => {
     border-radius: 4px;
     background: color-mix(in srgb, var(--paper) 6%, transparent);
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
     color: var(--text-2);
 }
 .doc-text :deep(.sp-path) {
@@ -671,7 +673,7 @@ const mergeSummary = computed(() => {
     color: var(--accent);
 }
 .doc-text.cut :deep(.sp-code) {
-    color: var(--text-4);
+    color: var(--text-3);
 }
 .doc-text :deep(b) {
     color: var(--text);
@@ -695,7 +697,7 @@ const mergeSummary = computed(() => {
     gap: 8px;
     padding: 2px 12px;
     font-family: var(--mono);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
     line-height: 1.6;
     color: var(--text-3);
 }
@@ -749,8 +751,8 @@ const mergeSummary = computed(() => {
 }
 .spec-empty {
     padding: 6px 4px;
-    font-size: var(--fs-xs);
+    font-size: var(--fs-12);
     line-height: 1.5;
-    color: var(--text-4);
+    color: var(--text-3);
 }
 </style>

@@ -144,25 +144,26 @@ const empty = computed(() => !loading.value && releases.value.length === 0);
     gap: 8px;
 }
 .about-title {
-    font-size: var(--fs-sm);
+    font-size: var(--fs-16);
     font-weight: 600;
     color: var(--text);
     letter-spacing: -0.01em;
 }
 .about-ver {
-    font-size: var(--fs-xs);
+    font-family: var(--mono);
+    font-size: var(--fs-12);
     color: var(--text-3);
     font-variant-numeric: tabular-nums;
 }
 .about-desc {
-    font-size: var(--fs-xs);
+    font-size: var(--fs-13);
     color: var(--text-2);
     line-height: 1.4;
     margin: 8px 0 0;
 }
 .about-copy {
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    color: var(--text-3);
     margin: 8px 0 0;
 }
 .about-link {
@@ -175,7 +176,7 @@ const empty = computed(() => !loading.value && releases.value.length === 0);
     border-radius: 6px;
     background: transparent;
     color: var(--text-2);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-13);
     font-family: var(--segoe);
     cursor: pointer;
     transition:
@@ -191,10 +192,11 @@ const empty = computed(() => !loading.value && releases.value.length === 0);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-size: var(--fs-xs);
+    font-family: var(--mono);
+    font-size: var(--fs-11);
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     color: var(--text-3);
     margin: 6px 2px 0;
 }
@@ -231,7 +233,7 @@ const empty = computed(() => !loading.value && releases.value.length === 0);
     justify-content: center;
     padding: 24px 0;
     color: var(--text-3);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-12);
 }
 
 .release-card {
@@ -244,23 +246,25 @@ const empty = computed(() => !loading.value && releases.value.length === 0);
     gap: 8px;
 }
 .release-ver {
-    font-size: var(--fs-xs);
+    font-family: var(--mono);
+    font-size: var(--fs-16);
     font-weight: 600;
     color: var(--text);
     font-variant-numeric: tabular-nums;
 }
 .release-date {
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-family: var(--mono);
+    font-size: var(--fs-12);
+    color: var(--text-3);
 }
 .release-notes {
     margin-top: 6px;
-    font-size: var(--fs-xs);
+    font-size: var(--fs-13);
     color: var(--text-2);
     line-height: 1.45;
 }
 .release-notes :deep(h5) {
-    font-size: var(--fs-xs);
+    font-size: var(--fs-16);
     font-weight: 600;
     color: var(--text-2);
     margin: 8px 0 4px;
@@ -277,14 +281,14 @@ const empty = computed(() => !loading.value && releases.value.length === 0);
 }
 .release-notes :deep(code) {
     font-family: var(--mono, monospace);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-11);
     background: var(--card-bg-hover);
     padding: 1px 4px;
     border-radius: 3px;
 }
 .release-empty {
     margin: 6px 0 0;
-    font-size: var(--fs-xs);
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    color: var(--text-3);
 }
 </style>
