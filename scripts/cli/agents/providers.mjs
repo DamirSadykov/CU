@@ -4,6 +4,7 @@ export { READ_ONLY_TOOLS, parseClaudeResult } from "../models/claude-code.mjs";
 export { parseCodexResult, observeCodexThread } from "../models/codex.mjs";
 export { SANDBOXES, resolveSpawn } from "../models/engine.mjs";
 export { Candidate, createCandidate, runCandidate } from "../models/candidate.mjs";
+export { openAiCost } from "../models/providers.mjs";
 
 import { claudeCodeArgv, normalizeClaudeResult } from "../models/claude-code.mjs";
 import { codexArgv, parseCodexResult } from "../models/codex.mjs";

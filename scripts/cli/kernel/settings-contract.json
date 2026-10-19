@@ -24,6 +24,7 @@
     { "key": "alertTiers", "scope": "ui", "writer": "app", "readers": ["ui"], "defaultFrom": "src/thresholds.ts normalizeAlertTiers()" },
     { "key": "alertTypes", "scope": "ui", "writer": "app", "readers": ["ui"], "defaultFrom": "src/thresholds.ts normalizeAlertTypes()" },
     { "key": "quietHours", "scope": "ui", "writer": "app", "readers": ["ui"], "default": { "enabled": false, "start": "23:00", "end": "08:00" } },
+    { "key": "providerSelection", "scope": "ui", "writer": "app", "readers": ["ui"], "default": null },
     { "key": "ccAnalyticsEnabled", "scope": "ui", "writer": "app", "readers": ["ui"], "default": false },
     { "key": "dailyBudget", "scope": "ui", "writer": "app", "readers": ["ui"], "default": null },
     { "key": "goalCostPerHourMax", "scope": "ui", "writer": "app", "readers": ["ui"], "default": null },

@@ -31,6 +31,8 @@ describe("model engines", () => {
   it("prices OpenAI cache and output tokens in the provider", () => {
     expect(openAiCost("gpt-5.6-sol", { input_tokens: 100, cached_input_tokens: 40, output_tokens: 10 }))
       .toBe((60 * 4 + 40 * 0.4 + 10 * 20) / 1_000_000);
+    expect(openAiCost("gpt-5.6-sol-preview", { input_tokens: 100, cached_input_tokens: 40, output_tokens: 10 }))
+      .toBe((60 * 4 + 40 * 0.4 + 10 * 20) / 1_000_000);
   });
 });
 

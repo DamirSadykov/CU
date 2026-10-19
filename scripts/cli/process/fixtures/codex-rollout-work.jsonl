@@ -1,0 +1,4 @@
+{"timestamp":"2026-10-19T09:59:00.000Z","type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"please call apply_patch"}]}}
+{"timestamp":"2026-10-19T10:00:00.000Z","type":"response_item","payload":{"type":"custom_tool_call","name":"apply_patch","input":"*** Begin Patch\n*** End Patch"}}
+{"timestamp":"2026-10-19T10:02:00.000Z","type":"response_item","payload":{"type":"custom_tool_call","name":"exec","input":"const result = await tools.apply_patch(\"*** Begin Patch\\n*** End Patch\");"}}
+{"timestamp":"2026-10-19T10:03:00.000Z","type":"response_item","payload":{"type":"function_call","name":"spawn_agent","namespace":"collaboration","arguments":"{}"}}

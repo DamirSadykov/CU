@@ -296,6 +296,9 @@ function main(args = []) {
   } catch {
     // no stdin / bad JSON → keep process.cwd()
   }
+  // Codex exposes its session id to hook commands through the environment,
+  // while Claude normally includes it in the payload. The shared resolver
+  // keeps the host-specific fallback and its source priority in one place.
   if (!session) session = currentSessionId();
 
   const appData = path.dirname(appDataDir());

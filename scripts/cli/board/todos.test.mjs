@@ -452,11 +452,13 @@ describe("task-session journal", () => {
   let dir;
   const savedAppData = process.env.APPDATA;
   const savedSession = process.env.CLAUDE_CODE_SESSION_ID;
+  const savedCodexSession = process.env.CODEX_SESSION_ID;
 
   beforeEach(() => {
     dir = mkdtempSync(path.join(os.tmpdir(), "cut-tasksess-"));
     process.env.APPDATA = dir;
     delete process.env.CLAUDE_CODE_SESSION_ID;
+    delete process.env.CODEX_SESSION_ID;
   });
 
   afterEach(() => {
@@ -464,6 +466,8 @@ describe("task-session journal", () => {
     else process.env.APPDATA = savedAppData;
     if (savedSession === undefined) delete process.env.CLAUDE_CODE_SESSION_ID;
     else process.env.CLAUDE_CODE_SESSION_ID = savedSession;
+    if (savedCodexSession === undefined) delete process.env.CODEX_SESSION_ID;
+    else process.env.CODEX_SESSION_ID = savedCodexSession;
     rmSync(dir, { recursive: true, force: true });
   });
 
@@ -523,6 +527,21 @@ describe("task-session journal", () => {
     expect(currentSessionId({ session: true })).toBe("env-session");
   });
 
+  it("falls back to the Codex session id when Claude Code's is unset", () => {
+    process.env.CODEX_SESSION_ID = " codex-session ";
+    expect(currentSessionId({})).toBe("codex-session");
+    process.env.CLAUDE_CODE_SESSION_ID = "env-session";
+    expect(currentSessionId({})).toBe("env-session");
+    expect(currentSessionId({ session: "flag-session" })).toBe("flag-session");
+  });
+
+  it("envWithoutSession erases the Codex session id too", () => {
+    process.env.CODEX_SESSION_ID = "codex-session";
+    const child = envWithoutSession();
+    expect("CODEX_SESSION_ID" in child).toBe(false);
+    expect(process.env.CODEX_SESSION_ID).toBe("codex-session");
+  });
+
   // What the runner hands its children (t#312): the variable gone, everything
   // else — APPDATA above all, which is what points them at this journal — intact.
   it("envWithoutSession erases only the session id, and never in place", () => {
@@ -565,6 +584,24 @@ describe("todos take without a session id", () => {
     expect(events).toHaveLength(1);
     expect(events[0]).toMatchObject({ session: "sess-cont", task: "task-uuid", event: "start", source: "set-status" });
     rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("take inside a Codex session binds the Codex session id", () => {
+    const dir = mkdtempSync(path.join(os.tmpdir(), "cut-take-codex-"));
+    const appDir = path.join(dir, "com.claude-usage-tracker.app");
+    mkdirSync(appDir, { recursive: true });
+    writeFileSync(
+      path.join(appDir, "todos.json"),
+      JSON.stringify({
+        version: 2,
+        todos: [{ id: "task-uuid", number: 1, subject: "s", status: "queue", project: "p" }],
+      }),
+    );
+    const env = { ...envWithoutSession(), APPDATA: dir, CODEX_SESSION_ID: "codex-sess" };
+    execFileSync(process.execPath, [cli, "todos", "take", "1"], { env, encoding: "utf8", stdio: "pipe" });
+    const events = readTaskSessionEvents(path.join(appDir, "task-sessions.jsonl"));
+    rmSync(dir, { recursive: true, force: true });
+    expect(events.at(-1)).toMatchObject({ session: "codex-sess", task: "task-uuid", event: "start" });
   });
 
   it("fails with a message naming the variable and the --session escape", () => {
