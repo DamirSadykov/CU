@@ -64,10 +64,10 @@
 // tidiness — is the binding constraint of an autonomous run.
 
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { execFile, execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { readFileSync, appendFileSync, mkdirSync } from "node:fs";
+import { readFileSync, appendFileSync, existsSync, mkdirSync } from "node:fs";
 
 import {
   resolveTask,
@@ -102,7 +102,8 @@ import { DEFAULT_PARALLEL_LIMIT, buildWave, declaredRed, resolveParallelLimit } 
 import { appendRunEvent, createVerifyLog, runEventsPath, verifyLogPath, watchRunEvents, writeVerifyLog } from "./run-events.mjs";
 import { pathMatches } from "./outcome.mjs";
 import { runFlowGate } from "./flow-gate.mjs";
-import { runMutationGate } from "./mutation-gate.mjs";
+import { mutationResult, runMutationGate } from "./mutation-gate.mjs";
+import { DEFAULT_STEP_TIMEOUT_MS } from "./run-step.mjs";
 import { flowDeclared } from "./graph-rules.mjs";
 import { flowcheckExe, mutations as mutationSettings, mutscopeDir, parkedStepExpiryHours } from "../kernel/settings.mjs";
 
@@ -354,9 +355,132 @@ export function simulationEffects() {
     redGate: async () => ({ ok: true, field: "failed-on-base", reason: null }),
     flowGate: async () => ({ status: "pass", reason: null, coverage: [], unchecked: [], duration_ms: 0 }),
     mutationGate: async () => ({ status: "skipped", reason: "dry" }),
+    planMutationGate: async () => ({ status: "skipped", reason: "dry" }),
     recordFlowDiagram: async () => ({ written: false }),
     stepCost: async ({ budgetUsd }) => budgetUsd,
   };
+}
+
+const PLAN_MUTATION_LEVELS = [2, 3];
+const PLAN_MUTATION_EXTENSIONS = new Set([".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".mts", ".cts"]);
+
+const emptyMutation = (status, reason, duration_ms = 0) => ({
+  levels: [], killed: 0, survived: [], noCoverage: [], quarantined: [], duration_ms, status, reason,
+});
+
+export function planMutationCandidates(members = []) {
+  const candidates = [];
+  const seen = new Set();
+  for (const task of members) {
+    const mutation = task?.mutation ?? task?.ext?.process?.mutation;
+    for (const mutant of [...(mutation?.survived ?? []), ...(mutation?.noCoverage ?? [])]) {
+      if (!mutant?.selector || seen.has(mutant.selector)) continue;
+      seen.add(mutant.selector);
+      candidates.push(mutant);
+    }
+  }
+  return candidates;
+}
+
+async function withTimeout(operation, timeoutMs) {
+  let timer;
+  try {
+    return await Promise.race([
+      operation,
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`plan mutation gate timed out after ${timeoutMs}ms`)), Math.max(1, timeoutMs));
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export async function runPlanMutationGate({ members = [], cwd = process.cwd(), timeoutMs, mutscopeDir: directory } = {}) {
+  const started = Date.now();
+  const finish = (status, reason) => emptyMutation(status, reason, Date.now() - started);
+  const root = typeof directory === "string" ? directory.trim() : "";
+  if (!root) return finish("skipped", "mutscope directory is not configured");
+  if (!existsSync(path.join(root, "stryker.mjs"))) return finish("skipped", `mutscope is unavailable: ${path.join(root, "stryker.mjs")} does not exist`);
+  const candidates = planMutationCandidates(members)
+    .filter((mutant) => PLAN_MUTATION_EXTENSIONS.has(path.posix.extname(String(mutant.file ?? "").replaceAll("\\", "/")).toLowerCase()));
+  if (!candidates.length) return finish("skipped", "plan has no surviving JavaScript or TypeScript mutants to promote");
+
+  try {
+    const operation = (async () => {
+      const scope = await import(pathToFileURL(path.join(root, "scope.mjs")).href);
+      const stryker = await import(pathToFileURL(path.join(root, "stryker.mjs")).href);
+      if (typeof scope.discoverTestLadder !== "function" || typeof stryker.runStrykerLadder !== "function"
+        || typeof stryker.createStrykerRunner !== "function") {
+        throw new Error("mutscope does not expose the plan-promotion API");
+      }
+      const byFile = new Map();
+      for (const mutant of candidates) {
+        const file = String(mutant.file).replaceAll("\\", "/");
+        if (!byFile.has(file)) byFile.set(file, []);
+        byFile.get(file).push(mutant.selector);
+      }
+      const ladders = await Promise.all([...byFile.keys()].map((file) =>
+        scope.discoverTestLadder({ root: cwd, changedFile: file, language: "js" }),
+      ));
+      const seenTests = new Set();
+      const ladder = PLAN_MUTATION_LEVELS.map((level) => ({
+        level,
+        tests: ladders.flatMap((entries) => entries.find((entry) => entry.level === level)?.tests ?? [])
+          .filter((test) => {
+            if (seenTests.has(test)) return false;
+            seenTests.add(test);
+            return true;
+          }),
+      }));
+      return stryker.runStrykerLadder({
+        mutate: [...byFile.values()].flat(),
+        ladder,
+        from: PLAN_MUTATION_LEVELS[0],
+        to: PLAN_MUTATION_LEVELS.at(-1),
+        cwd,
+        runLevel: stryker.createStrykerRunner({ cwd }),
+        quarantine: typeof stryker.createThreadQuarantine === "function" ? stryker.createThreadQuarantine({ cwd }) : undefined,
+      });
+    })();
+    const report = await withTimeout(operation, timeoutMs ?? DEFAULT_STEP_TIMEOUT_MS);
+    return mutationResult(report, Date.now() - started);
+  } catch (error) {
+    return finish("cannot", `plan mutation gate cannot run: ${error?.message || error}`);
+  }
+}
+
+const mutationTaskDescription = (change, mutation) => {
+  const lines = [
+    `Mutants that survived the final level 2-3 check for ${formatRef(change)}.`,
+    "",
+    ...mutation.survived.map((m) => `[survived] ${m.selector} ${m.mutator || ""} -> ${m.replacement ?? ""}`.trim()),
+    ...mutation.noCoverage.map((m) => `[no coverage] ${m.selector} ${m.mutator || ""} -> ${m.replacement ?? ""}`.trim()),
+  ];
+  return lines.join("\n").trim();
+};
+
+export function recordPlanMutation(data, { changeId, mutation }) {
+  const change = (data?.changes ?? []).find((entry) => entry?.id === changeId);
+  if (!change) return { written: false, error: `plan ${changeId} not found on the board` };
+  const existing = change.mutation ?? change.ext?.process?.mutation;
+  if (existing?.status) return { written: false, mutation: existing, task: null };
+  const remaining = [...(mutation?.survived ?? []), ...(mutation?.noCoverage ?? [])];
+  let task = null;
+  if (remaining.length) {
+    task = newTodo(data, {
+      subject: `[mutation] Survivors after ${formatRef(change)}`,
+      description: mutationTaskDescription(change, mutation),
+      status: "backlog",
+      project: change.project || null,
+      by: "runner",
+    });
+    task.links = [change.id];
+    task.mutation = mutation;
+  }
+  change.mutation = { ...mutation, task: task?.number ?? null };
+  change.updated_at = new Date().toISOString();
+  return { written: true, mutation: change.mutation, task };
 }
 
 function trackerCliPath() {
@@ -619,6 +743,26 @@ export function liveEffects({ cwd } = {}) {
         return { written: true };
       });
       return write.written ? mutation : { ...mutation, write_error: write.error };
+    },
+    planMutationGate: async ({ change, members, cwd, timeoutMs }) => {
+      const configured = mutationSettings();
+      const mutation = !configured.enabled
+        ? emptyMutation("skipped", "mutation checks are disabled")
+        : !configured.plan
+          ? emptyMutation("skipped", "plan mutation checks are disabled")
+          : await runPlanMutationGate({ members, cwd, timeoutMs, mutscopeDir: mutscopeDir() });
+      return withDataDir((dir) => {
+        const file = path.join(dir, "todos.json");
+        const data = loadBoardForWrite(file);
+        const recorded = recordPlanMutation(data, { changeId: change.id, mutation });
+        if (!recorded.written) {
+          return recorded.mutation
+            ? recorded
+            : { ...recorded, mutation: { ...mutation, write_error: recorded.error } };
+        }
+        saveBoard(file, data);
+        return recorded;
+      });
     },
     // What a step really cost lives in the tracker's blocks (SQLite, Rust side),
     // but the headless run already reports its own total — `executeStep` returns
@@ -2213,6 +2357,35 @@ export async function runChange({
   }
 
   const complete = !ctx.stop && members.every((t) => isDone(t));
+  const changeRecord = (ctx.data.changes ?? []).find((entry) => entry?.id === root.id);
+  let planMutation = changeRecord?.mutation ?? changeRecord?.ext?.process?.mutation ?? null;
+  if (complete && !dry && changeRecord && !planMutation?.status && typeof ctx.effects.planMutationGate === "function") {
+    let outcome;
+    try {
+      outcome = await ctx.effects.planMutationGate({ change: changeRecord, members, cwd, timeoutMs });
+    } catch (error) {
+      outcome = emptyMutation("cannot", `plan mutation gate crashed: ${error?.message || error}`);
+    }
+    if (outcome?.mutation) {
+      planMutation = outcome.mutation;
+      changeRecord.mutation = planMutation;
+      if (outcome.task && !(ctx.data.todos ?? []).some((task) => task?.id === outcome.task.id)) ctx.data.todos.push(outcome.task);
+    } else {
+      const recorded = recordPlanMutation(ctx.data, { changeId: changeRecord.id, mutation: outcome });
+      planMutation = recorded.mutation ?? outcome;
+    }
+    emitRunEvent(ctx, {
+      kind: "mutation_plan",
+      status: planMutation?.status ?? "cannot",
+      levels: planMutation?.levels ?? [],
+      killed: planMutation?.killed ?? 0,
+      survived: planMutation?.survived ?? [],
+      noCoverage: planMutation?.noCoverage ?? [],
+      duration_ms: planMutation?.duration_ms ?? 0,
+      survivor_task: planMutation?.task ?? null,
+      reason: planMutation?.reason ?? null,
+    });
+  }
   const card = await attachDecisionCard(ctx);
   const report = {
     version: 1,
@@ -2225,6 +2398,7 @@ export async function runChange({
       parallel_declared: typeof root.parallel_limit === "number" ? root.parallel_limit : null,
       budget_usd: groupBudget,
       status: root.status,
+      mutation: planMutation,
     },
     members: members.map((t) => ({ ...brief(t), status: t.status, gate: isGate(t) })),
     waves: ctx.waves,

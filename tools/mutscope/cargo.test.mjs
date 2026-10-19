@@ -87,7 +87,6 @@ describe("cargo-mutants adapter", () => {
         const output = args[args.indexOf("--output") + 1];
         const source = path.join(fixture, "outcomes.json");
         const outcomes = JSON.parse(await readFile(source, "utf8"));
-        // Reuse the fixture directory through a read interception is unnecessary here: no log is fatal.
         const { mkdir, writeFile } = await import("node:fs/promises");
         await mkdir(path.join(output, "mutants.out"));
         await writeFile(path.join(output, "mutants.out", "outcomes.json"), JSON.stringify({ ...outcomes, outcomes: [] }));
