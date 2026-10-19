@@ -928,6 +928,7 @@ describe("the exit journal", () => {
             "    verify: npm run test",
             "    kind: auto",
             "    size: S",
+            "    flow: n/a fixture without methods",
             "  2:",
             "    title: Шаг два",
             "    needs: [1]",

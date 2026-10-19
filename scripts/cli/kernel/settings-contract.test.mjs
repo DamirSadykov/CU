@@ -52,10 +52,11 @@ describe("CLI settings contract", () => {
       expect(specRepoPath("unlisted", appData)).toBe("");
       expect(uiLocale(appData)).toBe(defaults.get("locale"));
       expect(parkedStepExpiryHours(appData)).toBe(defaults.get("parkedStepExpiryHours"));
-      expect(flowcheckExe(appData)).toBe(defaults.get("flowcheckExe"));
+      const nothing = { exists: () => false };
+      expect(flowcheckExe(appData, nothing)).toBe(defaults.get("flowcheckExe"));
       expect(mutations(appData)).toEqual(defaults.get("mutations"));
-      expect(mutscopeDir(appData)).toBe(defaults.get("mutscopeDir"));
-      expect(flowLanguages("unlisted", appData)).toEqual(["cs"]);
+      expect(mutscopeDir(appData, nothing)).toBe(defaults.get("mutscopeDir"));
+      expect(flowLanguages("unlisted", appData)).toEqual(["ts", "js"]);
       expect(defaults.get("flowLanguages")).toEqual({});
 
       const dir = path.join(appData, "com.cu.app");
@@ -67,7 +68,7 @@ describe("CLI settings contract", () => {
       writeFileSync(path.join(dir, "settings.json"), JSON.stringify({ flowcheckExe: " C:/tools/flowcheck.exe ", flowLanguages: { app: ["rs", "vue", "ts"], empty: [] } }));
       expect(flowcheckExe(appData)).toBe("C:/tools/flowcheck.exe");
       expect(flowLanguages("app", appData)).toEqual(["rs", "ts"]);
-      expect(flowLanguages("empty", appData)).toEqual(["cs"]);
+      expect(flowLanguages("empty", appData)).toEqual(["ts", "js"]);
       writeFileSync(path.join(dir, "settings.json"), JSON.stringify({ runnerEnabled: false }));
       expect(runnerEnabled(appData)).toBe(false);
 
@@ -82,7 +83,21 @@ describe("CLI settings contract", () => {
         mutscopeDir: 42,
       }));
       expect(mutations(appData)).toEqual(defaults.get("mutations"));
-      expect(mutscopeDir(appData)).toBe("");
+      expect(mutscopeDir(appData, nothing)).toBe("");
+
+      writeFileSync(path.join(dir, "settings.json"), JSON.stringify({}));
+      const repoRoot = path.join(appData, "repo");
+      const installedExe = path.join(dir, "tools", "flowcheck.exe");
+      const builtExe = path.join(repoRoot, "tools", "flowcheck", "target", "release", "flowcheck.exe");
+      expect(flowcheckExe(appData, { repoRoot, exists: (file) => file === builtExe })).toBe(builtExe);
+      expect(flowcheckExe(appData, { repoRoot, exists: (file) => file === installedExe || file === builtExe })).toBe(installedExe);
+      const repoMutscope = path.join(repoRoot, "tools", "mutscope");
+      const ready = (directory) => (file) => file === path.join(directory, "stryker.mjs")
+        || file === path.join(directory, "node_modules", "@stryker-mutator", "core");
+      expect(mutscopeDir(appData, { repoRoot, exists: ready(repoMutscope) })).toBe(repoMutscope);
+      expect(mutscopeDir(appData, { repoRoot, exists: (file) => file === path.join(repoMutscope, "stryker.mjs") })).toBe("");
+      writeFileSync(path.join(dir, "settings.json"), JSON.stringify({ mutscopeDir: "C:/own/mutscope" }));
+      expect(mutscopeDir(appData, { repoRoot, exists: ready(repoMutscope) })).toBe("C:/own/mutscope");
 
       writeFileSync(path.join(dir, "settings.json"), JSON.stringify({ specs: { enabled: true, deltaGuard: "off" } }));
       expect(specsEnabled(appData)).toBe(true);

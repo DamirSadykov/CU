@@ -10,7 +10,7 @@ import settingsContract from "../../scripts/cli/kernel/settings-contract.json";
 
 export type FlowLanguage = "cs" | "rs" | "ts" | "js";
 export const FLOW_LANGUAGES: readonly FlowLanguage[] = ["cs", "rs", "ts", "js"];
-export const DEFAULT_FLOW_LANGUAGES: readonly FlowLanguage[] = ["cs"];
+export const DEFAULT_FLOW_LANGUAGES: readonly FlowLanguage[] = ["ts", "js"];
 
 export type QuietHoursSetting = { enabled: boolean; start: string; end: string };
 export type RuntimeInsightsSetting = { enabled: boolean; kinds: string[] };
