@@ -70,6 +70,30 @@ describe("runFlowGate", () => {
     expect(written).toEqual(flow);
   });
 
+  it("keeps every failed problem ahead of a long coverage report", async () => {
+    const problems = ["guard moved after send", "required call is missing", "new exit bypasses validation"];
+    const result = await runFlowGate({
+      task: task(), cwd: process.cwd(), exe,
+      runCmd: async () => ({
+        code: 1,
+        stdout: JSON.stringify({
+          results: problems.map((problem, index) => ({ method: `Method${index + 1}`, status: "fail", problems: [problem] })),
+          coverage: { checked: 120, changed: 80, findings: Array.from({ length: 100 }, (_, index) => ({ reason: `finding ${index}` })) },
+          unchecked: [{ file: "src/Other.cs" }],
+        }),
+        stderr: "raw stderr must not replace structured failures",
+      }),
+    });
+
+    expect(result.reason.split("\n")).toEqual([
+      "Method1: guard moved after send",
+      "Method2: required call is missing",
+      "Method3: new exit bypasses validation",
+      "coverage: checked=120, changed=80, findings=100; unchecked=2",
+    ]);
+    expect(result.reason).not.toContain("raw stderr");
+  });
+
   it("does not mark supported Rust and TS/JS produces unchecked", async () => {
     const result = await runFlowGate({
       task: task({ produces: ["src/notify.rs", "src/view.tsx", "src/check.js", "docs/note.md"] }), cwd: process.cwd(), exe,
