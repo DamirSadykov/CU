@@ -966,7 +966,7 @@ export const ATTEMPT_END_REASONS = Object.freeze([
   "verify", "missing_produces", "reconcile", "mechanics", "undecided", "interrupted",
 ]);
 
-const ATTEMPT_END_KINDS = new Set(["issue", "convergence", "mechanics", "undecided", "flow-cannot"]);
+const ATTEMPT_END_KINDS = new Set(["issue", "convergence", "mechanics", "undecided", "flow-cannot", "flow-delta"]);
 
 export const ATTEMPT_END_DETAIL_LIMIT = 2000;
 
@@ -1064,6 +1064,14 @@ export function formatDecisionCard(stop, { task = null, change = null, spent = 0
   }
   const retry = (limit ?? 0) + 2;
   const changeRef = change?.number == null ? "p#<plan>" : formatRef(change);
+  if (stop.kind === "flow-delta") {
+    if (stop.problems) out.push(`flow problems:\n${String(stop.problems).trim()}\n`);
+    out.push("actions:\n");
+    out.push(`  поправить flow задачи и перезапустить: todos run ${changeRef} --go\n`);
+    out.push("  указать flow: n/a с причиной и перезапустить\n");
+    out.push(`  принять как есть: todos set status t#${task.number} done\n`);
+    return out.join("");
+  }
   out.push("actions:\n");
   out.push(`  accept as is: todos set status t#${task.number} done\n`);
   out.push(`  allow more attempts: todos set retry t#${task.number} ${retry}\n`);
@@ -1374,20 +1382,6 @@ async function recordOutOfScopeFindings(ctx, task, findings) {
   }
 }
 
-async function recordGateSkippedComment(ctx, task, reason) {
-  const comment = {
-    id: randomUUID(),
-    author: "runner",
-    body: `GATE_SKIPPED\n${reason}`,
-    created_at: new Date().toISOString(),
-  };
-  (task.comments ??= []).push(comment);
-  if (typeof ctx.effects.recordIssue === "function") {
-    try { await ctx.effects.recordIssue({ task, comment }); } catch {}
-  }
-  return comment;
-}
-
 function resultBase(ctx, task, result, review, baton, cost, ownChanges, outsideChanges, mutation = null) {
   const attempt = ctx.attempts.get(task.id);
   const limit = retryLimitOf(task);
@@ -1650,7 +1644,7 @@ export async function finishStep(ctx, task, { result, review, baton, cost, ownCh
     if (flow.status !== "pass") {
       await recordIssueComment(ctx, task, { attempt, limit, source: "flow", text: clampChars(flow.reason || "flowcheck found a flow issue", 6000) });
       return finishAttempt(ctx, task, {
-        ...base, kind: "issue", routeEscalated: task._runner_high_route_attempt === attempt,
+        ...base, kind: "flow-delta",
         endReason: "flow",
         reason: flow.reason || "flowcheck found a flow issue",
       });
@@ -1816,19 +1810,17 @@ function downgradeUntouchedRetryFindings(review, context) {
 // its verdict and branches.
 async function runOne(ctx, task, wave = []) {
   if (isEmptyHumanGate(task)) {
-    const reason = "empty manual gate — no produces or verify were declared, so there is nothing for a human to approve";
-    const moved = await moveTo(ctx, task, "done");
+    const reason = "нет produces и verify — решает человек";
+    const moved = await moveTo(ctx, task, "review");
     if (!moved.ok) {
       return {
         task, kind: "undecided", attempt: null, limit: retryLimitOf(task), cost: 0,
         session: null, review: null,
-        reason: `empty manual gate could not be closed: ${moved.error}`,
+        reason: `empty manual gate could not be moved to review: ${moved.error}`,
       };
     }
-    await recordGateSkippedComment(ctx, task, reason);
-    emitRunEvent(ctx, { task: task.number, kind: "gate_skipped", reason });
     return {
-      task, kind: "gate-skipped", attempt: null, limit: retryLimitOf(task), cost: null,
+      task, kind: "gate", attempt: null, limit: retryLimitOf(task), cost: null,
       session: null, review: null, reason,
     };
   }
@@ -2133,7 +2125,7 @@ export async function applyResult(ctx, r, { dry, log }) {
     ctx.spent += r.cost;
     ctx.nodeSpent.set(r.task.id, (ctx.nodeSpent.get(r.task.id) || 0) + r.cost);
     ctx.attemptCosts?.set(r.task.id, [...(ctx.attemptCosts.get(r.task.id) || []), r.cost]);
-  } else if (r.kind !== "retry-exhausted" && r.kind !== "gate-skipped") {
+  } else if (r.kind !== "retry-exhausted" && r.kind !== "gate-skipped" && !(r.kind === "gate" && r.attempt === null)) {
     ctx.unknownCost += 1;
   }
   const record = {
@@ -2187,6 +2179,13 @@ export async function applyResult(ctx, r, { dry, log }) {
     ctx.parked.add(r.task.id);
     await moveTo(ctx, r.task, "review");
     park(ctx, "flow-cannot", r.task, r.reason, { flow: r.flow ?? null });
+    record.status = r.task.status;
+    return record;
+  }
+  if (r.kind === "flow-delta") {
+    ctx.parked.add(r.task.id);
+    await moveTo(ctx, r.task, "review");
+    park(ctx, "flow-delta", r.task, "дельта плана", { problems: r.reason, flow: r.flow ?? null });
     record.status = r.task.status;
     return record;
   }
