@@ -288,11 +288,107 @@ impl Source {
         let receiver = self.text(function);
         lang::callee_name(&receiver)
     }
+    fn is_invocation(&self, n: Node) -> bool {
+        n.kind() == self.lang.invocation_kind
+            || self.lang.macro_invocation_kind == Some(n.kind())
+            || self.lang.new_expression_kind == Some(n.kind())
+    }
+    fn argument_identifier(&self, n: Node) -> bool {
+        if n.kind() != self.lang.identifier_kind {
+            return false;
+        }
+        let Some(mut list) = n.parent() else {
+            return false;
+        };
+        if self.lang.argument_kind == Some(list.kind()) {
+            let Some(parent) = list.parent() else {
+                return false;
+            };
+            list = parent;
+        }
+        list.parent()
+            .map(|owner| {
+                self.is_invocation(owner)
+                    && owner.child_by_field_name(self.lang.arguments_field) == Some(list)
+            })
+            .unwrap_or(false)
+    }
+    fn function_names(&self) -> HashSet<String> {
+        self.methods()
+            .into_iter()
+            .filter_map(|m| self.method_name(m))
+            .collect()
+    }
+    fn function_refs(&self, method: Node) -> HashMap<usize, String> {
+        let mut nodes = Vec::new();
+        self.walk(method, &mut nodes);
+        let candidates: Vec<_> = nodes
+            .into_iter()
+            .filter(|n| self.argument_identifier(*n))
+            .collect();
+        if candidates.is_empty() {
+            return HashMap::new();
+        }
+        let functions = self.function_names();
+        let local = self.bindings(method);
+        candidates
+            .into_iter()
+            .map(|n| (n, self.text(n)))
+            .filter(|(_, name)| functions.contains(name) && !local.contains(name))
+            .map(|(n, name)| (n.id(), name))
+            .collect()
+    }
+    fn bindings(&self, method: Node) -> HashSet<String> {
+        let mut names = self.locals(method);
+        let mut nodes = Vec::new();
+        self.walk(method, &mut nodes);
+        for n in nodes {
+            let mut declared = Vec::new();
+            for field in ["parameters", "parameter"] {
+                declared.extend(n.child_by_field_name(field));
+            }
+            if self.lang.loop_kinds.contains(&n.kind()) {
+                for field in ["left", "pattern"] {
+                    declared.extend(n.child_by_field_name(field));
+                }
+            }
+            for d in declared {
+                let mut inner = Vec::new();
+                self.walk(d, &mut inner);
+                names.extend(
+                    inner
+                        .into_iter()
+                        .filter(|x| x.kind() == self.lang.identifier_kind)
+                        .map(|x| self.text(x)),
+                );
+            }
+        }
+        names
+    }
+    fn scope<'a>(&self, n: Node<'a>) -> Node<'a> {
+        let mut scope = n;
+        let mut at = n;
+        while let Some(parent) = at.parent() {
+            if self.lang.method_kinds.contains(&parent.kind()) {
+                scope = parent;
+            }
+            at = parent;
+        }
+        scope
+    }
     fn steps(&self, method: Node) -> Vec<Step> {
-        fn visit(s: &Source, n: Node, out: &mut Vec<Step>) {
+        fn visit(s: &Source, n: Node, refs: &HashMap<usize, String>, out: &mut Vec<Step>) {
             let mut c = n.walk();
             for x in n.children(&mut c) {
-                visit(s, x, out);
+                visit(s, x, refs, out);
+            }
+            if let Some(name) = refs.get(&n.id()) {
+                out.push(Step {
+                    kind: "call",
+                    key: name.clone(),
+                    line: n.start_position().row + 1,
+                    node_id: n.id(),
+                });
             }
             if n.kind() == s.lang.invocation_kind
                 || s.lang.macro_invocation_kind == Some(n.kind())
@@ -331,10 +427,12 @@ impl Source {
                 });
             }
         }
+        let refs = self.function_refs(method);
         let mut out = Vec::new();
         visit(
             self,
             method.child_by_field_name("body").unwrap_or(method),
+            &refs,
             &mut out,
         );
         out
@@ -370,10 +468,11 @@ impl Source {
             s: &Source,
             n: Node,
             changed: &HashSet<usize>,
+            refs: &HashMap<usize, String>,
             closures: &mut Vec<ClosureTree>,
         ) -> Vec<FlowNode> {
             if s.lang.closure_kinds.contains(&n.kind()) {
-                let nodes = visit(s, body(n), changed, closures);
+                let nodes = visit(s, body(n), changed, refs, closures);
                 closures.push(ClosureTree {
                     name: closure_name(s, n),
                     nodes,
@@ -388,14 +487,14 @@ impl Source {
                 changed: changed.contains(&line),
                 branches,
             };
-            if n.kind() == s.lang.invocation_kind
-                || s.lang.macro_invocation_kind == Some(n.kind())
-                || s.lang.new_expression_kind == Some(n.kind())
-            {
+            if let Some(name) = refs.get(&n.id()) {
+                return vec![node("call", name.clone(), Vec::new())];
+            }
+            if s.is_invocation(n) {
                 let mut out = Vec::new();
                 let mut cursor = n.walk();
                 for child in n.named_children(&mut cursor) {
-                    out.extend(visit(s, child, changed, closures));
+                    out.extend(visit(s, child, changed, refs, closures));
                 }
                 out.push(node("call", s.callee(n), Vec::new()));
                 return out;
@@ -404,7 +503,7 @@ impl Source {
                 let mut out = Vec::new();
                 let mut cursor = n.walk();
                 for child in n.named_children(&mut cursor) {
-                    out.extend(visit(s, child, changed, closures));
+                    out.extend(visit(s, child, changed, refs, closures));
                 }
                 out.push(node("exit", s.display_text(n), Vec::new()));
                 return out;
@@ -432,20 +531,20 @@ impl Source {
                     for case in direct_cases {
                         branches.push(FlowBranch {
                             kind: s.text(case.child_by_field_name("value").unwrap_or(case)),
-                            nodes: visit(s, case, changed, closures),
+                            nodes: visit(s, case, changed, refs, closures),
                         });
                     }
                 } else {
                     if let Some(then) = branch_body(n, &["consequence", "body"]) {
                         branches.push(FlowBranch {
                             kind: "then".into(),
-                            nodes: visit(s, then, changed, closures),
+                            nodes: visit(s, then, changed, refs, closures),
                         });
                     }
                     if let Some(otherwise) = n.child_by_field_name("alternative") {
                         branches.push(FlowBranch {
                             kind: "else".into(),
-                            nodes: visit(s, otherwise, changed, closures),
+                            nodes: visit(s, otherwise, changed, refs, closures),
                         });
                     }
                 }
@@ -456,7 +555,7 @@ impl Source {
                     .map(|x| s.display_text(x))
                     .unwrap_or_else(|| s.display_text(n));
                 let nodes = branch_body(n, &["body", "consequence"])
-                    .map(|x| visit(s, x, changed, closures))
+                    .map(|x| visit(s, x, changed, refs, closures))
                     .unwrap_or_default();
                 return vec![node(
                     "loop",
@@ -480,7 +579,7 @@ impl Source {
                     if let Some(kind) = kind {
                         branches.push(FlowBranch {
                             kind: kind.into(),
-                            nodes: visit(s, child, changed, closures),
+                            nodes: visit(s, child, changed, refs, closures),
                         });
                     }
                 }
@@ -489,15 +588,17 @@ impl Source {
             let mut out = Vec::new();
             let mut cursor = n.walk();
             for child in n.named_children(&mut cursor) {
-                out.extend(visit(s, child, changed, closures));
+                out.extend(visit(s, child, changed, refs, closures));
             }
             out
         }
+        let refs = self.function_refs(method);
         let mut closures = Vec::new();
         let nodes = visit(
             self,
             method.child_by_field_name("body").unwrap_or(method),
             changed,
+            &refs,
             &mut closures,
         );
         FlowTree { nodes, closures }
@@ -662,16 +763,19 @@ fn load_source(repo: &Path, rev: Option<&str>, file: &str) -> Result<Source, Can
 }
 
 fn is_call_to(s: &Source, n: Node, name: &str) -> bool {
-    (n.kind() == s.lang.invocation_kind
-        || s.lang.macro_invocation_kind == Some(n.kind())
-        || s.lang.new_expression_kind == Some(n.kind()))
-        && matches(&s.callee(n), name)
+    s.is_invocation(n) && matches(&s.callee(n), name)
+}
+fn is_ref_to(s: &Source, n: Node, name: &str) -> bool {
+    s.argument_identifier(n)
+        && matches(&s.text(n), name)
+        && s.function_refs(s.scope(n)).contains_key(&n.id())
 }
 fn contains_call(s: &Source, n: Node, name: &str, aliases: &HashSet<String>) -> bool {
     let mut nodes = Vec::new();
     s.walk(n, &mut nodes);
     nodes.into_iter().any(|x| {
         is_call_to(s, x, name)
+            || is_ref_to(s, x, name)
             || (x.kind() == s.lang.identifier_kind && aliases.contains(&s.text(x)))
     })
 }
