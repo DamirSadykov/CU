@@ -25,6 +25,7 @@ import {
   stepChanges,
   latestInProgressAt,
   reconcileTodo,
+  outsideRepoEvidence,
 } from "./outcome.mjs";
 import { loadBoard } from "../board/todos.mjs";
 
@@ -438,6 +439,21 @@ describe("outcome --write (end to end)", () => {
     }).report;
     expect(report.produces[0]).toMatchObject({ produced: true, evidence: "mtime" });
     expect(report.outcome).toBe("ok");
+  });
+});
+
+describe("outsideRepoEvidence", () => {
+  const since = "2026-01-01T10:00:00.000Z";
+  const until = "2026-01-01T11:00:00.000Z";
+  const at = (mtime) => outsideRepoEvidence({ cwd: os.tmpdir(), since, until, statFile: () => mtime })("ledger.json");
+
+  it("counts a file stamped just after until, as the filesystem clock runs ahead of Date.now on Windows", () => {
+    expect(at("2026-01-01T11:00:00.001Z")).toBe("2026-01-01T11:00:00.001Z");
+  });
+
+  it("drops a file stamped well after until or before since", () => {
+    expect(at("2026-01-01T11:00:02.000Z")).toBeNull();
+    expect(at("2026-01-01T09:59:59.999Z")).toBeNull();
   });
 });
 
