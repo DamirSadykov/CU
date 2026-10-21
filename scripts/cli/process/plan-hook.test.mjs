@@ -27,6 +27,7 @@ import {
   planFormatCuttingDoc,
 } from "./plan-hook.mjs";
 import { emptyAgentConfig, saveAgentConfig } from "../agents/agents.mjs";
+import { planBrief } from "./plan-guard.mjs";
 
 describe("buildCriticContext", () => {
   let dir;
@@ -207,22 +208,24 @@ describe("the plan-format document", () => {
     expect(context).toContain(`Only if work must be split: ${planFormatCuttingDoc()}`);
   });
 
-  it("teaches every language field in the flat legend", () => {
-    const legendFields = [...doc.matchAll(/^`([^`]+)` —/gm)].map((m) => m[1]);
-    expect(legendFields.sort()).toEqual([...DSL_DOC_FIELDS, ...DSL_STEP_FIELDS].sort());
+  it("teaches every language field in the typed block shape", () => {
+    const shape = /```ts\r?\n([\s\S]*?)```/.exec(doc)[1];
+    const fields = [...shape.matchAll(/(?:^\s+|\{ )"?([a-z][a-z-]*)"?\??:/gm)].map((m) => m[1]);
+    for (const field of [...DSL_DOC_FIELDS, ...DSL_STEP_FIELDS, "why"]) expect(fields).toContain(field);
     expect(doc).toMatch(/`why` is the task's durable reasoning/);
+    expect(doc).toMatch(/Text outside\s+the block becomes the plan's `vision`/);
   });
 
   it("keeps a connected skeleton and validates every YAML fragment after inference", () => {
     const blocks = [...doc.matchAll(YAML_BLOCK)].map((m) => m[1]);
-    expect(blocks.length).toBe(2);
+    expect(blocks.length).toBe(1);
     for (const block of blocks) {
       const parsed = readDocument(block);
       expect(parsed.steps.length).toBeGreaterThan(0);
       expect(validate(parsed, { onBoard: () => true }).errors).toEqual([]);
     }
 
-    const skeleton = blocks.map(readDocument).find((parsed) => parsed.steps.length === 3);
+    const skeleton = blocks.map(readDocument).find((parsed) => parsed.steps.length === 4);
     expect(skeleton).toBeTruthy();
     expect(skeleton.steps.some((s) => s.needs.length === 2)).toBe(true);
 
@@ -680,6 +683,24 @@ describe("recordPlan", () => {
       "Пишу обработчик",
     ]);
     expect(out.result.applied).toBe(true);
+  });
+
+  it("records the prose outside the block as vision when the block declares none", () => {
+    const calls = [];
+    const brief = PLAN.replace("vision: Должен появиться разбор входящих вебхуков.\n", "") + "\n\nРиск: дубли событий.";
+    recordPlan(brief, { apply: fakeApply(calls) });
+    expect(calls.at(-1).doc.vision).toBe("Вот план.\n\nРиск: дубли событий.");
+  });
+
+  it("keeps an explicit vision over the prose brief", () => {
+    const calls = [];
+    recordPlan(PLAN, { apply: fakeApply(calls) });
+    expect(calls.at(-1).doc.vision).toBe("Должен появиться разбор входящих вебхуков.");
+  });
+
+  it("finds no brief when the whole plan is the document", () => {
+    const bare = ["change: CHANGE: X", "steps:", "  1:", "    title: A"].join("\n");
+    expect(planBrief(bare, bare)).toBe("");
   });
 
   // A plan in prose is not a failure — it is the case the instruction still
