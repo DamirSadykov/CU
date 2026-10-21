@@ -16,6 +16,8 @@ use serde_json::Value;
 use crate::analytics::stats::{CcUsageRow, CodexLimitFileState, StatsDb};
 
 const LIMITS_FORMULA_VERSION: i64 = 1;
+const OPENAI_PRICES_JSON: &str =
+    include_str!("../../../scripts/cli/models/openai-prices.json");
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 struct RolloutContext {
@@ -161,21 +163,36 @@ fn project_name(cwd: &str) -> Option<String> {
     (!name.is_empty()).then(|| name.to_string())
 }
 
+#[derive(Deserialize)]
+struct OpenAiPriceRule {
+    r#match: String,
+    models: Vec<String>,
+    input: f64,
+    cached_input: f64,
+    output: f64,
+}
+
+fn openai_prices() -> &'static [OpenAiPriceRule] {
+    static PRICES: OnceLock<Vec<OpenAiPriceRule>> = OnceLock::new();
+    PRICES.get_or_init(|| {
+        serde_json::from_str(OPENAI_PRICES_JSON)
+            .expect("scripts/cli/models/openai-prices.json must be valid")
+    })
+}
+
 /// Current OpenAI API list prices per million (input, cached input, output).
-/// Unknown models remain visible with zero estimated cost.
+/// Rules are shared with the CLI. Unknown models remain visible with zero
+/// estimated cost.
 pub fn price_per_mtok(model: &str) -> Option<(f64, f64, f64)> {
     let m = model.to_ascii_lowercase();
-    if m.contains("gpt-5.6-terra") {
-        Some((2.0, 0.2, 12.0))
-    } else if m.contains("gpt-5.6-luna") {
-        Some((0.2, 0.02, 1.2))
-    } else if m == "gpt-5.6" || m.contains("gpt-5.6-sol") {
-        Some((4.0, 0.4, 20.0))
-    } else if m.contains("gpt-5.3-codex") || m.contains("gpt-5.2-codex") || m == "gpt-5.2" {
-        Some((1.75, 0.175, 14.0))
-    } else {
-        None
-    }
+    openai_prices().iter().find_map(|rule| {
+        let matched = rule.models.iter().any(|name| match rule.r#match.as_str() {
+            "exact" => m == *name,
+            "contains" => m.contains(name),
+            _ => false,
+        });
+        matched.then_some((rule.input, rule.cached_input, rule.output))
+    })
 }
 
 pub fn cost_for(model: &str, input: i64, output: i64, cache_write: i64, cache_read: i64) -> f64 {
@@ -689,6 +706,14 @@ mod tests {
             (30, 60, 10, 20)
         );
         assert!(row.cost > 0.0);
+    }
+
+    #[test]
+    fn shared_pricing_matches_suffixed_model_names() {
+        assert_eq!(
+            price_per_mtok("gpt-5.6-sol-preview"),
+            Some((4.0, 0.4, 20.0))
+        );
     }
 
     #[test]

@@ -31,6 +31,7 @@ import {
     loadSettingsStoreForWrite,
     readSettingsSnapshot,
 } from "./kernel/settingsStore";
+import type { ProviderSelection } from "./kernel/settingsStore";
 import { logInfo, logWarn, logError } from "./kernel/logging";
 import type { CodexRateLimits, ForecastData, UsageData, UsageLevels } from "./contracts/types";
 
@@ -68,6 +69,10 @@ const quietHoursEnabled = ref(false);
 const quietHoursStart = ref("23:00");
 const quietHoursEnd = ref("08:00");
 const ccAnalyticsEnabled = ref(false);
+const providerSelection = ref<ProviderSelection | null>(null);
+const savedProviderSelection = ref<ProviderSelection | null>(null);
+const providerDetectionReady = ref(false);
+const providerOptions: ProviderSelection[] = ["claude", "codex", "both"];
 const dailyBudgetEnabled = ref(false);
 const dailyBudget = ref(0);
 // Efficiency goals (issue: trend/goals). cost/hour is USD/hour; errorRateMax is
@@ -221,6 +226,8 @@ async function loadSettings() {
     quietHoursEnabled.value = s.quietHours.enabled;
     quietHoursStart.value = s.quietHours.start;
     quietHoursEnd.value = s.quietHours.end;
+    providerSelection.value = s.providerSelection;
+    savedProviderSelection.value = s.providerSelection;
     ccAnalyticsEnabled.value = s.ccAnalyticsEnabled;
     dailyBudgetEnabled.value = s.dailyBudget !== null;
     dailyBudget.value = s.dailyBudget ?? 0;
@@ -269,6 +276,7 @@ async function saveSettings() {
         start: quietHoursStart.value,
         end: quietHoursEnd.value,
     });
+    await store.set("providerSelection", providerSelection.value);
     await store.set("ccAnalyticsEnabled", ccAnalyticsEnabled.value);
     await store.set("dailyBudget", dailyBudgetEnabled.value ? dailyBudget.value : null);
     await store.set("goalCostPerHourMax", goalCostPerHourMax.value);
@@ -475,6 +483,49 @@ async function loadCodexLimits() {
         });
     } catch {
         codexLimits.value = null;
+    }
+}
+
+interface ProviderDetection {
+    claude: boolean;
+    codex: boolean;
+}
+
+async function initializeProviderSelection() {
+    if (providerSelection.value) {
+        providerDetectionReady.value = true;
+        return;
+    }
+    try {
+        const detected = await invoke<ProviderDetection>("detect_providers");
+        providerSelection.value = detected.claude && detected.codex
+            ? "both"
+            : detected.codex
+              ? "codex"
+              : "claude";
+    } catch {
+        // Browser previews and older backends cannot detect providers. Preserve
+        // the historical Claude-first default while still allowing a choice.
+        providerSelection.value = "claude";
+    } finally {
+        providerDetectionReady.value = true;
+    }
+}
+
+async function confirmProviderSelection() {
+    if (!providerSelection.value) return;
+    const includesCodex = providerSelection.value === "codex"
+        || providerSelection.value === "both";
+    // This button is the explicit opt-in for reading local coding-agent usage.
+    ccAnalyticsEnabled.value = includesCodex;
+    await saveSettings();
+    await invoke("set_cc_analytics_enabled", { enabled: includesCodex });
+    savedProviderSelection.value = providerSelection.value;
+    await loadCodexLimits();
+    const { emit } = await import("@tauri-apps/api/event");
+    await emit("settings-changed");
+    if (providerSelection.value !== "codex") {
+        await openSettings("providers");
     }
 }
 
@@ -703,6 +754,10 @@ onMounted(async () => {
     if (isKit) return;
 
     await loadSettings();
+    await initializeProviderSelection();
+    if (!configured.value && ccAnalyticsEnabled.value) {
+        await invoke("set_cc_analytics_enabled", { enabled: true }).catch(() => {});
+    }
     void logInfo(`[frontend] onMounted: settings loaded configured=${Boolean(configured.value)}`);
     await loadCodexLimits();
     codexLimitsTimer = setInterval(() => { void loadCodexLimits(); }, 30_000);
@@ -1045,21 +1100,46 @@ onUnmounted(() => {
                 class="cards"
             >
                 <CodexUsageCards v-if="codexLimits" :limits="codexLimits" />
-                <div style="padding: 22px 4px; text-align: center">
+                <div v-if="!providerDetectionReady" class="provider-loading">
+                    <div class="spinner"></div>
+                    <p>{{ t("detectingProviders") }}</p>
+                </div>
+                <div v-else class="provider-picker">
+                    <div class="provider-heading">
+                        <strong>{{ t("chooseProvider") }}</strong>
+                        <span>{{ t("chooseProviderHint") }}</span>
+                    </div>
+                    <div class="provider-options" role="radiogroup" :aria-label="t('chooseProvider')">
+                        <label
+                            v-for="option in providerOptions"
+                            :key="option"
+                            class="provider-option"
+                            :class="{ selected: providerSelection === option }"
+                        >
+                            <input v-model="providerSelection" type="radio" :value="option" />
+                            <span>
+                                <b>{{ t(`provider${option[0].toUpperCase()}${option.slice(1)}`) }}</b>
+                                <small>{{ t(`provider${option[0].toUpperCase()}${option.slice(1)}Hint`) }}</small>
+                            </span>
+                        </label>
+                    </div>
                     <p
-                        style="
-                            color: var(--text-3);
-                            font: 400 var(--fs-12) / var(--lh-12) var(--sans);
-                        "
+                        v-if="providerSelection === 'codex' || providerSelection === 'both'"
+                        class="provider-consent"
                     >
-                        {{ t("configureClaude") }}
+                        {{ t("codexConsent") }}
+                    </p>
+                    <p
+                        v-if="savedProviderSelection === providerSelection"
+                        class="provider-saved"
+                    >
+                        {{ t("providerSaved") }}
                     </p>
                     <button
                         class="btn-primary"
-                        @click="openSettings('providers')"
-                        style="margin-top: 12px"
+                        @click="confirmProviderSelection"
                     >
-                        {{ t("configure") }}
+                        {{ providerSelection === "codex" ? t("continue") : t("configureClaudeAction") }}
                     </button>
                 </div>
             </div>
@@ -1300,5 +1380,92 @@ onUnmounted(() => {
     border: 1px solid var(--accent);
     background: color-mix(in srgb, var(--ag-claude) 12%, transparent);
     vertical-align: middle;
+}
+
+.provider-loading {
+    padding: 30px 4px;
+    text-align: center;
+    color: var(--text-3);
+    font: 400 var(--fs-12) / var(--lh-12) var(--sans);
+}
+
+.provider-loading p {
+    margin-top: 12px;
+}
+
+.provider-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px 10px 18px;
+}
+
+.provider-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.provider-heading strong {
+    color: var(--text-1);
+    font: 600 var(--fs-13) / var(--lh-13) var(--sans);
+}
+
+.provider-heading span,
+.provider-consent,
+.provider-saved {
+    color: var(--text-3);
+    font: 400 var(--fs-12) / var(--lh-12) var(--sans);
+}
+
+.provider-options {
+    display: grid;
+    gap: 7px;
+}
+
+.provider-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 10px;
+    border: 1px solid var(--stroke-strong);
+    border-radius: var(--card-radius);
+    background: var(--layer);
+    cursor: pointer;
+}
+
+.provider-option.selected {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--ag-claude) 10%, transparent);
+}
+
+.provider-option input {
+    margin: 2px 0 0;
+    accent-color: var(--accent);
+}
+
+.provider-option span {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.provider-option b {
+    color: var(--text-1);
+    font: 600 var(--fs-13) / var(--lh-13) var(--sans);
+}
+
+.provider-option small {
+    color: var(--text-3);
+    font: 400 var(--fs-11) / var(--lh-11) var(--sans);
+}
+
+.provider-consent,
+.provider-saved {
+    margin: 0;
+}
+
+.provider-saved {
+    color: var(--ok);
 }
 </style>

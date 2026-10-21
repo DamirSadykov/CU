@@ -15,6 +15,7 @@ export const DEFAULT_FLOW_LANGUAGES: readonly FlowLanguage[] = ["ts", "js"];
 export type QuietHoursSetting = { enabled: boolean; start: string; end: string };
 export type RuntimeInsightsSetting = { enabled: boolean; kinds: string[] };
 export type SpecsSetting = { enabled: boolean; deltaGuard: "on" | "off" };
+export type ProviderSelection = "claude" | "codex" | "both";
 
 // Single read-only access layer for settings.json (issue: unify settings reads).
 //
@@ -47,6 +48,7 @@ export interface SettingsSnapshot {
     alertTiers: AlertTiers;
     alertTypes: AlertTypes;
     quietHours: QuietHoursSetting;
+    providerSelection: ProviderSelection | null;
     ccAnalyticsEnabled: boolean;
     dailyBudget: number | null;
     goalCostPerHourMax: number | null;
@@ -91,6 +93,7 @@ export function defaultSettings(): SettingsSnapshot {
         alertTiers: normalizeAlertTiers(undefined),
         alertTypes: normalizeAlertTypes(undefined),
         quietHours: { enabled: false, start: "23:00", end: "08:00" },
+        providerSelection: null,
         ccAnalyticsEnabled: false,
         dailyBudget: null,
         goalCostPerHourMax: null,
@@ -261,6 +264,12 @@ export async function readSettingsSnapshot(): Promise<SettingsSnapshot> {
             start: quietHours?.start ?? s.quietHours.start,
             end: quietHours?.end ?? s.quietHours.end,
         };
+        const providerSelection = await get<string>("providerSelection");
+        s.providerSelection = providerSelection === "claude"
+            || providerSelection === "codex"
+            || providerSelection === "both"
+            ? providerSelection
+            : null;
         s.ccAnalyticsEnabled = (await get<boolean>("ccAnalyticsEnabled")) ?? s.ccAnalyticsEnabled;
         s.dailyBudget = typeof dailyBudget === "number" ? dailyBudget : null;
         s.goalCostPerHourMax = (await get<number | null>("goalCostPerHourMax")) ?? null;

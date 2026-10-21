@@ -24,7 +24,7 @@
 import { spawn, execFileSync } from "node:child_process";
 import path from "node:path";
 import { homedir } from "node:os";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 
@@ -48,6 +48,7 @@ import {
 import { openAiCost } from "../models/providers.mjs";
 import { createCandidate } from "../models/candidate.mjs";
 import { snapshotTree } from "./red-gate.mjs";
+import { codexRolloutFiles } from "../kernel/codex-rollout.mjs";
 import { FILE_ANCHOR, parseFindings, priorFindingsBlock, readReviewBar, reviewBarText, verdictInstruction } from "./review-core.mjs";
 
 // Re-exported: the parsers moved to the provider seam, their callers and
@@ -307,30 +308,6 @@ export function transcriptPathFor(session, cwd) {
 
 export function claudeTranscriptPath(session, cwd) {
   return session ? path.join(transcriptDirFor(cwd), `${session}.jsonl`) : "";
-}
-
-function codexRolloutFiles(threadId) {
-  const sessions = path.join(process.env.CODEX_HOME || path.join(homedir(), ".codex"), "sessions");
-  const suffix = `-${threadId}.jsonl`;
-  const files = [];
-  const visit = (dir) => {
-    let entries;
-    try {
-      entries = readdirSync(dir, { withFileTypes: true });
-    } catch {
-      return false;
-    }
-    for (const entry of entries) {
-      const file = path.join(dir, entry.name);
-      if (entry.isDirectory()) {
-        if (!visit(file)) return false;
-      } else if (entry.isFile() && entry.name.startsWith("rollout-") && entry.name.endsWith(suffix)) {
-        files.push(file);
-      }
-    }
-    return true;
-  };
-  return visit(sessions) ? files.sort() : null;
 }
 
 export function codexRolloutPath(threadId) {

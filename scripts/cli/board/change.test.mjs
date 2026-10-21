@@ -251,7 +251,7 @@ describe("cli plan (with change as a compatibility alias)", () => {
 
   const run = (args, opts = {}) =>
     execFileSync(process.execPath, [cli, ...args], {
-      env: { ...process.env, APPDATA: dir, CLAUDE_CODE_SESSION_ID: "" },
+      env: { ...process.env, APPDATA: dir, CLAUDE_CODE_SESSION_ID: "", CODEX_SESSION_ID: "" },
       encoding: "utf8",
       cwd: opts.cwd ?? process.cwd(),
       stdio: "pipe",

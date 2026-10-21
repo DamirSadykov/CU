@@ -16,6 +16,7 @@ pub use external::{enroll, identity};
 pub use kernel::{board_lock, data_dir, report, sysmon};
 
 use std::collections::{HashMap, HashSet};
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
@@ -92,6 +93,165 @@ fn env_label(identifier: &str) -> Option<&'static str> {
 #[tauri::command]
 fn app_env_label(app: AppHandle) -> Option<String> {
     env_label(&app.config().identifier).map(str::to_string)
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+struct ProviderDetection {
+    claude: bool,
+    codex: bool,
+}
+
+fn executable_on_path(command: &str, path: Option<&OsStr>, path_ext: Option<&OsStr>) -> bool {
+    let Some(path) = path else {
+        return false;
+    };
+
+    #[cfg(windows)]
+    let candidates: Vec<String> = {
+        let mut suffixes = vec![String::new()];
+        suffixes.extend(
+            path_ext
+                .and_then(OsStr::to_str)
+                .unwrap_or(".COM;.EXE;.BAT;.CMD")
+                .split(';')
+                .filter(|ext| !ext.is_empty())
+                .map(|ext| {
+                    if ext.starts_with('.') {
+                        ext.to_string()
+                    } else {
+                        format!(".{ext}")
+                    }
+                }),
+        );
+        suffixes
+            .into_iter()
+            .map(|suffix| format!("{command}{suffix}"))
+            .collect()
+    };
+    #[cfg(not(windows))]
+    let candidates = vec![command.to_string()];
+
+    std::env::split_paths(path).any(|dir| {
+        candidates
+            .iter()
+            .any(|candidate| dir.join(candidate).is_file())
+    })
+}
+
+fn detect_providers_at(
+    home: Option<&Path>,
+    codex_home: Option<&Path>,
+    path: Option<&OsStr>,
+    path_ext: Option<&OsStr>,
+) -> ProviderDetection {
+    let claude = home.is_some_and(|dir| dir.join(".claude").exists())
+        || executable_on_path("claude", path, path_ext);
+    let codex_dir = codex_home
+        .map(PathBuf::from)
+        .or_else(|| home.map(|dir| dir.join(".codex")));
+    let codex = codex_dir.is_some_and(|dir| dir.join("auth.json").is_file());
+    ProviderDetection { claude, codex }
+}
+
+/// Detect locally usable coding providers without attempting authentication.
+/// Claude is considered present when its home directory or CLI exists; Codex
+/// requires the authentication file because a bare installation cannot load
+/// account limits.
+#[tauri::command]
+async fn detect_providers() -> ProviderDetection {
+    let home = dirs::home_dir();
+    let codex_home = std::env::var_os("CODEX_HOME")
+        .filter(|value| !value.is_empty())
+        .map(PathBuf::from);
+    let path = std::env::var_os("PATH");
+    let path_ext = std::env::var_os("PATHEXT");
+    detect_providers_at(
+        home.as_deref(),
+        codex_home.as_deref(),
+        path.as_deref(),
+        path_ext.as_deref(),
+    )
+}
+
+#[cfg(test)]
+mod detect_providers_tests {
+    use super::*;
+
+    static NEXT_TEMP: AtomicU64 = AtomicU64::new(0);
+
+    fn temp_dir(label: &str) -> PathBuf {
+        let id = NEXT_TEMP.fetch_add(1, Ordering::Relaxed);
+        let dir = std::env::temp_dir().join(format!(
+            "cu_detect_providers_{label}_{}_{}",
+            std::process::id(),
+            id
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    #[test]
+    fn detect_providers_finds_home_directories_and_codex_auth() {
+        let home = temp_dir("home");
+        std::fs::create_dir(home.join(".claude")).unwrap();
+        std::fs::create_dir(home.join(".codex")).unwrap();
+        std::fs::write(home.join(".codex").join("auth.json"), "{}").unwrap();
+
+        let found = detect_providers_at(Some(&home), None, None, None);
+        assert_eq!(
+            found,
+            ProviderDetection {
+                claude: true,
+                codex: true
+            }
+        );
+        let _ = std::fs::remove_dir_all(home);
+    }
+
+    #[test]
+    fn detect_providers_honours_codex_home_and_claude_path() {
+        let home = temp_dir("empty_home");
+        let codex_home = temp_dir("codex_home");
+        let bin = temp_dir("bin");
+        std::fs::write(codex_home.join("auth.json"), "{}").unwrap();
+        #[cfg(windows)]
+        let executable = bin.join("claude.CMD");
+        #[cfg(not(windows))]
+        let executable = bin.join("claude");
+        std::fs::write(executable, "").unwrap();
+        let path = std::env::join_paths([&bin]).unwrap();
+
+        let found = detect_providers_at(
+            Some(&home),
+            Some(&codex_home),
+            Some(path.as_os_str()),
+            Some(OsStr::new(".EXE;.CMD")),
+        );
+        assert_eq!(
+            found,
+            ProviderDetection {
+                claude: true,
+                codex: true
+            }
+        );
+        let _ = std::fs::remove_dir_all(home);
+        let _ = std::fs::remove_dir_all(codex_home);
+        let _ = std::fs::remove_dir_all(bin);
+    }
+
+    #[test]
+    fn detect_providers_requires_codex_auth_file() {
+        let home = temp_dir("no_auth");
+        std::fs::create_dir(home.join(".codex")).unwrap();
+        assert_eq!(
+            detect_providers_at(Some(&home), None, None, None),
+            ProviderDetection {
+                claude: false,
+                codex: false
+            }
+        );
+        let _ = std::fs::remove_dir_all(home);
+    }
 }
 
 fn now_ms() -> u64 {
@@ -988,6 +1148,14 @@ fn configure(
     apply_mini_layout(&app, system_info);
     notify.notify_one(); // apply immediately, don't wait out the interval
     Ok(())
+}
+
+#[tauri::command]
+fn set_cc_analytics_enabled(
+    enabled: bool,
+    state: tauri::State<'_, Mutex<AppConfig>>,
+) {
+    state.lock().unwrap().cc_analytics_enabled = enabled;
 }
 
 #[tauri::command]
@@ -3803,6 +3971,7 @@ pub fn run() {
             crate::spec::spec_domains,
             crate::spec::spec_section,
             refresh_now,
+            set_cc_analytics_enabled,
             open_claude,
             ensure_project,
             start_session,
@@ -3824,6 +3993,7 @@ pub fn run() {
             report_frontend_error,
             set_pin,
             app_env_label,
+            detect_providers,
             open_analytics_window,
             open_kit_window,
             get_analytics_ext,

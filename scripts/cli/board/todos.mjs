@@ -169,11 +169,15 @@ export function taskSessionsPath() {
 
 export function currentSessionId(flags = {}) {
   const explicit = typeof flags.session === "string" ? flags.session.trim() : "";
-  return explicit || String(process.env.CLAUDE_CODE_SESSION_ID || "").trim();
+  return (
+    explicit ||
+    String(process.env.CLAUDE_CODE_SESSION_ID || "").trim() ||
+    String(process.env.CODEX_SESSION_ID || "").trim()
+  );
 }
 
-// The other side of the same variable (t#312): a child process that is NOT the
-// session it inherited must not be handed its id, because everything reading it
+// The other side of the same variables (t#312): a child process that is NOT the
+// session it inherited must not be handed an id, because everything reading it
 // — `set status`, the SessionStart hook — would bind a session that is doing
 // none of that child's work. Erasing it makes the child behave exactly as it
 // does from a plain terminal, where the variable is unset. Lives next to
@@ -182,6 +186,7 @@ export function currentSessionId(flags = {}) {
 export function envWithoutSession(env = process.env) {
   const out = { ...env };
   delete out.CLAUDE_CODE_SESSION_ID;
+  delete out.CODEX_SESSION_ID;
   return out;
 }
 
@@ -306,8 +311,8 @@ function cmdTake(args) {
   const session = currentSessionId(flags);
   if (!session) {
     fail(
-      "no session id: CLAUDE_CODE_SESSION_ID is unset — `take` is meant to run INSIDE\n" +
-        "a Claude Code session, where the binding it records has a session to point at.\n" +
+      "no session id: CLAUDE_CODE_SESSION_ID and CODEX_SESSION_ID are unset — `take` is meant to run INSIDE\n" +
+        "a Claude Code or Codex session, where the binding it records has a session to point at.\n" +
         "pass one explicitly with --session <id> if you really know it.",
     );
   }
