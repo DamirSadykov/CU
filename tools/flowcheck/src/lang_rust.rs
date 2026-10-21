@@ -13,6 +13,8 @@ static RUST: LanguageSpec = LanguageSpec {
     new_expression_kind: None,
     macro_invocation_kind: Some("macro_invocation"),
     member_access_kind: "field_expression",
+    arguments_field: "arguments",
+    argument_kind: None,
     local_kinds: &["parameter", "let_declaration", "closure_parameters"],
     identifier_kind: "identifier",
     parenthesized_kind: "parenthesized_expression",
