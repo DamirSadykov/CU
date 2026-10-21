@@ -79,6 +79,8 @@ export function pathMatches(declared, touched) {
   return t.startsWith(d + "/") || t.includes("/" + d + "/");
 }
 
+const MTIME_UNTIL_SLACK_MS = 1000;
+
 export function outsideRepoEvidence({ cwd, repoRoot, since, until, statFile = fileMtime }) {
   if (!cwd || !since) return () => null;
   const root = repoRoot ? path.resolve(repoRoot) : null;
@@ -91,7 +93,7 @@ export function outsideRepoEvidence({ cwd, repoRoot, since, until, statFile = fi
     const abs = path.resolve(cwd, normalizePath(item));
     if (inside(abs)) return null;
     const mtime = statFile(abs);
-    if (!mtime || mtime < since || (until && mtime > until)) return null;
+    if (!mtime || mtime < since || (until && Date.parse(mtime) > Date.parse(until) + MTIME_UNTIL_SLACK_MS)) return null;
     return mtime;
   };
 }
