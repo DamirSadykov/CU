@@ -355,6 +355,21 @@ describe("cli plan (with change as a compatibility alias)", () => {
     expect(refuse(["change", "close", "c#1"])).toContain("has no tasks");
   });
 
+  it("удаляет пустой план только с --go", () => {
+    run(["plan", "new", "Пустой", "--project", "board"]);
+    expect(run(["plan", "rm", "p#1"])).toContain("DRY RUN");
+    expect(read().changes).toHaveLength(1);
+    expect(run(["plan", "rm", "p#1", "--go"])).toContain("deleted p#1");
+    expect(read().changes).toHaveLength(0);
+  });
+
+  it("отказывается удалять план с задачами, даже закрытыми", () => {
+    run(["plan", "new", "С задачей", "--project", "board"]);
+    run(["todos", "set", "change", "2", "p#1"]);
+    expect(refuse(["plan", "rm", "p#1", "--go"])).toContain("still has 1 task(s)");
+    expect(read().changes).toHaveLength(1);
+  });
+
   it("ведёт out по ключу what и показывает его в карточке", () => {
     run(["change", "new", "Перевод на записи", "--project", "board"]);
     run(["change", "out", "add", "c#1", "не трогаем окно", "--why", "нет запроса", "--ref", "docs/decision.md"]);

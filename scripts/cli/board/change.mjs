@@ -423,6 +423,42 @@ export function cmdClose(args, { collectFacts = null } = {}) {
   printMeasureReminder(change);
 }
 
+export function cmdRm(args) {
+  const { positional, flags } = parseArgs(args);
+  if (!positional[0]) fail(USAGE);
+  const file = boardPath();
+  const refuseMembers = (data, c) => {
+    if (c.legacy)
+      fail(`refusing: ${changeAddress(c)} is still a root task — delete it as a task: cli todos rm ${changeAddress(c)}`);
+    const { total } = changeProgress(data, c);
+    if (total > 0)
+      fail(
+        `refusing: ${changeAddress(c)} still has ${total} task(s) — only a plan with no tasks is deleted.
+` +
+          `  close it when they are done: cli plan close ${changeAddress(c)}`,
+      );
+  };
+  if (!flags.go) {
+    const data = loadBoard(file);
+    const c = resolveOrFail(data, positional[0]);
+    refuseMembers(data, c);
+    process.stdout.write(`${changeAddress(c)} "${c.title}"
+DRY RUN — nothing deleted. Do it: plan rm ${changeAddress(c)} --go
+`);
+    return;
+  }
+  const change = withBoardLock(file, () => {
+    const data = loadBoardForWrite(file);
+    const c = resolveOrFail(data, positional[0]);
+    refuseMembers(data, c);
+    data.changes = data.changes.filter((x) => x !== c);
+    saveBoard(file, data);
+    return c;
+  });
+  process.stdout.write(`ok: deleted ${changeAddress(change)} "${change.title}"
+`);
+}
+
 function printMeasureReminder(change) {
   const pending = (change.measure ?? []).filter((item) => !String(item.actual ?? "").trim());
   if (pending.length) {
@@ -673,6 +709,7 @@ export function run(args) {
   if (cmd === "list") return cmdList(rest);
   if (cmd === "show") return cmdShow(rest);
   if (cmd === "close") return mutate(() => cmdClose(rest));
+  if (cmd === "rm") return mutate(() => cmdRm(rest));
   if (cmd === "out") return mutate(() => cmdOut(rest));
   if (cmd === "measure") return mutate(() => cmdMeasure(rest));
   if (cmd === "proposal" && rest[0] === "set") return mutate(() => cmdProposal(rest));
