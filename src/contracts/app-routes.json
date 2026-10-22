@@ -1,0 +1,11 @@
+{
+  "scheme": "cu",
+  "settingsTabs": ["account", "providers", "limits", "notifications", "budget", "insights", "tasks", "integrations", "updates"],
+  "routes": [
+    { "path": "settings", "window": "settings" },
+    { "path": "settings/<tab>", "window": "settings" },
+    { "path": "tasks", "window": "todos" },
+    { "path": "tasks/<number>", "window": "todos" },
+    { "path": "analytics", "window": "analytics" }
+  ]
+}

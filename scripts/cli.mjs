@@ -27,6 +27,8 @@ const AREAS = {
   agents: "./cli/agents/agents.mjs",
   guard: "./cli/guard/guard.mjs",
   spec: "./cli/spec/spec.mjs",
+  open: "./cli/app/open.mjs",
+  guide: "./cli/app/guide.mjs",
   hook: "./cli/cc-hooks/hook.mjs",
   "stop-hook": "./cli/cc-hooks/stop-hook.mjs",
   "plan-hook": "./cli/process/plan-hook.mjs",
@@ -97,6 +99,8 @@ function usage(code) {
       "  trace     <…> restart-point reports and restart calibration\n" +
       "  agents  <…>   model/provider profiles used by autonomous task runs\n" +
       "  guard [rules] enforce write/command policy or print Codex execpolicy rules\n" +
+      "  guide         how CU works and where each setting lives — for an agent explaining CU\n" +
+      "  open <route>  open a CU window on a screen (cu://settings/<tab>, tasks/<N>, analytics); only when the user asks\n" +
       "  spec    <…>   spec registry (t#339): domains / show / refs / lint over docs/specs\n" +
       "  hook [--host claude|codex]  SessionStart context for an AI CLI\n" +
       "  stop-hook     Stop hook — blocks a stop that leaves a worked task without a handoff baton\n" +

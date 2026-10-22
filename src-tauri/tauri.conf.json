@@ -111,7 +111,11 @@
       "../docs/plan-format.md": "docs/plan-format.md",
       "../docs/plan-format-issues.md": "docs/plan-format-issues.md",
       "../docs/plan-format-cutting.md": "docs/plan-format-cutting.md",
-      "../docs/flow-delta.md": "docs/flow-delta.md"
+      "../docs/flow-delta.md": "docs/flow-delta.md",
+      "../scripts/cli/app/open.mjs": "scripts/cli/app/open.mjs",
+      "../scripts/cli/app/guide.mjs": "scripts/cli/app/guide.mjs",
+      "../src/contracts/app-routes.json": "src/contracts/app-routes.json",
+      "../docs/agent-guide.md": "docs/agent-guide.md"
     },
     "icon": [
       "icons/32x32.png",
@@ -129,6 +133,11 @@
     }
   },
   "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": ["cu"]
+      }
+    },
     "updater": {
       "active": true,
       "endpoints": [

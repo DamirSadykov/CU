@@ -3576,7 +3576,41 @@ fn apply_todo_import(app: AppHandle, path: String) -> Result<todos::ImportReport
 
 #[tauri::command]
 async fn open_todo_window(app: AppHandle) {
-    kernel::windows::open_todos(&app);
+    kernel::windows::open_todos(&app, None);
+}
+
+#[tauri::command]
+async fn take_todos_open_task(
+    state: tauri::State<'_, kernel::windows::WindowOpenState>,
+) -> Result<Option<u32>, ()> {
+    Ok(state.take_todos_task())
+}
+
+fn setup_deep_links(app: &AppHandle) {
+    use tauri_plugin_deep_link::DeepLinkExt;
+
+    let deep_link = app.deep_link();
+    #[cfg(debug_assertions)]
+    if std::env::var("CU_DEV_DEEPLINK").as_deref() == Ok("1") {
+        if let Err(error) = deep_link.register_all() {
+            warn!("deep link: register_all failed: {error}");
+        }
+    }
+    let handle = app.clone();
+    deep_link.on_open_url(move |event| {
+        for url in event.urls() {
+            kernel::deep_link::handle_url(&handle, url.as_str());
+        }
+    });
+    match deep_link.get_current() {
+        Ok(Some(urls)) => {
+            for url in urls {
+                kernel::deep_link::handle_url(app, url.as_str());
+            }
+        }
+        Ok(None) => {}
+        Err(error) => warn!("deep link: get_current failed: {error}"),
+    }
 }
 
 fn show_settings_window(app: &AppHandle, tab: Option<String>) {
@@ -3735,12 +3769,16 @@ pub fn run() {
                 .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepAll)
                 .build(),
         )
-        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            if kernel::deep_link::is_deep_link_launch(&args) {
+                return;
+            }
             if let Some(window) = app.get_webview_window("main") {
                 let _ = window.show();
                 let _ = window.set_focus();
             }
         }))
+        .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
@@ -3858,6 +3896,7 @@ pub fn run() {
             app.manage(cache::BoardCache::default());
             app.manage(graph_cache::GraphCache::default());
             app.manage(kernel::windows::WindowOpenState::default());
+            setup_deep_links(app.handle());
             let notify = Arc::new(Notify::new());
             app.manage(notify.clone());
 
@@ -4043,6 +4082,7 @@ pub fn run() {
             open_todo_window,
             open_settings_window,
             get_settings_open_tab,
+            take_todos_open_task,
             enrollment_status,
             enroll_bind,
             enroll_reset,
