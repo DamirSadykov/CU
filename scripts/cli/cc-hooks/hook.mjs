@@ -73,6 +73,7 @@ export function contractBlock(source, refExample = 12) {
     `  link two tasks  → <cli> todos dep add <task> <depends-on>  (blocking, acyclic, one board)  ·  <cli> todos ref add <task> <target>  (non-blocking, cross-project ok)`,
     `  handoff         → what a task passes to whatever depends on it: inherited notes auto-print on → in_progress; leave yours with \`<cli> todos handoff set <id> --text "<body>"\`.`,
     `  see the board   → <cli> todos list  [--all | --status <col>[,<col>]]`,
+    `  explain CU      → <cli> guide  (where each setting lives; <cli> open <route> only when the user asks)`,
     `Rules: <id> = N or #N. Touch only the field you're setting; add/comment only what's asked (new tasks → backlog). Prose: t#${refExample} links a task, bare #N is a GitHub PR/issue, inline t#N draws a non-blocking ref only — use \`dep add\` for a real dependency.`,
   ].join("\n");
 }

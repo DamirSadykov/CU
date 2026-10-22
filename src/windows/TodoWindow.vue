@@ -994,6 +994,17 @@ function openTask(number: number) {
   const t = byNumber.value.get(number);
   if (t) openDetail(t);
 }
+function openTaskWhenLoaded(number: number) {
+  if (byNumber.value.size > 0) {
+    openTask(number);
+    return;
+  }
+  const stop = watch(byNumber, (map) => {
+    if (map.size === 0) return;
+    stop();
+    openTask(number);
+  });
+}
 function openProject(name: string) {
   projectFilter.value = name;
   closeDetail();
@@ -1423,6 +1434,7 @@ let unlistenLocale: (() => void) | null = null;
 let unlistenFocus: (() => void) | null = null;
 let unlistenExternal: (() => void) | null = null;
 let unlistenTaskCosts: (() => void) | null = null;
+let unlistenTodosOpen: (() => void) | null = null;
 
 // Refresh the project picker from cc_usage. The todos window is a persisted
 // webview (created once at startup, then shown/hidden), so `onMounted` runs a
@@ -1577,6 +1589,11 @@ onMounted(async () => {
     void loadTaskCosts();
   });
   await loadTodos();
+  unlistenTodosOpen = await listen<number>("todos-open", (e) => {
+    openTaskWhenLoaded(Number(e.payload));
+  });
+  const pendingTask = await invoke<number | null>("take_todos_open_task");
+  if (pendingTask != null) openTaskWhenLoaded(pendingTask);
   void loadTaskCosts();
   // Populate the "External · N" count chip even while in local mode.
   void loadExternalTasks();
@@ -1602,6 +1619,7 @@ onUnmounted(() => {
   if (unlistenFocus) unlistenFocus();
   if (unlistenExternal) unlistenExternal();
   if (unlistenTaskCosts) unlistenTaskCosts();
+  if (unlistenTodosOpen) unlistenTodosOpen();
 });
 </script>
 

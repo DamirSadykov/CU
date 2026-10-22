@@ -14,6 +14,7 @@ const ALLOWED = {
   spec: ["kernel"],
   process: ["kernel", "board", "agents", "models"],
   analytics: ["kernel", "board", "agents"],
+  app: ["kernel"],
   "cc-hooks": ["kernel", "board", "agents", "spec", "process", "analytics", "cc-hooks"],
 };
 

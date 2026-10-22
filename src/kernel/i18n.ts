@@ -759,7 +759,7 @@ const messages = {
     projectGroupTip: "Works with:",
     awGroupsTitle: "Project groups (associations)",
     groupsDesc:
-      "Group projects that work together. They stay separate in stats, but show as related and can be totalled here. The cc-todos CLI reads these too, so a session in one project can file a task against a related one.",
+      "Group projects that work together. They stay separate in stats, but show as related and can be totalled here. The CU CLI reads these too, so a session in one project can file a task against a related one.",
     groupCreatePlaceholder: "New group name",
     groupCreate: "Create group",
     groupAddPlaceholder: "Add project…",
@@ -994,7 +994,7 @@ const messages = {
     ioImported: "Imported: {added} added, {forked} filed as new. {total} task(s) on the board.",
     installCcHook: "Claude Code CLI + hook",
     installCcHookDesc:
-      "Wire the SessionStart and Stop hooks into ~/.claude/settings.json so every Claude Code session sees this project's tasks, edits them via the cc-todos CLI, and can't end a session that worked a task without leaving a handoff.",
+      "Wire the SessionStart and Stop hooks into ~/.claude/settings.json so every Claude Code session sees this project's tasks, edits them via the CU CLI, and can't end a session that worked a task without leaving a handoff.",
     installCcHookOn: "Installed",
     installCcHookOff: "Not installed",
     installCcHookStopMissing:
@@ -1788,7 +1788,7 @@ const messages = {
     projectGroupTip: "Работает с:",
     awGroupsTitle: "Группы проектов (связи)",
     groupsDesc:
-      "Группируйте проекты, которые работают вместе. В статистике они остаются раздельными, но показываются связанными, и здесь можно посмотреть суммарный итог. Эти группы читает и CLI cc-todos — так из одного проекта можно поставить задачу в связанный.",
+      "Группируйте проекты, которые работают вместе. В статистике они остаются раздельными, но показываются связанными, и здесь можно посмотреть суммарный итог. Эти группы читает и CLI CU — так из одного проекта можно поставить задачу в связанный.",
     groupCreatePlaceholder: "Имя новой группы",
     groupCreate: "Создать группу",
     groupAddPlaceholder: "Добавить проект…",
@@ -2023,7 +2023,7 @@ const messages = {
     ioImported: "Импортировано: добавлено {added}, заведено новыми {forked}. Задач на доске: {total}.",
     installCcHook: "CLI + хук Claude Code",
     installCcHookDesc:
-      "Прописать хуки SessionStart и Stop в ~/.claude/settings.json, чтобы каждая сессия Claude Code видела задачи этого проекта, меняла их через CLI cc-todos и не завершала сессию с рабочей задачей без handoff.",
+      "Прописать хуки SessionStart и Stop в ~/.claude/settings.json, чтобы каждая сессия Claude Code видела задачи этого проекта, меняла их через CLI CU и не завершала сессию с рабочей задачей без handoff.",
     installCcHookOn: "Установлено",
     installCcHookOff: "Не установлено",
     installCcHookStopMissing:

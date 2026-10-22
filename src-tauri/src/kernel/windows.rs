@@ -6,6 +6,7 @@ use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 #[derive(Default)]
 pub struct WindowOpenState {
     settings_tab: Mutex<String>,
+    todos_task: Mutex<Option<u32>>,
 }
 
 impl WindowOpenState {
@@ -15,6 +16,14 @@ impl WindowOpenState {
 
     fn set_settings_tab(&self, tab: String) {
         *self.settings_tab.lock().unwrap() = tab;
+    }
+
+    pub fn take_todos_task(&self) -> Option<u32> {
+        self.todos_task.lock().unwrap().take()
+    }
+
+    fn set_todos_task(&self, task: Option<u32>) {
+        *self.todos_task.lock().unwrap() = task;
     }
 }
 
@@ -65,9 +74,13 @@ pub fn open_kit(app: &AppHandle) {
     }
 }
 
-pub fn open_todos(app: &AppHandle) {
+pub fn open_todos(app: &AppHandle, task: Option<u32>) {
+    app.state::<WindowOpenState>().set_todos_task(task);
     if let Some(window) = app.get_webview_window("todos") {
         show(&window);
+        if let Some(number) = task {
+            let _ = window.emit("todos-open", number);
+        }
         return;
     }
     if let Err(error) =

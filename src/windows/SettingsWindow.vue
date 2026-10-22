@@ -21,6 +21,7 @@ type SettingsTab =
     | "budget"
     | "insights"
     | "tasks"
+    | "integrations"
     | "updates";
 
 const { locale } = useI18n();
