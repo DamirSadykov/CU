@@ -184,6 +184,15 @@ export function planCandidates(text) {
   return out;
 }
 
+export function planBrief(text, source) {
+  const raw = String(text ?? "").replace(/\r\n?/g, "\n");
+  for (const m of raw.matchAll(FENCE_RE)) {
+    if (!m[1].includes(source)) continue;
+    return (raw.slice(0, m.index) + raw.slice(m.index + m[0].length)).replace(/\n{3,}/g, "\n\n").trim();
+  }
+  return "";
+}
+
 // --- the way out: a plan that is not about starting work ---------------------
 //
 // Plan mode is used for two things, and only one of them ends in tasks: a session
@@ -341,7 +350,7 @@ export function buildRefusal(errors, warnings = []) {
   lines.push(
     "",
     "Fix the plan itself and call ExitPlanMode again. Do not append a corrected",
-    "copy next to the old one — the plan IS the file, and there is one of it.",
+    "block next to the old one — a plan carries exactly one graph block.",
     "Use §1 of the base format for field meanings and §2 for the graph shape:",
     `  ${FORMAT_DOC}`,
   );
@@ -356,13 +365,13 @@ export function buildRefusal(errors, warnings = []) {
 // Exported for the unit tests.
 export function buildFormatRefusal() {
   return [
-    "PLAN REFUSED — it is not written in the process language, so it never reached",
-    "the user. A plan is recorded as the tracker's graph file, not as prose about it.",
+    "PLAN REFUSED — it has no task graph, so it never reached the user. Keep the",
+    "prose brief and add ONE ```yaml block the tracker records.",
     "",
-    "Rewrite the draft plan itself as the file: `change`, `vision`, `steps` with `title`",
-    "(or `task: <N>` for work already on the board), `why`, `needs`, `produces`,",
-    "`verify`, `kind`. A one-task draft plan is a file too. The shape, the rules and a",
-    "worked example:",
+    "The block holds `change` and `steps` with `title` (or `task: <N>` for work",
+    "already on the board), `why`, `needs`, `produces`, `verify`, `kind`. Text outside",
+    "the block becomes the plan's `vision`. A one-task draft plan has a block too.",
+    "The shape, the rules and a worked example:",
     `  §1 and §2: ${FORMAT_DOC}`,
     "",
     "If this plan does NOT start work — you are settling a question with the user,",

@@ -47,6 +47,7 @@ import {
   discussionDeclaration,
   isReason,
   planCandidates,
+  planBrief,
   planFormatDoc,
   planFormatIssuesDoc,
   planFormatCuttingDoc,
@@ -174,8 +175,8 @@ export function buildArchitectGateNotice(gate, planGuard = true) {
 
 export function buildEnterContext({ architectGate, planGuard = true } = {}) {
   const lines = [
-    "──────── PLAN MODE · the plan IS the graph file ────────",
-    "Write the draft plan as the YAML graph file the tracker records, one task per entry.",
+    "──────── PLAN MODE · free brief + one YAML graph block ────────",
+    "Write the brief freely; add ONE ```yaml block the tracker records, one task per entry.",
     "READ THE BASE NOW — it contains the field legend, inference rules and examples:",
     `  ${FORMAT_DOC}`,
     "EVERY plan is REFUSED before the user sees it if malformed.",
@@ -454,6 +455,7 @@ export function recordPlan(planText, { session = "", apply = applyDocument, file
   for (const source of planCandidates(planText)) {
     const doc = readDocument(source);
     if (!doc.steps.length) continue;
+    if (!doc.vision) doc.vision = planBrief(planText, source);
     const key = JSON.stringify([doc.change, doc.steps.map((s) => [s.task, s.title])]);
     if (readings.has(key)) continue;
     if (!apply(doc, { go: false }).ok) continue;
