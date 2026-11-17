@@ -1672,7 +1672,7 @@ export async function finishStep(ctx, task, { result, review, baton, cost, ownCh
   if (ctx.interrupted) return finishAttempt(ctx, task, {
     ...base, kind: "mechanics", endReason: "interrupted", reason: `interrupted by ${ctx.interrupted}`,
   });
-  const verify = Number(verdictRun?.code) === 0 ? "ok" : "issue";
+  const verify = verdictRun?.code === 0 && !verdictRun?.timedOut && !verdictRun?.error ? "ok" : "issue";
   const logFile = saveVerifyLog(ctx, task, attempt, verifyLog, verdictRun);
   emitRunEvent(ctx, { task: task.number, kind: "verify", attempt, limit, ok: verify === "ok", ...(logFile ? { log: logFile } : {}) });
   if (verify === "issue") {
