@@ -271,16 +271,18 @@ describe("board lock — stale-lock steal does not clobber a fresh winner (t#730
   });
 });
 
-describe("board lock — Windows create-time EPERM/EACCES/EBUSY is contention, not fatal (t#704)", () => {
+describe("board lock — Windows create-time EPERM/EACCES/EBUSY is contention, not fatal", () => {
   let dir;
+  let deniedIdentity;
   afterEach(() => {
     if (dir) {
       try {
-        execFileSync("icacls", [dir, "/remove:d", process.env.USERNAME], { windowsHide: true });
+        execFileSync("icacls", [dir, "/remove:d", deniedIdentity], { windowsHide: true });
       } catch {}
       rmSync(dir, { recursive: true, force: true });
     }
     dir = null;
+    deniedIdentity = null;
   });
 
   const maybeIt = process.platform === "win32" ? it : it.skip;
@@ -288,10 +290,22 @@ describe("board lock — Windows create-time EPERM/EACCES/EBUSY is contention, n
   maybeIt(
     "waits out the full deadline polling, then reports the real EPERM instead of a fake TIMEOUT",
     () => {
+      const identity = execFileSync("whoami", ["/user", "/fo", "csv", "/nh"], {
+        encoding: "utf8",
+        windowsHide: true,
+      });
+      const sid = identity.match(/"(S-\d+(?:-\d+)+)"/)?.[1];
+      expect(sid, "whoami must identify the current user's SID").toBeTruthy();
+      deniedIdentity = `*${sid}`;
       dir = mkdtempSync(path.join(os.tmpdir(), "lock-"));
       const file = path.join(dir, "todos.json");
 
-      execFileSync("icacls", [dir, "/deny", `${process.env.USERNAME}:(OI)(CI)(W)`], { windowsHide: true });
+      execFileSync("icacls", [dir, "/deny", `${deniedIdentity}:(OI)(CI)(W)`], { windowsHide: true });
+
+      expect(
+        () => writeFileSync(path.join(dir, "write-probe.txt"), "must be denied"),
+        "icacls must deny writes before measuring lock retries",
+      ).toThrowError(expect.objectContaining({ code: "EPERM" }));
 
       const start = Date.now();
       const got = acquireBoardLock(file, { waitMs: 300 });
