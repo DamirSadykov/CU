@@ -189,6 +189,7 @@ onUnmounted(() => {
             :memory-bloat-enabled="settings.memoryBloatEnabled"
             :todo-notifications-enabled="settings.todoNotificationsEnabled"
             :system-info-enabled="settings.systemInfoEnabled"
+            :mini-provider="settings.miniProvider"
             :corrections-enabled="settings.correctionsEnabled"
             :runtime-insights="settings.runtimeInsights"
             :keep-awake-enabled="settings.keepAwakeEnabled"

@@ -25,6 +25,12 @@ function seed(name: string, entries: Record<string, unknown>) {
 describe("settings migration to structured keys", () => {
     beforeEach(() => stores.clear());
 
+    it.each([undefined, "invalid", "auto", "claude", "codex"])("reads mini provider %s safely", async (value) => {
+        seed("settings.json", { miniProvider: value });
+        const settings = await readSettingsSnapshot();
+        expect(settings.miniProvider).toBe(value === "claude" || value === "codex" ? value : "auto");
+    });
+
     it("flat legacy keys become structured settings and are removed", async () => {
         seed("settings.json", {
             quietHoursEnabled: true,

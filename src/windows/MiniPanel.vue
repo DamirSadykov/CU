@@ -1,23 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { readSettingsSnapshot } from "../kernel/settingsStore";
-
-interface UsageTier {
-  percent_used: number;
-  reset_at: string | null;
-  is_limited: boolean;
-}
-
-interface UsageData {
-  five_hour: UsageTier;
-  seven_day: UsageTier;
-}
-
-interface UsageLevels {
-  five_hour: number;
-  seven_day: number;
-}
+import { useSettings } from "../kernel/settingsStore";
+import type { UsageData, UsageLevels, CodexRateLimits } from "../contracts/types";
+import { miniQuota } from "../analytics/miniQuota";
+import { logWarn } from "../kernel/logging";
 
 // Whole-system resource snapshot (CPU load + RAM), emitted by the backend
 // sysmon loop. Reflects the entire machine, not just this app.
@@ -36,6 +24,51 @@ const sys = ref<SysStats | null>(null);
 const systemInfo = ref(true);
 const error = ref("");
 const unlisteners: Array<() => void> = [];
+const { settings, initSettings } = useSettings();
+const codexLimits = ref<CodexRateLimits | null>(null);
+const codexLimitsError = ref("");
+const now = ref(Date.now());
+let limitsTimer: ReturnType<typeof setInterval> | null = null;
+const claudeConnected = computed(() => Boolean(settings.value.sessionKey && settings.value.orgId));
+const provider = computed(() => settings.value.miniProvider === "auto"
+  ? claudeConnected.value ? "claude" : "codex"
+  : settings.value.miniProvider);
+const providerName = computed(() => provider.value === "codex" ? "Codex" : "Claude");
+const quotas = computed(() => miniQuota(provider.value, claudeConnected.value ? usage.value : null,
+  levels.value, settings.value.ccAnalyticsEnabled ? codexLimits.value : null, now.value));
+
+let limitsRequest = 0;
+async function loadCodexLimits() {
+  const request = ++limitsRequest;
+  codexLimitsError.value = "";
+  now.value = Date.now();
+  if (!settings.value.ccAnalyticsEnabled || provider.value !== "codex") {
+    codexLimits.value = null;
+    return;
+  }
+  try {
+    const limits = await invoke<CodexRateLimits | null>("get_codex_limits", { enabled: true });
+    if (request === limitsRequest) codexLimits.value = limits;
+  } catch (err) {
+    if (request !== limitsRequest) return;
+    codexLimits.value = null;
+    codexLimitsError.value = String(err);
+    void logWarn(`[mini] get_codex_limits failed: ${err}`);
+  }
+}
+
+watch([provider, () => settings.value.ccAnalyticsEnabled], () => { void loadCodexLimits(); });
+watch(claudeConnected, (connected) => {
+  if (!connected) {
+    usage.value = null;
+    levels.value = null;
+    error.value = "";
+  }
+});
+
+function percentLabel(value: number | null): string {
+  return value === null ? "—" : `${value.toFixed(0)}%`;
+}
 
 const MINI_CLASSES = ["t-green", "t-yellow", "t-orange", "t-red"];
 function cls(level: number | null | undefined): string {
@@ -64,18 +97,18 @@ onMounted(async () => {
   // mount after the backend's last `configure`, so we can't rely on the
   // `system-info-enabled` event alone. That event stays the live channel below
   // (it also carries the drop-stale-readings side-effect).
-  systemInfo.value = (await readSettingsSnapshot()).systemInfoEnabled;
-
-  // The backend polling loop emits these globally to every window; the mini
-  // panel is a pure view — no fetching, timers or threshold logic of its own.
+  await initSettings();
+  systemInfo.value = settings.value.systemInfoEnabled;
   const { listen } = await import("@tauri-apps/api/event");
   unlisteners.push(
     await listen<{ usage: UsageData; levels: UsageLevels }>("usage-updated", (e) => {
+      if (!claudeConnected.value) return;
       usage.value = e.payload.usage;
       levels.value = e.payload.levels;
       error.value = "";
     }),
     await listen<{ message: string; reportable: boolean }>("usage-error", (e) => {
+      if (!claudeConnected.value) return;
       error.value = String(e.payload?.message ?? e.payload);
     }),
     await listen<SysStats>("system-stats", (e) => {
@@ -87,25 +120,23 @@ onMounted(async () => {
       if (!e.payload) sys.value = null;
     }),
   );
+  void loadCodexLimits();
+  limitsTimer = setInterval(() => { void loadCodexLimits(); }, 30_000);
 });
 
 onUnmounted(() => {
   unlisteners.forEach((u) => u());
+  if (limitsTimer) clearInterval(limitsTimer);
 });
 </script>
 
 <template>
-  <div class="mini" @mousedown="startDrag">
-    <template v-if="usage && levels">
-      <!-- Compact 2×2: Claude quota + whole-machine CPU/RAM -->
+  <div class="mini" :aria-label="providerName" :title="provider === 'claude' ? error || providerName : codexLimitsError || providerName" @mousedown="startDrag">
+    <div class="provider-name">{{ providerName }}</div>
       <div v-if="systemInfo" class="grid">
-        <div class="cell">
-          <span class="label">5h</span>
-          <span class="val" :class="cls(levels.five_hour)">{{ usage.five_hour.percent_used.toFixed(0) }}%</span>
-        </div>
-        <div class="cell">
-          <span class="label">7d</span>
-          <span class="val" :class="cls(levels.seven_day)">{{ usage.seven_day.percent_used.toFixed(0) }}%</span>
+        <div v-for="(quota, index) in quotas" :key="index" class="cell">
+          <span class="label">{{ quota.label }}</span>
+          <span class="val" :class="quota.percent === null ? '' : cls(quota.level)">{{ percentLabel(quota.percent) }}</span>
         </div>
         <template v-if="sys">
           <div class="cell">
@@ -123,23 +154,21 @@ onUnmounted(() => {
            .mini so .track's flex:1 fills the full window width (a wrapper div
            collapsed the track to 0). -->
       <template v-else>
-        <div class="row">
-          <span class="label">5h</span>
-          <div class="track"><i :class="cls(levels.five_hour)" :style="{ width: Math.min(usage.five_hour.percent_used, 100) + '%' }"></i></div>
-          <span class="val" :class="cls(levels.five_hour)">{{ usage.five_hour.percent_used.toFixed(0) }}%</span>
-        </div>
-        <div class="row">
-          <span class="label">7d</span>
-          <div class="track"><i :class="cls(levels.seven_day)" :style="{ width: Math.min(usage.seven_day.percent_used, 100) + '%' }"></i></div>
-          <span class="val" :class="cls(levels.seven_day)">{{ usage.seven_day.percent_used.toFixed(0) }}%</span>
+        <div v-for="(quota, index) in quotas" :key="index" class="row">
+          <span class="label">{{ quota.label }}</span>
+          <div class="track"><i :class="cls(quota.level)" :style="{ width: Math.min(quota.percent ?? 0, 100) + '%' }"></i></div>
+          <span class="val" :class="quota.percent === null ? '' : cls(quota.level)">{{ percentLabel(quota.percent) }}</span>
         </div>
       </template>
-    </template>
-    <div v-else class="loading">{{ error || '...' }}</div>
   </div>
 </template>
 
 <style scoped>
+.provider-name {
+  color: var(--text-2);
+  font: 600 var(--fs-11) / var(--lh-11) var(--mono);
+}
+
 .mini {
   width: 100%;
   height: 100%;

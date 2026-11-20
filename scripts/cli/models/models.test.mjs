@@ -81,7 +81,7 @@ describe("Candidate", () => {
 
   it("reports binary and guard independently during preflight", () => {
     const check = createCandidate({ provider: "openai", model: "gpt-5.6-sol" }).check({
-      bin: "codex", rulesFile: "Z:/definitely-absent/cu-guard.rules",
+      bin: "codex", hooksFile: "Z:/definitely-absent/hooks.json",
       run: () => ({ status: 0, stderr: "" }),
     });
     expect(check).toMatchObject({ ok: true, binary: { available: true }, guard: { active: false } });
