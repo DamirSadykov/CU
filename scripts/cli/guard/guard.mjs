@@ -1,5 +1,6 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { writeFileSync } from "node:fs";
 import { GUARDED_TOOLS, WRITE_TOOLS, blockedCommand, codexRules } from "./policy.mjs";
 
 export function toolPayload(payload = {}) {
@@ -56,11 +57,21 @@ export async function run(args = []) {
     process.stdout.write(codexRules());
     return;
   }
+  if (process.env.TRACKER_SESSION_KIND !== "runner") return;
   let payload;
   try { payload = JSON.parse(await readStdin()); }
   catch { return; } // a hook parsing failure must not break the host CLI
   const verdict = checkPayload(payload);
+  if (process.env.CU_RUNNER_GUARD_PROOF) {
+    try { writeFileSync(process.env.CU_RUNNER_GUARD_PROOF, "active"); } catch {}
+  }
   if (!verdict.allowed) {
+    if (args.includes("codex")) {
+      process.stdout.write(JSON.stringify({ hookSpecificOutput: {
+        hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: `CU runner guard: ${verdict.reason}`,
+      } }));
+      return;
+    }
     const error = new Error(`Command blocked by CU guard: ${verdict.reason}. Use a safe alternative or stop and report it.`);
     error.exitCode = 2;
     throw error;

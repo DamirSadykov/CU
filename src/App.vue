@@ -95,6 +95,7 @@ const runtimeInsightsEnabled = ref(false);
 const runtimeInsightKinds = ref<string[]>(["long_session", "cold_rewrites"]);
 const keepAwakeEnabled = ref(false);
 const systemInfoEnabled = ref(true);
+const miniProvider = ref<"auto" | "claude" | "codex">("auto");
 const correctionsEnabled = ref(false);
 const uiTheme = ref("system");
 const uiSkin = ref("standard");
@@ -106,6 +107,8 @@ const usage = ref<UsageData | null>(null);
 const levels = ref<UsageLevels | null>(null);
 const forecast = ref<ForecastData | null>(null);
 const codexLimits = ref<CodexRateLimits | null>(null);
+const codexLimitsError = ref("");
+const showProviderSetup = computed(() => !configured.value && savedProviderSelection.value !== "codex");
 let codexLimitsTimer: ReturnType<typeof setInterval> | null = null;
 const sessionActive = computed(() => {
     const fh = usage.value?.five_hour;
@@ -243,6 +246,7 @@ async function loadSettings() {
     runtimeInsightKinds.value = s.runtimeInsights.kinds;
     keepAwakeEnabled.value = s.keepAwakeEnabled;
     systemInfoEnabled.value = s.systemInfoEnabled;
+    miniProvider.value = s.miniProvider;
     correctionsEnabled.value = s.correctionsEnabled;
     // An unset locale must not clobber the running one (navigator default).
     if (s.locale) locale.value = s.locale;
@@ -293,6 +297,7 @@ async function saveSettings() {
     });
     await store.set("keepAwakeEnabled", keepAwakeEnabled.value);
     await store.set("systemInfoEnabled", systemInfoEnabled.value);
+    await store.set("miniProvider", miniProvider.value);
     await store.set("correctionsEnabled", correctionsEnabled.value);
     await store.set("locale", locale.value);
     await store.set("uiTheme", uiTheme.value);
@@ -326,7 +331,7 @@ function buildConfig() {
         goal_cost_per_hour_max: goalCostPerHourMax.value,
         goal_error_rate_max: goalErrorRateMax.value,
         notifications_muted_until: notificationsMutedUntil.value,
-        service_status_enabled: serviceStatusEnabled.value,
+        service_status_enabled: Boolean(configured.value) && serviceStatusEnabled.value,
         service_status_interval: serviceStatusInterval.value,
         service_status_notify: serviceStatusNotify.value,
         memory_bloat_enabled: memoryBloatEnabled.value,
@@ -340,11 +345,19 @@ function buildConfig() {
 }
 
 async function applyConfig() {
-    if (!configured.value) {
-        void logInfo("[frontend] applyConfig skipped: session key or org id empty");
-        return;
+    if (configured.value) {
+        beginLoading();
+    } else {
+        settleLoading();
+        usage.value = null;
+        levels.value = null;
+        forecast.value = null;
+        error.value = "";
+        errorReportable.value = false;
+        sessionExpired.value = false;
+        autoStartStatus.value = "";
+        stopAutoStartTimer();
     }
-    beginLoading();
     try {
         const config = buildConfig();
         void logInfo("[frontend] configure: invoke");
@@ -472,17 +485,24 @@ async function loadForecast() {
     }
 }
 
+let codexLimitsRequest = 0;
 async function loadCodexLimits() {
+    const request = ++codexLimitsRequest;
+    codexLimitsError.value = "";
     if (!ccAnalyticsEnabled.value) {
         codexLimits.value = null;
         return;
     }
     try {
-        codexLimits.value = await invoke<CodexRateLimits | null>("get_codex_limits", {
+        const limits = await invoke<CodexRateLimits | null>("get_codex_limits", {
             enabled: ccAnalyticsEnabled.value,
         });
-    } catch {
+        if (request === codexLimitsRequest && ccAnalyticsEnabled.value) codexLimits.value = limits;
+    } catch (err) {
+        if (request !== codexLimitsRequest || !ccAnalyticsEnabled.value) return;
         codexLimits.value = null;
+        codexLimitsError.value = String(err);
+        void logWarn(`[frontend] get_codex_limits failed: ${err}`);
     }
 }
 
@@ -521,7 +541,7 @@ async function confirmProviderSelection() {
     await saveSettings();
     await invoke("set_cc_analytics_enabled", { enabled: includesCodex });
     savedProviderSelection.value = providerSelection.value;
-    await loadCodexLimits();
+    void loadCodexLimits();
     const { emit } = await import("@tauri-apps/api/event");
     await emit("settings-changed");
     if (providerSelection.value !== "codex") {
@@ -637,11 +657,15 @@ async function handleSave(settings: {
     memoryBloatEnabled: boolean;
     todoNotificationsEnabled: boolean;
     systemInfoEnabled: boolean;
+    miniProvider: "auto" | "claude" | "codex";
     correctionsEnabled: boolean;
     locale: string;
     uiTheme: string;
     uiSkin: string;
 }) {
+    if (orgId.value !== settings.orgId || !settings.sessionKey || !settings.orgId) {
+        projectId.value = "";
+    }
     sessionKey.value = settings.sessionKey;
     orgId.value = settings.orgId;
     refreshInterval.value = settings.refreshInterval;
@@ -667,6 +691,7 @@ async function handleSave(settings: {
     memoryBloatEnabled.value = settings.memoryBloatEnabled;
     todoNotificationsEnabled.value = settings.todoNotificationsEnabled;
     systemInfoEnabled.value = settings.systemInfoEnabled;
+    miniProvider.value = settings.miniProvider;
     correctionsEnabled.value = settings.correctionsEnabled;
     locale.value = settings.locale;
     uiTheme.value = settings.uiTheme;
@@ -679,7 +704,7 @@ async function handleSave(settings: {
     await applyConfig();
     await loadTodaySpent();
     await loadForecast();
-    await loadCodexLimits();
+    void loadCodexLimits();
     // Tell the settings window (and any other listener) to refresh its form from
     // the canonical on-disk state we just wrote.
     const { emit } = await import("@tauri-apps/api/event");
@@ -692,7 +717,7 @@ async function handleRuntimeChange(payload: { enabled: boolean; kinds: string[] 
     runtimeInsightsEnabled.value = payload.enabled;
     runtimeInsightKinds.value = [...payload.kinds];
     await saveSettings();
-    if (configured.value) await applyConfig();
+    await applyConfig();
     const { emit } = await import("@tauri-apps/api/event");
     await emit("settings-changed");
 }
@@ -700,7 +725,7 @@ async function handleRuntimeChange(payload: { enabled: boolean; kinds: string[] 
 async function handleKeepAwakeChange(enabled: boolean) {
     keepAwakeEnabled.value = enabled;
     await saveSettings();
-    if (configured.value) await applyConfig();
+    await applyConfig();
     const { emit } = await import("@tauri-apps/api/event");
     await emit("settings-changed");
 }
@@ -759,9 +784,6 @@ onMounted(async () => {
         await invoke("set_cc_analytics_enabled", { enabled: true }).catch(() => {});
     }
     void logInfo(`[frontend] onMounted: settings loaded configured=${Boolean(configured.value)}`);
-    await loadCodexLimits();
-    codexLimitsTimer = setInterval(() => { void loadCodexLimits(); }, 30_000);
-
     try {
         envBadge.value = await invoke<string | null>("app_env_label");
     } catch {
@@ -773,6 +795,7 @@ onMounted(async () => {
         await listen<{ usage: UsageData; levels: UsageLevels }>(
             "usage-updated",
             (e) => {
+                if (!configured.value) return;
                 usage.value = e.payload.usage;
                 levels.value = e.payload.levels;
                 error.value = "";
@@ -787,6 +810,7 @@ onMounted(async () => {
         await listen<{ message: string; reportable: boolean; session_expired?: boolean }>(
             "usage-error",
             (e) => {
+                if (!configured.value) return;
                 error.value = String(e.payload?.message ?? e.payload);
                 errorReportable.value = e.payload?.reportable ?? false;
                 sessionExpired.value = e.payload?.session_expired ?? false;
@@ -864,9 +888,9 @@ onMounted(async () => {
     );
 
     void logInfo("[frontend] onMounted: listeners ready");
-    if (configured.value) {
-        await applyConfig();
-    }
+    void loadCodexLimits();
+    codexLimitsTimer = setInterval(() => { void loadCodexLimits(); }, 30_000);
+    await applyConfig();
 
     // Surface a diagnostic report left by a crash on the previous run (or a
     // frontend error), offering to file a pre-filled GitHub issue.
@@ -916,7 +940,7 @@ onUnmounted(() => {
                     class="icon-btn"
                     @click="toggleMini"
                     title="Mini widget"
-                    v-if="!showAbout && configured"
+                    v-if="!showAbout"
                 >
                     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
                         <rect x="1" y="5" width="14" height="8" rx="2" stroke-linecap="round"/>
@@ -928,7 +952,7 @@ onUnmounted(() => {
                     :class="{ spin: loading }"
                     @click="refresh"
                     :title="t('refresh')"
-                    v-if="!showAbout && configured"
+                    v-if="!showAbout && (configured || ccAnalyticsEnabled)"
                 >
                     <svg
                         width="14"
@@ -951,7 +975,7 @@ onUnmounted(() => {
                     :class="{ active: showAnalytics }"
                     @click="toggleAnalytics"
                     :title="t('analytics')"
-                    v-if="!showAbout && configured && ccAnalyticsEnabled"
+                    v-if="!showAbout && ccAnalyticsEnabled"
                 >
                     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
                         <path d="M2 14V2" stroke-linecap="round"/>
@@ -1018,13 +1042,6 @@ onUnmounted(() => {
         </div>
 
         <div class="hr"></div>
-
-        <!-- Status tray: Claude service health + 5h session activity -->
-        <ServiceStatusBar
-            v-if="usage && !showAbout && (serviceStatusEnabled || sessionActive)"
-            :service-enabled="serviceStatusEnabled"
-            :session-active="sessionActive"
-        />
 
         <!-- Update banner -->
         <div
@@ -1095,11 +1112,29 @@ onUnmounted(() => {
 
         <!-- Usage -->
         <template v-else>
+            <div class="provider-list">
+            <section v-if="codexLimits || (ccAnalyticsEnabled && savedProviderSelection === 'codex')" class="provider-section" aria-label="Codex">
+                <h2 class="provider-section-heading">Codex</h2>
+                <div class="cards">
+                    <CodexUsageCards v-if="codexLimits" :limits="codexLimits" />
+                    <div v-else class="card">
+                        <p>{{ t(codexLimitsError ? "codexLimitsFailed" : "codexLimitsPending") }}</p>
+                        <p v-if="codexLimitsError">{{ codexLimitsError }}</p>
+                        <button class="btn-secondary" @click="loadCodexLimits">{{ t("retry") }}</button>
+                    </div>
+                </div>
+            </section>
+            <section v-if="configured || showProviderSetup" class="provider-section" :aria-label="configured ? 'Claude' : undefined">
+            <h2 v-if="configured" class="provider-section-heading">Claude</h2>
+            <ServiceStatusBar
+                v-if="configured && usage && (serviceStatusEnabled || sessionActive)"
+                :service-enabled="serviceStatusEnabled"
+                :session-active="sessionActive"
+            />
             <div
                 v-if="!configured"
                 class="cards"
             >
-                <CodexUsageCards v-if="codexLimits" :limits="codexLimits" />
                 <div v-if="!providerDetectionReady" class="provider-loading">
                     <div class="spinner"></div>
                     <p>{{ t("detectingProviders") }}</p>
@@ -1145,7 +1180,6 @@ onUnmounted(() => {
             </div>
 
             <div v-else-if="error" class="cards">
-                <CodexUsageCards v-if="codexLimits" :limits="codexLimits" />
                 <div
                     class="card"
                     style="border-color: color-mix(in srgb, var(--crit) 30%, transparent)"
@@ -1197,7 +1231,6 @@ onUnmounted(() => {
                     :usage="usage"
                     :levels="levels"
                     :forecast="forecast"
-                    :codex-limits="codexLimits"
                     :loading="loading"
                     :auto-start-enabled="autoStartSession"
                     :auto-start-status="autoStartStatus"
@@ -1208,18 +1241,12 @@ onUnmounted(() => {
                     @refresh="refresh"
                     @manual-start="handleManualStart"
                 />
-                <FocusControls
-                    :muted-until="notificationsMutedUntil"
-                    @mute="setMute"
-                    @notify="notify"
-                />
             </template>
 
             <div
                 v-else
                 class="cards"
             >
-                <CodexUsageCards v-if="codexLimits" :limits="codexLimits" />
                 <div style="padding: 30px 4px; text-align: center">
                     <div class="spinner"></div>
                     <p
@@ -1233,11 +1260,37 @@ onUnmounted(() => {
                     </p>
                 </div>
             </div>
+            </section>
+            </div>
+            <FocusControls
+                v-if="configured || savedProviderSelection"
+                :muted-until="notificationsMutedUntil"
+                @mute="setMute"
+                @notify="notify"
+            />
         </template>
     </div>
 </template>
 
 <style scoped>
+.provider-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.provider-section + .provider-section {
+    border-top: 1px solid var(--stroke-strong);
+    margin-top: 4px;
+}
+
+.provider-section-heading {
+    margin: 12px 10px 0;
+    color: var(--text-2);
+    font: 600 var(--fs-12) / var(--lh-12) var(--mono);
+    letter-spacing: 0.08em;
+}
+
 .update-banner {
     display: flex;
     align-items: center;
