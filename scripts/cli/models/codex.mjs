@@ -1,8 +1,7 @@
 import { assertSandbox, createEngine, splitBin } from "./engine.mjs";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import path from "node:path";
-import { homedir } from "node:os";
-import { codexRules } from "../guard/policy.mjs";
+import { homedir, tmpdir } from "node:os";
 
 export function codexArgv(profile = {}, { bin = "codex", inherit = "", sandbox = "read-only" } = {}) {
   assertSandbox(sandbox);
@@ -56,11 +55,27 @@ export const CODEX_ENGINE = createEngine({
   argv: codexArgv,
   parse: parseCodexResult,
   observe: observeCodexThread,
-  guard: ({ rulesFile = path.join(process.env.CODEX_HOME || path.join(homedir(), ".codex"), "rules", "cu-guard.rules") } = {}) => {
-    let installed = "";
-    try { installed = readFileSync(rulesFile, "utf8"); } catch {}
-    const active = installed === codexRules();
-    return { active, reason: active ? null : installed ? "CU Codex execpolicy rules are stale" : "CU Codex execpolicy rules are absent", path: rulesFile };
+  guardSession: () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "cu-codex-guard-"));
+    const proofFile = path.join(dir, "observed");
+    return {
+      env: { CU_RUNNER_GUARD_PROOF: proofFile },
+      check: () => {
+        let active = false;
+        try { active = readFileSync(proofFile, "utf8") === "active"; } catch {}
+        return { active };
+      },
+      close: () => rmSync(dir, { recursive: true, force: true }),
+    };
+  },
+  guard: ({ hooksFile = path.join(process.env.CODEX_HOME || path.join(homedir(), ".codex"), "hooks.json") } = {}) => {
+    let groups = [];
+    try { groups = JSON.parse(readFileSync(hooksFile, "utf8"))?.hooks?.PreToolUse || []; } catch {}
+    const configured = Array.isArray(groups) && groups.some((group) => group?.matcher === "Bash"
+      && Array.isArray(group.hooks) && group.hooks.some((hook) => hook?.type === "command" && /cli\.mjs["']?\s+guard --host codex\s*$/.test(hook.command)));
+    return { active: false, configured, reason: configured
+      ? "CU runner hook is configured; trust it in Codex /hooks. Activation is observed during each agent run"
+      : "CU runner hook is absent; reinstall the Codex integration", path: hooksFile };
   },
 });
 

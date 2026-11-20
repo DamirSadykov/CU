@@ -26,7 +26,7 @@
 
 | Ключ | Scope | Вкладка → подпись в SettingsPanel | Кто читает | Умолчание | Предложенный вердикт и причина |
 |---|---|---|---|---|---|
-| `sessionKey` | ui | Провайдеры → «Session Key» | `App.vue` → Rust usage API | `""` | **keep** — обязательная учётная пара для Claude usage API. |
+| `sessionKey` | ui | Провайдеры → «Session Key» | `App.vue` → Rust usage API | `""` | **keep** — учётная пара для необязательного подключения Claude; пустые поля сохраняются и отключают опрос Claude. |
 | `orgId` | ui | Провайдеры → «Organization ID» | `App.vue` → Rust usage API | `""` | **keep** — второй обязательный идентификатор Claude usage API. |
 | `refreshInterval` | ui | Обновления → «Интервал обновления» | `App.vue` → Rust polling/AppConfig | `60` с | **keep** — понятный пользователю компромисс свежести и частоты запросов. |
 | `autoStartSession` | ui | Аккаунт → «Автостарт сессии» | `App.vue` → Rust AppConfig; `SessionCard.vue` | `false` | **keep** — самостоятельная автоматизация с заметным внешним эффектом. |
@@ -56,6 +56,7 @@
 | `runtimeInsightKinds` | ui | Выводы → колонка «Runtime» у каждой метрики | `App.vue` → Rust runtime insight engine | `["long_session", "cold_rewrites"]` | **merge** → `runtimeInsights`; хранить `{enabled, kinds}` вместе. |
 | `keepAwakeEnabled` | ui | Аккаунт → «Не давать Windows засыпать во время работы ИИ» | `App.vue` → Rust keep-awake worker | `false` | **keep** — явное управление поведением ОС с понятным opt-in. |
 | `systemInfoEnabled` | ui | Аккаунт → «Системная информация в мини-панели» | `MiniPanel.vue` | `true` | **keep** — пользователь решает, показывать ли системные CPU/RAM. |
+| `miniProvider` | ui | Аккаунт → «Провайдер мини-панели» | `MiniPanel.vue` | `"auto"` | **keep** — `claude` или `codex`; `auto` выбирает Claude при заполненной учётной паре, иначе Codex. Отсутствующие окна лимитов показываются как «—». |
 | `correctionsEnabled` | ui | Бюджет → «Метрика исхода — поправки пользователя» | `App.vue` → Rust analytics; `AnalyticsWindow.vue` | `false` | **keep** — отдельный privacy-sensitive opt-in сканирования транскриптов. |
 | `locale` | shared | Аккаунт → «Язык» | UI i18n; CLI `uiLocale()` | `null` (системный/текущий язык) | **keep** — единый язык UI и сообщений CLI. |
 | `uiTheme` | ui | Аккаунт → «Внешний вид / Основа» | theme bootstrap и Settings UI | `"system"` | **keep** — базовая светлая/тёмная политика независима от skin. |

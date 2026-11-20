@@ -351,7 +351,7 @@ function cmdCheck(args) {
   const report = checkAgentDuties();
   if (flags.json) process.stdout.write(JSON.stringify(report, null, 2) + "\n");
   else for (const item of report.duties) {
-    process.stdout.write(`${item.ok ? "ok" : "missing"}: ${item.duty} — ${item.candidates.map((candidate) => `${candidate.provider}/${candidate.model}:${candidate.binary.available ? "available" : candidate.binary.reason},guard:${candidate.guard.active ? "active" : "absent"}`).join("; ")}\n`);
+    process.stdout.write(`${item.ok ? "ok" : "missing"}: ${item.duty} — ${item.candidates.map((candidate) => `${candidate.provider}/${candidate.model}:${candidate.binary.available ? "available" : candidate.binary.reason},guard:${candidate.guard.active ? "active" : candidate.guard.configured ? "configured (trust in Codex /hooks)" : "absent"}`).join("; ")}\n`);
   }
   if (!report.ok) fail("one or more enabled duties have no available candidate");
 }
