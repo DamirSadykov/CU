@@ -144,6 +144,52 @@ const go = (data, change, effects, opts = {}) =>
 const statusOf = (report, number) =>
   report.board.todos.find((t) => t.number === number).status;
 
+describe("runChange — verification failures do not release dependents", () => {
+  it.each([
+    ["nonzero exit", { code: 7, stdout: "", stderr: "check failed", timedOut: false, error: "" }],
+    ["spawn error", { code: null, stdout: "", stderr: "", timedOut: false, error: "cannot start check: ENOENT" }],
+    ["timeout", { code: null, stdout: "", stderr: "", timedOut: true, error: "timed out" }],
+    ["zero exit with an error", { code: 0, stdout: "", stderr: "", timedOut: false, error: "executor failed" }],
+    ["zero exit with a timeout", { code: 0, stdout: "", stderr: "", timedOut: true, error: "" }],
+    ["null exit without an error", { code: null, stdout: "", stderr: "", timedOut: false, error: "" }],
+    ["missing exit code", { stdout: "", stderr: "", timedOut: false, error: "" }],
+    ["string zero", { code: "0", stdout: "", stderr: "", timedOut: false, error: "" }],
+  ])("keeps the task and its dependent open after %s", async (_name, check) => {
+    const data = board(
+      changeRoot(1, [2, 3]),
+      auto(2, { retry_limit: 1 }),
+      auto(3, { depends_on: deps(2) }),
+    );
+    const h = harness({ runVerify: async () => check });
+
+    const report = await go(data, "1", h.effects);
+
+    expect(statusOf(report, 2)).not.toBe("done");
+    expect(statusOf(report, 3)).toBe("queue");
+    expect(report.complete).toBe(false);
+    expect(h.calls.steps).toEqual([2]);
+    expect(h.calls.reconciles).toEqual([[2, "issue"]]);
+  });
+
+  it("releases the dependent after a successful numeric zero exit", async () => {
+    const data = board(
+      changeRoot(1, [2, 3]),
+      auto(2),
+      auto(3, { depends_on: deps(2) }),
+    );
+    const h = harness({
+      runVerify: async () => ({ code: 0, stdout: "", stderr: "", timedOut: false, error: "" }),
+    });
+
+    const report = await go(data, "1", h.effects);
+
+    expect(statusOf(report, 2)).toBe("done");
+    expect(statusOf(report, 3)).toBe("done");
+    expect(report.complete).toBe(true);
+    expect(h.calls.steps).toEqual([2, 3]);
+  });
+});
+
 // ── the loop ─────────────────────────────────────────────────────────────────
 
 describe("runChange — the frontier", () => {
