@@ -62,6 +62,7 @@ export interface SettingsSnapshot {
     runtimeInsights: RuntimeInsightsSetting;
     keepAwakeEnabled: boolean;
     systemInfoEnabled: boolean;
+    miniProvider: "auto" | "claude" | "codex";
     correctionsEnabled: boolean;
     specs: SpecsSetting;
     // Raw persisted locale — null when unset. Callers decide whether to apply it
@@ -107,6 +108,7 @@ export function defaultSettings(): SettingsSnapshot {
         runtimeInsights: { enabled: false, kinds: ["long_session", "cold_rewrites"] },
         keepAwakeEnabled: false,
         systemInfoEnabled: true,
+        miniProvider: "auto",
         correctionsEnabled: false,
         specs: { enabled: false, deltaGuard: "on" },
         locale: null,
@@ -243,6 +245,8 @@ export async function readSettingsSnapshot(): Promise<SettingsSnapshot> {
         if (runtimeChanged) await runtimeStore.save();
 
         s.sessionKey = (await get<string>("sessionKey")) ?? s.sessionKey;
+        const miniProvider = await get<string>("miniProvider");
+        s.miniProvider = miniProvider === "claude" || miniProvider === "codex" ? miniProvider : "auto";
         s.orgId = (await get<string>("orgId")) ?? s.orgId;
         s.refreshInterval = (await get<number>("refreshInterval")) ?? s.refreshInterval;
         s.autoStartSession = (await get<boolean>("autoStartSession")) ?? s.autoStartSession;

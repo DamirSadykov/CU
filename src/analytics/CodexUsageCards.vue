@@ -15,10 +15,14 @@ onUnmounted(() => {
   if (timer) clearInterval(timer);
 });
 
-const windows = computed(() => [
-  props.limits.primary ? { key: "primary", title: t("codexSession5h"), value: props.limits.primary } : null,
-  props.limits.secondary ? { key: "secondary", title: t("codexWeekly"), value: props.limits.secondary } : null,
-].filter((item): item is { key: string; title: string; value: CodexLimitWindow } => item !== null));
+const windows = computed(() => (["primary", "secondary"] as const).flatMap((key) => {
+  const value = props.limits[key];
+  if (!value) return [];
+  const minutes = value.windowMinutes;
+  const title = minutes === 300 ? t("codexSession5h") : minutes === 10080 ? t("codexWeekly")
+    : t("codexWindowMinutes", { minutes });
+  return [{ key, title, value }];
+}));
 
 function currentPercent(window: CodexLimitWindow): number {
   return window.resetsAt * 1000 <= now.value ? 0 : Math.max(0, Math.min(window.usedPercent, 100));
@@ -94,7 +98,7 @@ function isLimited(window: CodexLimitWindow): boolean {
     </div>
     <div class="bar" :class="level(currentPercent(window.value))">
       <i :style="{ width: currentPercent(window.value) + '%' }"></i>
-      <template v-if="window.value.windowMinutes >= 10080">
+      <template v-if="window.value.windowMinutes === 10080">
         <span v-for="day in 6" :key="day" class="day-seg" :style="{ left: (day / 7 * 100) + '%' }"></span>
       </template>
     </div>

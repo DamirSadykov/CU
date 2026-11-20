@@ -107,6 +107,7 @@ const props = defineProps<{
   memoryBloatEnabled: boolean;
   todoNotificationsEnabled: boolean;
   systemInfoEnabled: boolean;
+  miniProvider: "auto" | "claude" | "codex";
   correctionsEnabled: boolean;
   runtimeInsights: RuntimeInsightsSetting;
   keepAwakeEnabled: boolean;
@@ -143,6 +144,7 @@ const emit = defineEmits<{
     memoryBloatEnabled: boolean;
     todoNotificationsEnabled: boolean;
     systemInfoEnabled: boolean;
+    miniProvider: "auto" | "claude" | "codex";
     correctionsEnabled: boolean;
     locale: string;
     uiTheme: string;
@@ -187,6 +189,13 @@ const localSvcNotify = ref(props.serviceStatusNotify);
 const localMemBloat = ref(props.memoryBloatEnabled);
 const localTodoNotify = ref(props.todoNotificationsEnabled);
 const localSystemInfo = ref(props.systemInfoEnabled);
+const localMiniProvider = ref(props.miniProvider);
+watch(() => props.miniProvider, (value) => { localMiniProvider.value = value; });
+const miniProviderOptions = computed<CuSegOption<"auto" | "claude" | "codex">[]>(() => [
+  { value: "auto", label: t("miniProviderAuto") },
+  { value: "claude", label: "Claude" },
+  { value: "codex", label: "Codex" },
+]);
 const localCorrections = ref(props.correctionsEnabled);
 const localLocale = ref(props.locale);
 const localTheme = ref<UiTheme>(normalizeUiTheme(props.uiTheme));
@@ -591,7 +600,8 @@ onMounted(loadCcHookStatus);
 
 interface CodexHookStatus {
   installed: boolean;
-  guard_active: boolean;
+  guard_installed: boolean;
+  legacy_guard_present: boolean;
   script_path: string;
   wired_path: string;
   wired_path_exists: boolean;
@@ -994,6 +1004,7 @@ function handleSave() {
     memoryBloatEnabled: localMemBloat.value,
     todoNotificationsEnabled: localTodoNotify.value,
     systemInfoEnabled: localSystemInfo.value,
+    miniProvider: localMiniProvider.value,
     correctionsEnabled: localCorrections.value,
     locale: localLocale.value,
     uiTheme: localTheme.value,
@@ -1174,6 +1185,12 @@ function handleSave() {
         </div>
       </div>
 
+      <div class="card">
+        <div class="field-label">{{ t('miniProvider') }}</div>
+        <CuSeg v-model="localMiniProvider" :options="miniProviderOptions" />
+        <div class="field-hint">{{ t('miniProviderHint') }}</div>
+      </div>
+
       <!-- Mini panel: whole-machine CPU + RAM (compact 2×2 vs original bars) -->
       <div class="card toggle-card" @click="localSystemInfo = !localSystemInfo">
         <div style="flex: 1; min-width: 0">
@@ -1198,6 +1215,13 @@ function handleSave() {
 
       <template v-if="tab === 'providers'">
       <div class="provider-title">Claude</div>
+      <div class="field-hint">{{ t('claudeOptional') }}</div>
+      <button
+        v-if="localSessionKey || localOrgId"
+        type="button"
+        class="suggest-btn"
+        @click="localSessionKey = ''; localOrgId = ''"
+      >{{ t('disconnectClaude') }}</button>
       <!-- Session Key -->
       <div class="card">
         <div class="field-label">{{ t('sessionKey') }}</div>
@@ -1288,9 +1312,10 @@ function handleSave() {
               — {{ codexHookStatus.wired_path }}
             </span>
           </div>
-          <div v-if="codexHookStatus" class="field-hint guard-state" :class="codexHookStatus.guard_active ? 'guard-state-active' : 'guard-state-absent'">
-            {{ codexHookStatus.guard_active ? t('agentGuardActive') : t('agentGuardAbsent') }}
+          <div v-if="codexHookStatus" class="field-hint guard-state" :class="codexHookStatus.guard_installed ? 'guard-state-active' : 'guard-state-absent'">
+            {{ codexHookStatus.guard_installed ? t('agentGuardConfiguredCodex') : t('agentGuardAbsent') }}
           </div>
+          <div v-if="codexHookStatus?.legacy_guard_present" class="field-hint guard-state-absent">{{ t('agentGuardLegacyCodex') }}</div>
           <div
             v-if="codexHookStatus && codexHookStatus.installed && !codexHookStatus.wired_path_exists"
             class="field-hint"
@@ -2012,7 +2037,7 @@ function handleSave() {
         type="submit"
         class="save-btn"
         :class="{ saved: saveState === 'saved' }"
-        :disabled="!localSessionKey || !localOrgId || saveState === 'saving'"
+        :disabled="saveState === 'saving'"
       >
         {{ saveState === 'saving' ? t('saving') : saveState === 'saved' ? t('saved') : t('save') }}
       </button>

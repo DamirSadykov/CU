@@ -1,6 +1,7 @@
 pub mod alerts;
 pub mod cc;
 pub mod codex;
+pub mod codex_account;
 pub mod codex_work_tree;
 pub mod corrections;
 pub mod domain;

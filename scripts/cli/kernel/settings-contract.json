@@ -41,6 +41,7 @@
     { "key": "locale", "scope": "shared", "writer": "app", "readers": ["ui", "cli"], "default": null },
     { "key": "uiTheme", "scope": "ui", "writer": "app", "readers": ["ui"], "default": "system" },
     { "key": "uiSkin", "scope": "ui", "writer": "app", "readers": ["ui"], "default": "standard" },
+    { "key": "miniProvider", "scope": "ui", "writer": "app", "readers": ["ui"], "default": "auto" },
     { "key": "ignoredInsights", "scope": "ui", "writer": "app", "readers": ["ui"], "default": [], "direct": true },
     { "key": "resolverUrl", "scope": "ui", "writer": "app", "readers": ["ui"], "default": "", "direct": true },
     { "key": "updateCheckHours", "scope": "ui", "writer": "app", "readers": ["ui"], "default": 6, "direct": true },
