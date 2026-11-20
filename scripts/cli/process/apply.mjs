@@ -207,7 +207,11 @@ const asList = (v) => {
 // but a plan may carry a measured fact when it continues an existing change.
 function readChangeItems(raw) {
   if (raw == null || raw === "") return [];
-  return Array.isArray(raw) ? raw : [raw];
+  return (Array.isArray(raw) ? raw : [raw]).map((item) => {
+    if (!item || typeof item !== "object" || typeof item.ok !== "string") return item;
+    const ok = item.ok.trim().toLowerCase();
+    return ok === "true" || ok === "false" ? { ...item, ok: ok === "true" } : item;
+  });
 }
 
 // A step may be written as a mapping of fields or, when it declares nothing but
@@ -385,6 +389,8 @@ export function validate(
       for (const key of required) {
         if (!String(item[key] ?? "").trim()) errors.push(`${field}[${index + 1}]: ${key} is required`);
       }
+      if (field === "measure" && item.ok !== undefined && typeof item.ok !== "boolean")
+        errors.push(`measure[${index + 1}]: ok must be true or false`);
     }
   }
   if (doc.parallel && normalizeLimit(doc.parallel) === undefined)
