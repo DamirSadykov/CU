@@ -1,6 +1,7 @@
 import type { RunGraphNode } from "../../board/graphModel";
 import { isDone, laneTotals, moneyOf, type Money } from "./adapt";
 import { diffLines, diffStat } from "../../kernel/specDiff";
+import { formatRef } from "../../../scripts/cli/kernel/terms.mjs";
 
 export interface ChangeSpecAnswer {
     address: string;
@@ -24,6 +25,32 @@ export interface ChangeStatusEvent {
     at: string;
 }
 
+export interface MutationFinding {
+    file: string;
+    line: number | null;
+    column: number | null;
+    mutator: string | null;
+    replacement: string | null;
+    selector: string | null;
+}
+
+export interface MutationResult {
+    levels: number[];
+    killed: number;
+    survived: MutationFinding[];
+    noCoverage: MutationFinding[];
+    quarantined: unknown[];
+    duration_ms: number;
+    status: "pass" | "skipped" | "cannot";
+    reason?: string | null;
+    task?: number | null;
+}
+
+type MutationCarrier = {
+    mutation?: unknown;
+    ext?: { process?: { mutation?: unknown } };
+};
+
 export interface ChangeTask {
     id: string;
     number?: number;
@@ -43,6 +70,8 @@ export interface ChangeTask {
     status_history?: ChangeStatusEvent[];
     created_at?: string;
     updated_at?: string;
+    mutation?: MutationResult | null;
+    ext?: MutationCarrier["ext"];
 }
 
 export interface ChangeRecord {
@@ -57,10 +86,53 @@ export interface ChangeRecord {
     created_at?: string;
     updated_at?: string;
     closed_at?: string;
+    mutation?: MutationResult | null;
+    ext?: MutationCarrier["ext"];
+}
+
+function recordOf(value: unknown): Record<string, unknown> | null {
+    return value !== null && typeof value === "object" && !Array.isArray(value)
+        ? value as Record<string, unknown>
+        : null;
+}
+
+function mutationResultOf(value: unknown): MutationResult | null {
+    const result = recordOf(value);
+    if (!result) return null;
+    if (!Array.isArray(result.levels)
+        || !Array.isArray(result.survived)
+        || !Array.isArray(result.noCoverage)
+        || !Array.isArray(result.quarantined)
+        || typeof result.killed !== "number"
+        || typeof result.duration_ms !== "number"
+        || !["pass", "skipped", "cannot"].includes(String(result.status))) return null;
+    return result as unknown as MutationResult;
+}
+
+export function mutationOf(value: unknown): MutationResult | null {
+    const record = recordOf(value) as MutationCarrier | null;
+    if (!record) return null;
+    const direct = mutationResultOf(record.mutation);
+    if (direct) return direct;
+    return mutationResultOf(record.ext?.process?.mutation);
+}
+
+export interface StepMutationRow {
+    taskId: string;
+    taskNumber?: number;
+    subject: string;
+    mutation: MutationResult;
+}
+
+export function stepMutationsFor(members: ChangeTask[]): StepMutationRow[] {
+    return members.flatMap((member) => {
+        const mutation = mutationOf(member);
+        return mutation ? [{ taskId: member.id, taskNumber: member.number, subject: member.subject, mutation }] : [];
+    });
 }
 
 export function changeAddress(change: ChangeRecord): string {
-    return `c#${change.number}`;
+    return formatRef(change);
 }
 
 export function changeMembers(board: ChangeTask[], change: ChangeRecord): ChangeTask[] {
@@ -147,7 +219,7 @@ export function blockersFor(
         out.push({
             id: `concurrent-change:${address}`,
             rule: "concurrent-change",
-            title: `${address}: ${open.length} открытых change'а сразу`,
+            title: `${address}: открытых планов одновременно — ${open.length}`,
             detail: others.map((c) => `${changeAddress(c)} "${c.title}"`).join(", "),
             address,
         });
@@ -183,8 +255,8 @@ export function blockersFor(
         out.push({
             id: `spec-silently-behind:${change.id}`,
             rule: "spec-silently-behind",
-            title: "change открыт без ссылки на спеку",
-            detail: `${members.filter((t) => isDone(t.status)).length} задач(и) уже закрыты, а раздел спеки не указан ни на change'е, ни на его задачах`,
+            title: "план открыт без ссылки на спеку",
+            detail: `${members.filter((t) => isDone(t.status)).length} задач(и) уже закрыты, а раздел спеки не указан ни в плане, ни в его задачах`,
         });
     }
 
@@ -228,7 +300,7 @@ export function passedFor(
         out.push({ id: "spec-answered", label: "все ссылки на спеку отвечены" });
     }
     if (addresses.length && !blockers.some((b) => b.rule === "concurrent-change")) {
-        out.push({ id: "no-concurrent", label: "ни один раздел не делят два открытых change'а" });
+        out.push({ id: "no-concurrent", label: "ни один раздел не делят два открытых плана" });
     }
     if (
         members.length &&

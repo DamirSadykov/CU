@@ -16,6 +16,8 @@ use serde_json::Value;
 use crate::analytics::stats::{CcUsageRow, CodexLimitFileState, StatsDb};
 
 const LIMITS_FORMULA_VERSION: i64 = 1;
+const OPENAI_PRICES_JSON: &str =
+    include_str!("../../../scripts/cli/models/openai-prices.json");
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 struct RolloutContext {
@@ -161,21 +163,36 @@ fn project_name(cwd: &str) -> Option<String> {
     (!name.is_empty()).then(|| name.to_string())
 }
 
+#[derive(Deserialize)]
+struct OpenAiPriceRule {
+    r#match: String,
+    models: Vec<String>,
+    input: f64,
+    cached_input: f64,
+    output: f64,
+}
+
+fn openai_prices() -> &'static [OpenAiPriceRule] {
+    static PRICES: OnceLock<Vec<OpenAiPriceRule>> = OnceLock::new();
+    PRICES.get_or_init(|| {
+        serde_json::from_str(OPENAI_PRICES_JSON)
+            .expect("scripts/cli/models/openai-prices.json must be valid")
+    })
+}
+
 /// Current OpenAI API list prices per million (input, cached input, output).
-/// Unknown models remain visible with zero estimated cost.
+/// Rules are shared with the CLI. Unknown models remain visible with zero
+/// estimated cost.
 pub fn price_per_mtok(model: &str) -> Option<(f64, f64, f64)> {
     let m = model.to_ascii_lowercase();
-    if m.contains("gpt-5.6-terra") {
-        Some((2.0, 0.2, 12.0))
-    } else if m.contains("gpt-5.6-luna") {
-        Some((0.2, 0.02, 1.2))
-    } else if m == "gpt-5.6" || m.contains("gpt-5.6-sol") {
-        Some((4.0, 0.4, 20.0))
-    } else if m.contains("gpt-5.3-codex") || m.contains("gpt-5.2-codex") || m == "gpt-5.2" {
-        Some((1.75, 0.175, 14.0))
-    } else {
-        None
-    }
+    openai_prices().iter().find_map(|rule| {
+        let matched = rule.models.iter().any(|name| match rule.r#match.as_str() {
+            "exact" => m == *name,
+            "contains" => m.contains(name),
+            _ => false,
+        });
+        matched.then_some((rule.input, rule.cached_input, rule.output))
+    })
 }
 
 pub fn cost_for(model: &str, input: i64, output: i64, cache_write: i64, cache_read: i64) -> f64 {
@@ -302,14 +319,18 @@ fn parse_rollout_line(line: &str, ctx: &mut RolloutContext) -> Option<CcUsageRow
     })
 }
 
-fn collect_jsonl(dir: &Path, out: &mut Vec<PathBuf>) {
-    let Ok(entries) = std::fs::read_dir(dir) else {
-        return;
+fn collect_jsonl(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), String> {
+    let entries = match std::fs::read_dir(dir) {
+        Ok(entries) => entries,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(error) => return Err(format!("Cannot read Codex directory: {error}")),
     };
-    for entry in entries.flatten() {
+    for entry in entries {
+        let entry = entry
+            .map_err(|error| format!("Cannot read Codex directory entry: {error}"))?;
         let path = entry.path();
         if path.is_dir() {
-            collect_jsonl(&path, out);
+            collect_jsonl(&path, out)?;
         } else if path.extension().and_then(|x| x.to_str()) == Some("jsonl")
             && path
                 .file_name()
@@ -320,6 +341,7 @@ fn collect_jsonl(dir: &Path, out: &mut Vec<PathBuf>) {
             out.push(path);
         }
     }
+    Ok(())
 }
 
 fn mtime_key(modified: Result<SystemTime, std::io::Error>) -> String {
@@ -380,13 +402,17 @@ pub fn latest_limits(base: &Path, db: &StatsDb) -> Result<Option<CodexRateLimits
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner());
     let mut paths = Vec::new();
-    collect_jsonl(&base.join("sessions"), &mut paths);
-    collect_jsonl(&base.join("archived_sessions"), &mut paths);
-    let mut states = db.codex_limit_file_states().unwrap_or_default();
+    collect_jsonl(&base.join("sessions"), &mut paths)?;
+    collect_jsonl(&base.join("archived_sessions"), &mut paths)?;
+    let mut states = db.codex_limit_file_states()
+        .map_err(|error| format!("Cannot read cached Codex limits: {error}"))?;
+    log::debug!("Codex limits: files={} cached_files={}", paths.len(), states.len());
     let mut newest = None;
     for path in paths {
-        let Ok(meta) = std::fs::metadata(&path) else {
-            continue;
+        let meta = match std::fs::metadata(&path) {
+            Ok(meta) => meta,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
+            Err(error) => return Err(format!("Cannot inspect Codex file: {error}")),
         };
         let size = meta.len();
         let mtime = mtime_key(meta.modified());
@@ -423,7 +449,7 @@ pub fn latest_limits(base: &Path, db: &StatsDb) -> Result<Option<CodexRateLimits
         } else {
             match scan_limits_tail(&path, start, prior) {
                 Ok(scanned) => scanned,
-                Err(_) => continue,
+                Err(error) => return Err(format!("Cannot read Codex limits file: {error}")),
             }
         };
         if !unchanged {
@@ -437,7 +463,8 @@ pub fn latest_limits(base: &Path, db: &StatsDb) -> Result<Option<CodexRateLimits
                 snapshot_ts: latest.as_ref().map(|(_, value)| value.observed_at.clone()),
                 formula_version: LIMITS_FORMULA_VERSION,
             };
-            let _ = db.set_codex_limit_file_state(&key, &state);
+            db.set_codex_limit_file_state(&key, &state)
+                .map_err(|error| format!("Cannot cache Codex limits: {error}"))?;
         }
         if let Some((_, snapshot)) = latest {
             // Rollout mtimes can be flushed out of order. The event's RFC3339
@@ -462,8 +489,8 @@ pub fn codex_dir() -> Option<PathBuf> {
 
 pub fn ingest(base: &Path, db: &StatsDb) -> Result<usize, String> {
     let mut files = Vec::new();
-    collect_jsonl(&base.join("sessions"), &mut files);
-    collect_jsonl(&base.join("archived_sessions"), &mut files);
+    collect_jsonl(&base.join("sessions"), &mut files)?;
+    collect_jsonl(&base.join("archived_sessions"), &mut files)?;
     let mut states = db.cc_file_states().map_err(|e| e.to_string())?;
     let mut inserted = 0;
     for path in files {
@@ -589,6 +616,50 @@ mod tests {
     }
 
     #[test]
+    fn limits_reports_invalid_directory_instead_of_missing_data() {
+        let base = limits_base("invalid-directory");
+        let sessions = base.join("sessions");
+        std::fs::remove_dir_all(&sessions).unwrap();
+        std::fs::write(&sessions, "not a directory").unwrap();
+        let db = StatsDb::open(Path::new(":memory:")).unwrap();
+        let error = latest_limits(&base, &db).unwrap_err();
+        assert!(error.contains("Cannot read Codex directory"), "{error}");
+        assert!(!error.contains(&sessions.display().to_string()), "{error}");
+        std::fs::remove_dir_all(base).unwrap();
+    }
+
+    #[test]
+    fn limits_allows_absent_session_directories() {
+        let base = limits_base("missing-directories");
+        std::fs::remove_dir_all(base.join("sessions")).unwrap();
+        let db = StatsDb::open(Path::new(":memory:")).unwrap();
+        assert_eq!(latest_limits(&base, &db).unwrap(), None);
+        std::fs::remove_dir_all(base).unwrap();
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn limits_reports_locked_rollout_instead_of_missing_data() {
+        use std::os::windows::fs::OpenOptionsExt;
+
+        let base = limits_base("locked-file");
+        let path = base.join("sessions").join("2026").join("10").join("16").join("rollout-locked.jsonl");
+        std::fs::write(&path, limits_line("2026-10-16T08:00:00Z", 10.0) + "\n").unwrap();
+        let locked = std::fs::OpenOptions::new()
+            .read(true)
+            .share_mode(0)
+            .open(&path)
+            .unwrap();
+        let db = StatsDb::open(Path::new(":memory:")).unwrap();
+        let error = latest_limits(&base, &db).unwrap_err();
+        assert!(error.contains("Cannot read Codex limits file"), "{error}");
+        assert!(!error.contains(&path.display().to_string()), "{error}");
+        drop(locked);
+        assert_eq!(used(latest_limits(&base, &db).unwrap()), Some(10.0));
+        std::fs::remove_dir_all(base).unwrap();
+    }
+
+    #[test]
     fn limits_state_picks_newest_event_and_follows_appends_and_deletions() {
         let base = limits_base("follow");
         let db = StatsDb::open(Path::new(":memory:")).unwrap();
@@ -689,6 +760,14 @@ mod tests {
             (30, 60, 10, 20)
         );
         assert!(row.cost > 0.0);
+    }
+
+    #[test]
+    fn shared_pricing_matches_suffixed_model_names() {
+        assert_eq!(
+            price_per_mtok("gpt-5.6-sol-preview"),
+            Some((4.0, 0.4, 20.0))
+        );
     }
 
     #[test]

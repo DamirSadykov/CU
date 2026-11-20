@@ -19,6 +19,7 @@ import path from "node:path";
 
 const AREAS = {
   todos: "./cli/board/todos.mjs",
+  plan: "./cli/board/change.mjs",
   change: "./cli/board/change.mjs",
   corrections: "./cli/analytics/corrections.mjs",
   "task-cost": "./cli/analytics/task-cost.mjs",
@@ -26,6 +27,8 @@ const AREAS = {
   agents: "./cli/agents/agents.mjs",
   guard: "./cli/guard/guard.mjs",
   spec: "./cli/spec/spec.mjs",
+  open: "./cli/app/open.mjs",
+  guide: "./cli/app/guide.mjs",
   hook: "./cli/cc-hooks/hook.mjs",
   "stop-hook": "./cli/cc-hooks/stop-hook.mjs",
   "plan-hook": "./cli/process/plan-hook.mjs",
@@ -50,6 +53,8 @@ const SUBCOMMANDS = {
     retro: "./cli/analytics/retro.mjs",
   },
 };
+
+SUBCOMMANDS.plan = SUBCOMMANDS.change;
 
 // Hook areas run inside Claude Code's session lifecycle: a crash there must never
 // break the session, so an unexpected throw exits clean instead of surfacing.
@@ -87,12 +92,15 @@ function usage(code) {
   process.stdout.write(
     "cli - CU\n\n" +
       "  todos   <…>   mutate the todo list (add / set / comment / list / …)\n" +
-      "  change  <…>   changes as records (new / list / show / close); a task points at one\n" +
+      "  plan    <…>   plans (new / list / show / close); a task points at one\n" +
+      "  change  <…>   alias for plan (kept for existing hooks and recipes)\n" +
       "  corrections <…> user-corrections outcome metric, layer 1 (scan / label-template / eval)\n" +
       "  task-cost <…> session->task attribution for tokens-per-task (scan / publish)\n" +
       "  trace     <…> restart-point reports and restart calibration\n" +
       "  agents  <…>   model/provider profiles used by autonomous task runs\n" +
       "  guard [rules] enforce write/command policy or print Codex execpolicy rules\n" +
+      "  guide         how CU works and where each setting lives — for an agent explaining CU\n" +
+      "  open <route>  open a CU window on a screen (cu://settings/<tab>, tasks/<N>, analytics); only when the user asks\n" +
       "  spec    <…>   spec registry (t#339): domains / show / refs / lint over docs/specs\n" +
       "  hook [--host claude|codex]  SessionStart context for an AI CLI\n" +
       "  stop-hook     Stop hook — blocks a stop that leaves a worked task without a handoff baton\n" +

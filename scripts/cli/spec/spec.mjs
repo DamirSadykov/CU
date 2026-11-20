@@ -23,6 +23,7 @@ import path from "node:path";
 import { parseYamlSubset } from "../kernel/yaml-subset.mjs";
 import { specRoot as specRootSetting, specRepoPath } from "../kernel/settings.mjs";
 import { withBoardLock, withDataDir } from "../kernel/board-lock.mjs";
+import { formatRef } from "../kernel/terms.mjs";
 import { readAsks, coverageOf } from "./spec-meter.mjs";
 import {
   boardPath,
@@ -676,6 +677,8 @@ const SKIP_DIRS = new Set([
   "node_modules", "target", "dist", ".git", ".vs", "build", "coverage", "vendor",
 ]);
 
+const CACHE_DIR_TAG = "CACHEDIR.TAG";
+
 // Dot-directories are NOT skipped wholesale. The heavy ones are named above,
 // and the rest are exactly where a spec has business pointing: `.github`
 // holds the CI this registry is linted by, `.claude` holds the skills and
@@ -696,6 +699,7 @@ function indexProject(projectRoot, budget = 20000) {
     } catch {
       continue;
     }
+    if (rel && entries.some((e) => e.isFile() && e.name === CACHE_DIR_TAG)) continue;
     for (const e of entries) {
       const child = rel ? `${rel}/${e.name}` : e.name;
       if (e.isDirectory()) {
@@ -1456,14 +1460,14 @@ function boardLinkFindings(root, cwd = process.cwd()) {
             "dangling-task-link",
             "error",
             address,
-            `change c#${c.number} "${c.title}" ссылается на ${address}, которого в реестре нет: ${r.reason}`,
+            `change ${formatRef(c)} "${c.title}" ссылается на ${address}, которого в реестре нет: ${r.reason}`,
           ),
         );
         continue;
       }
       if (!open) continue;
       if (!openChanges.has(address)) openChanges.set(address, []);
-      openChanges.get(address).push({ number: `c#${c.number}`, subject: c.title });
+      openChanges.get(address).push({ number: formatRef(c), subject: c.title });
     }
   }
   for (const t of board.todos ?? []) {
@@ -1496,7 +1500,7 @@ function boardLinkFindings(root, cwd = process.cwd()) {
         "warning",
         address,
         `${address}: на раздел открыто ${changes.length} change'а сразу — ` +
-          changes.map((t) => `${String(t.number).startsWith("c#") ? t.number : "#" + t.number} "${t.subject}"`).join(", ") +
+          changes.map((t) => `${t.number} "${t.subject}"`).join(", ") +
           `. Штамп второго затрёт провенанс первого, а правки лягут друг на друга без предупреждения`,
       ),
     );

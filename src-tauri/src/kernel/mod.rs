@@ -1,6 +1,7 @@
 pub mod board_lock;
 pub mod cli_node;
 pub mod data_dir;
+pub mod deep_link;
 pub mod keep_awake;
 pub mod paths;
 pub mod report;

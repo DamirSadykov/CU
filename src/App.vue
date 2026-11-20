@@ -31,6 +31,7 @@ import {
     loadSettingsStoreForWrite,
     readSettingsSnapshot,
 } from "./kernel/settingsStore";
+import type { ProviderSelection } from "./kernel/settingsStore";
 import { logInfo, logWarn, logError } from "./kernel/logging";
 import type { CodexRateLimits, ForecastData, UsageData, UsageLevels } from "./contracts/types";
 
@@ -68,6 +69,10 @@ const quietHoursEnabled = ref(false);
 const quietHoursStart = ref("23:00");
 const quietHoursEnd = ref("08:00");
 const ccAnalyticsEnabled = ref(false);
+const providerSelection = ref<ProviderSelection | null>(null);
+const savedProviderSelection = ref<ProviderSelection | null>(null);
+const providerDetectionReady = ref(false);
+const providerOptions: ProviderSelection[] = ["claude", "codex", "both"];
 const dailyBudgetEnabled = ref(false);
 const dailyBudget = ref(0);
 // Efficiency goals (issue: trend/goals). cost/hour is USD/hour; errorRateMax is
@@ -90,6 +95,7 @@ const runtimeInsightsEnabled = ref(false);
 const runtimeInsightKinds = ref<string[]>(["long_session", "cold_rewrites"]);
 const keepAwakeEnabled = ref(false);
 const systemInfoEnabled = ref(true);
+const miniProvider = ref<"auto" | "claude" | "codex">("auto");
 const correctionsEnabled = ref(false);
 const uiTheme = ref("system");
 const uiSkin = ref("standard");
@@ -101,6 +107,8 @@ const usage = ref<UsageData | null>(null);
 const levels = ref<UsageLevels | null>(null);
 const forecast = ref<ForecastData | null>(null);
 const codexLimits = ref<CodexRateLimits | null>(null);
+const codexLimitsError = ref("");
+const showProviderSetup = computed(() => !configured.value && savedProviderSelection.value !== "codex");
 let codexLimitsTimer: ReturnType<typeof setInterval> | null = null;
 const sessionActive = computed(() => {
     const fh = usage.value?.five_hour;
@@ -221,6 +229,8 @@ async function loadSettings() {
     quietHoursEnabled.value = s.quietHours.enabled;
     quietHoursStart.value = s.quietHours.start;
     quietHoursEnd.value = s.quietHours.end;
+    providerSelection.value = s.providerSelection;
+    savedProviderSelection.value = s.providerSelection;
     ccAnalyticsEnabled.value = s.ccAnalyticsEnabled;
     dailyBudgetEnabled.value = s.dailyBudget !== null;
     dailyBudget.value = s.dailyBudget ?? 0;
@@ -236,6 +246,7 @@ async function loadSettings() {
     runtimeInsightKinds.value = s.runtimeInsights.kinds;
     keepAwakeEnabled.value = s.keepAwakeEnabled;
     systemInfoEnabled.value = s.systemInfoEnabled;
+    miniProvider.value = s.miniProvider;
     correctionsEnabled.value = s.correctionsEnabled;
     // An unset locale must not clobber the running one (navigator default).
     if (s.locale) locale.value = s.locale;
@@ -269,6 +280,7 @@ async function saveSettings() {
         start: quietHoursStart.value,
         end: quietHoursEnd.value,
     });
+    await store.set("providerSelection", providerSelection.value);
     await store.set("ccAnalyticsEnabled", ccAnalyticsEnabled.value);
     await store.set("dailyBudget", dailyBudgetEnabled.value ? dailyBudget.value : null);
     await store.set("goalCostPerHourMax", goalCostPerHourMax.value);
@@ -285,6 +297,7 @@ async function saveSettings() {
     });
     await store.set("keepAwakeEnabled", keepAwakeEnabled.value);
     await store.set("systemInfoEnabled", systemInfoEnabled.value);
+    await store.set("miniProvider", miniProvider.value);
     await store.set("correctionsEnabled", correctionsEnabled.value);
     await store.set("locale", locale.value);
     await store.set("uiTheme", uiTheme.value);
@@ -318,7 +331,7 @@ function buildConfig() {
         goal_cost_per_hour_max: goalCostPerHourMax.value,
         goal_error_rate_max: goalErrorRateMax.value,
         notifications_muted_until: notificationsMutedUntil.value,
-        service_status_enabled: serviceStatusEnabled.value,
+        service_status_enabled: Boolean(configured.value) && serviceStatusEnabled.value,
         service_status_interval: serviceStatusInterval.value,
         service_status_notify: serviceStatusNotify.value,
         memory_bloat_enabled: memoryBloatEnabled.value,
@@ -332,11 +345,19 @@ function buildConfig() {
 }
 
 async function applyConfig() {
-    if (!configured.value) {
-        void logInfo("[frontend] applyConfig skipped: session key or org id empty");
-        return;
+    if (configured.value) {
+        beginLoading();
+    } else {
+        settleLoading();
+        usage.value = null;
+        levels.value = null;
+        forecast.value = null;
+        error.value = "";
+        errorReportable.value = false;
+        sessionExpired.value = false;
+        autoStartStatus.value = "";
+        stopAutoStartTimer();
     }
-    beginLoading();
     try {
         const config = buildConfig();
         void logInfo("[frontend] configure: invoke");
@@ -464,17 +485,67 @@ async function loadForecast() {
     }
 }
 
+let codexLimitsRequest = 0;
 async function loadCodexLimits() {
+    const request = ++codexLimitsRequest;
+    codexLimitsError.value = "";
     if (!ccAnalyticsEnabled.value) {
         codexLimits.value = null;
         return;
     }
     try {
-        codexLimits.value = await invoke<CodexRateLimits | null>("get_codex_limits", {
+        const limits = await invoke<CodexRateLimits | null>("get_codex_limits", {
             enabled: ccAnalyticsEnabled.value,
         });
-    } catch {
+        if (request === codexLimitsRequest && ccAnalyticsEnabled.value) codexLimits.value = limits;
+    } catch (err) {
+        if (request !== codexLimitsRequest || !ccAnalyticsEnabled.value) return;
         codexLimits.value = null;
+        codexLimitsError.value = String(err);
+        void logWarn(`[frontend] get_codex_limits failed: ${err}`);
+    }
+}
+
+interface ProviderDetection {
+    claude: boolean;
+    codex: boolean;
+}
+
+async function initializeProviderSelection() {
+    if (providerSelection.value) {
+        providerDetectionReady.value = true;
+        return;
+    }
+    try {
+        const detected = await invoke<ProviderDetection>("detect_providers");
+        providerSelection.value = detected.claude && detected.codex
+            ? "both"
+            : detected.codex
+              ? "codex"
+              : "claude";
+    } catch {
+        // Browser previews and older backends cannot detect providers. Preserve
+        // the historical Claude-first default while still allowing a choice.
+        providerSelection.value = "claude";
+    } finally {
+        providerDetectionReady.value = true;
+    }
+}
+
+async function confirmProviderSelection() {
+    if (!providerSelection.value) return;
+    const includesCodex = providerSelection.value === "codex"
+        || providerSelection.value === "both";
+    // This button is the explicit opt-in for reading local coding-agent usage.
+    ccAnalyticsEnabled.value = includesCodex;
+    await saveSettings();
+    await invoke("set_cc_analytics_enabled", { enabled: includesCodex });
+    savedProviderSelection.value = providerSelection.value;
+    void loadCodexLimits();
+    const { emit } = await import("@tauri-apps/api/event");
+    await emit("settings-changed");
+    if (providerSelection.value !== "codex") {
+        await openSettings("providers");
     }
 }
 
@@ -586,11 +657,15 @@ async function handleSave(settings: {
     memoryBloatEnabled: boolean;
     todoNotificationsEnabled: boolean;
     systemInfoEnabled: boolean;
+    miniProvider: "auto" | "claude" | "codex";
     correctionsEnabled: boolean;
     locale: string;
     uiTheme: string;
     uiSkin: string;
 }) {
+    if (orgId.value !== settings.orgId || !settings.sessionKey || !settings.orgId) {
+        projectId.value = "";
+    }
     sessionKey.value = settings.sessionKey;
     orgId.value = settings.orgId;
     refreshInterval.value = settings.refreshInterval;
@@ -616,6 +691,7 @@ async function handleSave(settings: {
     memoryBloatEnabled.value = settings.memoryBloatEnabled;
     todoNotificationsEnabled.value = settings.todoNotificationsEnabled;
     systemInfoEnabled.value = settings.systemInfoEnabled;
+    miniProvider.value = settings.miniProvider;
     correctionsEnabled.value = settings.correctionsEnabled;
     locale.value = settings.locale;
     uiTheme.value = settings.uiTheme;
@@ -628,7 +704,7 @@ async function handleSave(settings: {
     await applyConfig();
     await loadTodaySpent();
     await loadForecast();
-    await loadCodexLimits();
+    void loadCodexLimits();
     // Tell the settings window (and any other listener) to refresh its form from
     // the canonical on-disk state we just wrote.
     const { emit } = await import("@tauri-apps/api/event");
@@ -641,7 +717,7 @@ async function handleRuntimeChange(payload: { enabled: boolean; kinds: string[] 
     runtimeInsightsEnabled.value = payload.enabled;
     runtimeInsightKinds.value = [...payload.kinds];
     await saveSettings();
-    if (configured.value) await applyConfig();
+    await applyConfig();
     const { emit } = await import("@tauri-apps/api/event");
     await emit("settings-changed");
 }
@@ -649,7 +725,7 @@ async function handleRuntimeChange(payload: { enabled: boolean; kinds: string[] 
 async function handleKeepAwakeChange(enabled: boolean) {
     keepAwakeEnabled.value = enabled;
     await saveSettings();
-    if (configured.value) await applyConfig();
+    await applyConfig();
     const { emit } = await import("@tauri-apps/api/event");
     await emit("settings-changed");
 }
@@ -703,10 +779,11 @@ onMounted(async () => {
     if (isKit) return;
 
     await loadSettings();
+    await initializeProviderSelection();
+    if (!configured.value && ccAnalyticsEnabled.value) {
+        await invoke("set_cc_analytics_enabled", { enabled: true }).catch(() => {});
+    }
     void logInfo(`[frontend] onMounted: settings loaded configured=${Boolean(configured.value)}`);
-    await loadCodexLimits();
-    codexLimitsTimer = setInterval(() => { void loadCodexLimits(); }, 30_000);
-
     try {
         envBadge.value = await invoke<string | null>("app_env_label");
     } catch {
@@ -718,6 +795,7 @@ onMounted(async () => {
         await listen<{ usage: UsageData; levels: UsageLevels }>(
             "usage-updated",
             (e) => {
+                if (!configured.value) return;
                 usage.value = e.payload.usage;
                 levels.value = e.payload.levels;
                 error.value = "";
@@ -732,6 +810,7 @@ onMounted(async () => {
         await listen<{ message: string; reportable: boolean; session_expired?: boolean }>(
             "usage-error",
             (e) => {
+                if (!configured.value) return;
                 error.value = String(e.payload?.message ?? e.payload);
                 errorReportable.value = e.payload?.reportable ?? false;
                 sessionExpired.value = e.payload?.session_expired ?? false;
@@ -809,9 +888,9 @@ onMounted(async () => {
     );
 
     void logInfo("[frontend] onMounted: listeners ready");
-    if (configured.value) {
-        await applyConfig();
-    }
+    void loadCodexLimits();
+    codexLimitsTimer = setInterval(() => { void loadCodexLimits(); }, 30_000);
+    await applyConfig();
 
     // Surface a diagnostic report left by a crash on the previous run (or a
     // frontend error), offering to file a pre-filled GitHub issue.
@@ -861,7 +940,7 @@ onUnmounted(() => {
                     class="icon-btn"
                     @click="toggleMini"
                     title="Mini widget"
-                    v-if="!showAbout && configured"
+                    v-if="!showAbout"
                 >
                     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
                         <rect x="1" y="5" width="14" height="8" rx="2" stroke-linecap="round"/>
@@ -873,7 +952,7 @@ onUnmounted(() => {
                     :class="{ spin: loading }"
                     @click="refresh"
                     :title="t('refresh')"
-                    v-if="!showAbout && configured"
+                    v-if="!showAbout && (configured || ccAnalyticsEnabled)"
                 >
                     <svg
                         width="14"
@@ -896,7 +975,7 @@ onUnmounted(() => {
                     :class="{ active: showAnalytics }"
                     @click="toggleAnalytics"
                     :title="t('analytics')"
-                    v-if="!showAbout && configured && ccAnalyticsEnabled"
+                    v-if="!showAbout && ccAnalyticsEnabled"
                 >
                     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
                         <path d="M2 14V2" stroke-linecap="round"/>
@@ -963,13 +1042,6 @@ onUnmounted(() => {
         </div>
 
         <div class="hr"></div>
-
-        <!-- Status tray: Claude service health + 5h session activity -->
-        <ServiceStatusBar
-            v-if="usage && !showAbout && (serviceStatusEnabled || sessionActive)"
-            :service-enabled="serviceStatusEnabled"
-            :session-active="sessionActive"
-        />
 
         <!-- Update banner -->
         <div
@@ -1040,34 +1112,81 @@ onUnmounted(() => {
 
         <!-- Usage -->
         <template v-else>
+            <div class="provider-list">
+            <section v-if="codexLimits || (ccAnalyticsEnabled && savedProviderSelection === 'codex')" class="provider-section" aria-label="Codex">
+                <h2 class="provider-section-heading">Codex</h2>
+                <div class="cards">
+                    <CodexUsageCards v-if="codexLimits" :limits="codexLimits" />
+                    <div v-else class="card">
+                        <p>{{ t(codexLimitsError ? "codexLimitsFailed" : "codexLimitsPending") }}</p>
+                        <p v-if="codexLimitsError">{{ codexLimitsError }}</p>
+                        <button class="btn-secondary" @click="loadCodexLimits">{{ t("retry") }}</button>
+                    </div>
+                </div>
+            </section>
+            <section v-if="configured || showProviderSetup" class="provider-section" :aria-label="configured ? 'Claude' : undefined">
+            <h2 v-if="configured" class="provider-section-heading">Claude</h2>
+            <ServiceStatusBar
+                v-if="configured && usage && (serviceStatusEnabled || sessionActive)"
+                :service-enabled="serviceStatusEnabled"
+                :session-active="sessionActive"
+            />
             <div
                 v-if="!configured"
                 class="cards"
             >
-                <CodexUsageCards v-if="codexLimits" :limits="codexLimits" />
-                <div style="padding: 22px 4px; text-align: center">
-                    <p style="color: var(--text-3); font-size: 13px">
-                        {{ t("configureClaude") }}
+                <div v-if="!providerDetectionReady" class="provider-loading">
+                    <div class="spinner"></div>
+                    <p>{{ t("detectingProviders") }}</p>
+                </div>
+                <div v-else class="provider-picker">
+                    <div class="provider-heading">
+                        <strong>{{ t("chooseProvider") }}</strong>
+                        <span>{{ t("chooseProviderHint") }}</span>
+                    </div>
+                    <div class="provider-options" role="radiogroup" :aria-label="t('chooseProvider')">
+                        <label
+                            v-for="option in providerOptions"
+                            :key="option"
+                            class="provider-option"
+                            :class="{ selected: providerSelection === option }"
+                        >
+                            <input v-model="providerSelection" type="radio" :value="option" />
+                            <span>
+                                <b>{{ t(`provider${option[0].toUpperCase()}${option.slice(1)}`) }}</b>
+                                <small>{{ t(`provider${option[0].toUpperCase()}${option.slice(1)}Hint`) }}</small>
+                            </span>
+                        </label>
+                    </div>
+                    <p
+                        v-if="providerSelection === 'codex' || providerSelection === 'both'"
+                        class="provider-consent"
+                    >
+                        {{ t("codexConsent") }}
+                    </p>
+                    <p
+                        v-if="savedProviderSelection === providerSelection"
+                        class="provider-saved"
+                    >
+                        {{ t("providerSaved") }}
                     </p>
                     <button
                         class="btn-primary"
-                        @click="openSettings('providers')"
-                        style="margin-top: 12px"
+                        @click="confirmProviderSelection"
                     >
-                        {{ t("configure") }}
+                        {{ providerSelection === "codex" ? t("continue") : t("configureClaudeAction") }}
                     </button>
                 </div>
             </div>
 
             <div v-else-if="error" class="cards">
-                <CodexUsageCards v-if="codexLimits" :limits="codexLimits" />
                 <div
                     class="card"
                     style="border-color: color-mix(in srgb, var(--crit) 30%, transparent)"
                 >
                     <p
                         style="
-                            font-size: 12px;
+                            font-size: var(--fs-13);
                             color: var(--crit);
                             word-break: break-all;
                         "
@@ -1112,7 +1231,6 @@ onUnmounted(() => {
                     :usage="usage"
                     :levels="levels"
                     :forecast="forecast"
-                    :codex-limits="codexLimits"
                     :loading="loading"
                     :auto-start-enabled="autoStartSession"
                     :auto-start-status="autoStartStatus"
@@ -1123,24 +1241,18 @@ onUnmounted(() => {
                     @refresh="refresh"
                     @manual-start="handleManualStart"
                 />
-                <FocusControls
-                    :muted-until="notificationsMutedUntil"
-                    @mute="setMute"
-                    @notify="notify"
-                />
             </template>
 
             <div
                 v-else
                 class="cards"
             >
-                <CodexUsageCards v-if="codexLimits" :limits="codexLimits" />
                 <div style="padding: 30px 4px; text-align: center">
                     <div class="spinner"></div>
                     <p
                         style="
                             color: var(--text-3);
-                            font-size: 13px;
+                            font: 400 var(--fs-12) / var(--lh-12) var(--sans);
                             margin-top: 12px;
                         "
                     >
@@ -1148,11 +1260,37 @@ onUnmounted(() => {
                     </p>
                 </div>
             </div>
+            </section>
+            </div>
+            <FocusControls
+                v-if="configured || savedProviderSelection"
+                :muted-until="notificationsMutedUntil"
+                @mute="setMute"
+                @notify="notify"
+            />
         </template>
     </div>
 </template>
 
 <style scoped>
+.provider-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.provider-section + .provider-section {
+    border-top: 1px solid var(--stroke-strong);
+    margin-top: 4px;
+}
+
+.provider-section-heading {
+    margin: 12px 10px 0;
+    color: var(--text-2);
+    font: 600 var(--fs-12) / var(--lh-12) var(--mono);
+    letter-spacing: 0.08em;
+}
+
 .update-banner {
     display: flex;
     align-items: center;
@@ -1167,7 +1305,7 @@ onUnmounted(() => {
 }
 
 .update-text {
-    font-size: 12px;
+    font-size: var(--fs-13);
     color: var(--text-2);
 }
 
@@ -1182,9 +1320,10 @@ onUnmounted(() => {
     border-radius: 4px;
     background: var(--accent);
     color: var(--on-accent);
-    font-size: 12px;
-    font-weight: 500;
-    font-family: var(--segoe);
+    font-size: var(--fs-13);
+    font-weight: 400;
+    font-family: var(--sans);
+    line-height: var(--lh-13);
     cursor: pointer;
     transition: filter 120ms;
 }
@@ -1228,7 +1367,7 @@ onUnmounted(() => {
 }
 
 .diag-text {
-    font-size: 12px;
+    font-size: var(--fs-13);
     color: var(--text-2);
 }
 
@@ -1244,9 +1383,10 @@ onUnmounted(() => {
     border-radius: 4px;
     background: var(--crit);
     color: var(--on-close);
-    font-size: 12px;
-    font-weight: 500;
-    font-family: var(--segoe);
+    font-size: var(--fs-13);
+    font-weight: 400;
+    font-family: var(--sans);
+    line-height: var(--lh-13);
     cursor: pointer;
     transition: filter 120ms;
 }
@@ -1266,10 +1406,12 @@ onUnmounted(() => {
     background: transparent;
     border: none;
     color: var(--text-3);
-    font-size: 11px;
+    font-size: var(--fs-12);
     text-decoration: underline;
     cursor: pointer;
-    font-family: var(--segoe);
+    font-family: var(--sans);
+    font-weight: 400;
+    line-height: var(--lh-12);
 }
 
 .link-btn:hover {
@@ -1281,13 +1423,102 @@ onUnmounted(() => {
     margin-left: 6px;
     padding: 1px 5px;
     border-radius: 4px;
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
+    font-family: var(--mono);
+    font-size: var(--fs-11);
+    font-weight: 600;
+    line-height: var(--lh-11);
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--accent);
     border: 1px solid var(--accent);
     background: color-mix(in srgb, var(--ag-claude) 12%, transparent);
     vertical-align: middle;
+}
+
+.provider-loading {
+    padding: 30px 4px;
+    text-align: center;
+    color: var(--text-3);
+    font: 400 var(--fs-12) / var(--lh-12) var(--sans);
+}
+
+.provider-loading p {
+    margin-top: 12px;
+}
+
+.provider-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px 10px 18px;
+}
+
+.provider-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.provider-heading strong {
+    color: var(--text-1);
+    font: 600 var(--fs-13) / var(--lh-13) var(--sans);
+}
+
+.provider-heading span,
+.provider-consent,
+.provider-saved {
+    color: var(--text-3);
+    font: 400 var(--fs-12) / var(--lh-12) var(--sans);
+}
+
+.provider-options {
+    display: grid;
+    gap: 7px;
+}
+
+.provider-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 10px;
+    border: 1px solid var(--stroke-strong);
+    border-radius: var(--card-radius);
+    background: var(--layer);
+    cursor: pointer;
+}
+
+.provider-option.selected {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--ag-claude) 10%, transparent);
+}
+
+.provider-option input {
+    margin: 2px 0 0;
+    accent-color: var(--accent);
+}
+
+.provider-option span {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.provider-option b {
+    color: var(--text-1);
+    font: 600 var(--fs-13) / var(--lh-13) var(--sans);
+}
+
+.provider-option small {
+    color: var(--text-3);
+    font: 400 var(--fs-11) / var(--lh-11) var(--sans);
+}
+
+.provider-consent,
+.provider-saved {
+    margin: 0;
+}
+
+.provider-saved {
+    color: var(--ok);
 }
 </style>

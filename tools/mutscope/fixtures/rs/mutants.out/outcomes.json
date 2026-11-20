@@ -1,0 +1,1025 @@
+{
+  "outcomes": [
+    {
+      "scenario": "Baseline",
+      "summary": "Success",
+      "log_path": "log/baseline.log",
+      "diff_path": null,
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 15.7413061,
+          "process_status": "Success",
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=flowcheck@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 53.0653994,
+          "process_status": "Success",
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--verbose",
+            "--package=flowcheck@0.1.0",
+            "--no-fail-fast"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/coverage.rs:185:5: replace named -> bool with true",
+          "package": "flowcheck",
+          "file": "src/coverage.rs",
+          "function": {
+            "function_name": "named",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 184,
+                "column": 1
+              },
+              "end": {
+                "line": 188,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 185,
+              "column": 5
+            },
+            "end": {
+              "line": 187,
+              "column": 97
+            }
+          },
+          "replacement": "true",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__coverage.rs_line_185_col_5.log",
+      "diff_path": "diff/src__coverage.rs_line_185_col_5.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 3.1354432,
+          "process_status": "Success",
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=flowcheck@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 82.7652097,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--verbose",
+            "--package=flowcheck@0.1.0",
+            "--no-fail-fast"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/coverage.rs:185:5: replace named -> bool with false",
+          "package": "flowcheck",
+          "file": "src/coverage.rs",
+          "function": {
+            "function_name": "named",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 184,
+                "column": 1
+              },
+              "end": {
+                "line": 188,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 185,
+              "column": 5
+            },
+            "end": {
+              "line": 187,
+              "column": 97
+            }
+          },
+          "replacement": "false",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "MissedMutant",
+      "log_path": "log/src__coverage.rs_line_185_col_5_001.log",
+      "diff_path": "diff/src__coverage.rs_line_185_col_5_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 25.5577086,
+          "process_status": "Success",
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=flowcheck@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 73.6215003,
+          "process_status": "Success",
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--verbose",
+            "--package=flowcheck@0.1.0",
+            "--no-fail-fast"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/coverage.rs:187:75: replace && with || in named",
+          "package": "flowcheck",
+          "file": "src/coverage.rs",
+          "function": {
+            "function_name": "named",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 184,
+                "column": 1
+              },
+              "end": {
+                "line": 188,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 187,
+              "column": 75
+            },
+            "end": {
+              "line": 187,
+              "column": 77
+            }
+          },
+          "replacement": "||",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__coverage.rs_line_187_col_75.log",
+      "diff_path": "diff/src__coverage.rs_line_187_col_75.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.4176032,
+          "process_status": "Success",
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=flowcheck@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 54.4563305,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--verbose",
+            "--package=flowcheck@0.1.0",
+            "--no-fail-fast"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/coverage.rs:187:51: replace && with || in named",
+          "package": "flowcheck",
+          "file": "src/coverage.rs",
+          "function": {
+            "function_name": "named",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 184,
+                "column": 1
+              },
+              "end": {
+                "line": 188,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 187,
+              "column": 51
+            },
+            "end": {
+              "line": 187,
+              "column": 53
+            }
+          },
+          "replacement": "||",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__coverage.rs_line_187_col_51.log",
+      "diff_path": "diff/src__coverage.rs_line_187_col_51.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.5691464000000002,
+          "process_status": "Success",
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=flowcheck@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 55.3070982,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--verbose",
+            "--package=flowcheck@0.1.0",
+            "--no-fail-fast"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/coverage.rs:187:33: replace && with || in named",
+          "package": "flowcheck",
+          "file": "src/coverage.rs",
+          "function": {
+            "function_name": "named",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 184,
+                "column": 1
+              },
+              "end": {
+                "line": 188,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 187,
+              "column": 33
+            },
+            "end": {
+              "line": 187,
+              "column": 35
+            }
+          },
+          "replacement": "||",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__coverage.rs_line_187_col_33.log",
+      "diff_path": "diff/src__coverage.rs_line_187_col_33.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.165794,
+          "process_status": "Success",
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=flowcheck@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 49.240146,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--verbose",
+            "--package=flowcheck@0.1.0",
+            "--no-fail-fast"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/coverage.rs:187:25: replace == with != in named",
+          "package": "flowcheck",
+          "file": "src/coverage.rs",
+          "function": {
+            "function_name": "named",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 184,
+                "column": 1
+              },
+              "end": {
+                "line": 188,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 187,
+              "column": 25
+            },
+            "end": {
+              "line": 187,
+              "column": 27
+            }
+          },
+          "replacement": "!=",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "MissedMutant",
+      "log_path": "log/src__coverage.rs_line_187_col_25.log",
+      "diff_path": "diff/src__coverage.rs_line_187_col_25.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.5831335,
+          "process_status": "Success",
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=flowcheck@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 51.0848122,
+          "process_status": "Success",
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--verbose",
+            "--package=flowcheck@0.1.0",
+            "--no-fail-fast"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/coverage.rs:187:54: delete ! in named",
+          "package": "flowcheck",
+          "file": "src/coverage.rs",
+          "function": {
+            "function_name": "named",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 184,
+                "column": 1
+              },
+              "end": {
+                "line": 188,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 187,
+              "column": 54
+            },
+            "end": {
+              "line": 187,
+              "column": 55
+            }
+          },
+          "replacement": "",
+          "genre": "UnaryOperator"
+        }
+      },
+      "summary": "MissedMutant",
+      "log_path": "log/src__coverage.rs_line_187_col_54.log",
+      "diff_path": "diff/src__coverage.rs_line_187_col_54.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.3650058,
+          "process_status": "Success",
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=flowcheck@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 49.8145591,
+          "process_status": "Success",
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--verbose",
+            "--package=flowcheck@0.1.0",
+            "--no-fail-fast"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/coverage.rs:187:90: replace == with != in named",
+          "package": "flowcheck",
+          "file": "src/coverage.rs",
+          "function": {
+            "function_name": "named",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 184,
+                "column": 1
+              },
+              "end": {
+                "line": 188,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 187,
+              "column": 90
+            },
+            "end": {
+              "line": 187,
+              "column": 92
+            }
+          },
+          "replacement": "!=",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__coverage.rs_line_187_col_90.log",
+      "diff_path": "diff/src__coverage.rs_line_187_col_90.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.3169785,
+          "process_status": "Success",
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=flowcheck@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 49.481864,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--verbose",
+            "--package=flowcheck@0.1.0",
+            "--no-fail-fast"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/coverage.rs:191:5: replace na_for -> Option<String> with None",
+          "package": "flowcheck",
+          "file": "src/coverage.rs",
+          "function": {
+            "function_name": "na_for",
+            "return_type": "-> Option<String>",
+            "span": {
+              "start": {
+                "line": 190,
+                "column": 1
+              },
+              "end": {
+                "line": 201,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 191,
+              "column": 5
+            },
+            "end": {
+              "line": 200,
+              "column": 7
+            }
+          },
+          "replacement": "None",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__coverage.rs_line_191_col_5.log",
+      "diff_path": "diff/src__coverage.rs_line_191_col_5.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.5151451,
+          "process_status": "Success",
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=flowcheck@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 48.4209453,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--verbose",
+            "--package=flowcheck@0.1.0",
+            "--no-fail-fast"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/coverage.rs:191:5: replace na_for -> Option<String> with Some(String::new())",
+          "package": "flowcheck",
+          "file": "src/coverage.rs",
+          "function": {
+            "function_name": "na_for",
+            "return_type": "-> Option<String>",
+            "span": {
+              "start": {
+                "line": 190,
+                "column": 1
+              },
+              "end": {
+                "line": 201,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 191,
+              "column": 5
+            },
+            "end": {
+              "line": 200,
+              "column": 7
+            }
+          },
+          "replacement": "Some(String::new())",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__coverage.rs_line_191_col_5_001.log",
+      "diff_path": "diff/src__coverage.rs_line_191_col_5_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.7747491,
+          "process_status": "Success",
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=flowcheck@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 44.6129797,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--verbose",
+            "--package=flowcheck@0.1.0",
+            "--no-fail-fast"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/coverage.rs:191:5: replace na_for -> Option<String> with Some(\"xyzzy\".into())",
+          "package": "flowcheck",
+          "file": "src/coverage.rs",
+          "function": {
+            "function_name": "na_for",
+            "return_type": "-> Option<String>",
+            "span": {
+              "start": {
+                "line": 190,
+                "column": 1
+              },
+              "end": {
+                "line": 201,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 191,
+              "column": 5
+            },
+            "end": {
+              "line": 200,
+              "column": 7
+            }
+          },
+          "replacement": "Some(\"xyzzy\".into())",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__coverage.rs_line_191_col_5_002.log",
+      "diff_path": "diff/src__coverage.rs_line_191_col_5_002.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.7155532,
+          "process_status": "Success",
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=flowcheck@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 46.1904718,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--verbose",
+            "--package=flowcheck@0.1.0",
+            "--no-fail-fast"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/coverage.rs:192:27: replace || with && in na_for",
+          "package": "flowcheck",
+          "file": "src/coverage.rs",
+          "function": {
+            "function_name": "na_for",
+            "return_type": "-> Option<String>",
+            "span": {
+              "start": {
+                "line": 190,
+                "column": 1
+              },
+              "end": {
+                "line": 201,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 192,
+              "column": 27
+            },
+            "end": {
+              "line": 192,
+              "column": 29
+            }
+          },
+          "replacement": "&&",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "MissedMutant",
+      "log_path": "log/src__coverage.rs_line_192_col_27.log",
+      "diff_path": "diff/src__coverage.rs_line_192_col_27.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.3642581,
+          "process_status": "Success",
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=flowcheck@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 45.7791187,
+          "process_status": "Success",
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--verbose",
+            "--package=flowcheck@0.1.0",
+            "--no-fail-fast"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/coverage.rs:192:19: replace != with == in na_for",
+          "package": "flowcheck",
+          "file": "src/coverage.rs",
+          "function": {
+            "function_name": "na_for",
+            "return_type": "-> Option<String>",
+            "span": {
+              "start": {
+                "line": 190,
+                "column": 1
+              },
+              "end": {
+                "line": 201,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 192,
+              "column": 19
+            },
+            "end": {
+              "line": 192,
+              "column": 21
+            }
+          },
+          "replacement": "==",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__coverage.rs_line_192_col_19.log",
+      "diff_path": "diff/src__coverage.rs_line_192_col_19.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.36587,
+          "process_status": "Success",
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=flowcheck@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 46.9800876,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--verbose",
+            "--package=flowcheck@0.1.0",
+            "--no-fail-fast"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/coverage.rs:195:32: replace || with && in na_for",
+          "package": "flowcheck",
+          "file": "src/coverage.rs",
+          "function": {
+            "function_name": "na_for",
+            "return_type": "-> Option<String>",
+            "span": {
+              "start": {
+                "line": 190,
+                "column": 1
+              },
+              "end": {
+                "line": 201,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 195,
+              "column": 32
+            },
+            "end": {
+              "line": 195,
+              "column": 34
+            }
+          },
+          "replacement": "&&",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__coverage.rs_line_195_col_32.log",
+      "diff_path": "diff/src__coverage.rs_line_195_col_32.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.8169863,
+          "process_status": "Success",
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=flowcheck@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 50.8515358,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--verbose",
+            "--package=flowcheck@0.1.0",
+            "--no-fail-fast"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/coverage.rs:195:67: replace == with != in na_for",
+          "package": "flowcheck",
+          "file": "src/coverage.rs",
+          "function": {
+            "function_name": "na_for",
+            "return_type": "-> Option<String>",
+            "span": {
+              "start": {
+                "line": 190,
+                "column": 1
+              },
+              "end": {
+                "line": 201,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 195,
+              "column": 67
+            },
+            "end": {
+              "line": 195,
+              "column": 69
+            }
+          },
+          "replacement": "!=",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "MissedMutant",
+      "log_path": "log/src__coverage.rs_line_195_col_67.log",
+      "diff_path": "diff/src__coverage.rs_line_195_col_67.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.2138417,
+          "process_status": "Success",
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=flowcheck@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 46.6477677,
+          "process_status": "Success",
+          "argv": [
+            "C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+            "test",
+            "--verbose",
+            "--package=flowcheck@0.1.0",
+            "--no-fail-fast"
+          ]
+        }
+      ]
+    }
+  ],
+  "total_mutants": 15,
+  "missed": 5,
+  "caught": 10,
+  "timeout": 0,
+  "unviable": 0,
+  "success": 0,
+  "start_time": "2026-10-18T07:12:36.975125Z",
+  "end_time": "2026-10-18T07:21:03.7790987Z",
+  "cargo_mutants_version": "27.1.0"
+}

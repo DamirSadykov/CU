@@ -1,16 +1,28 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { CLAUDE_CODE_ENGINE } from "./claude-code.mjs";
 import { CODEX_ENGINE } from "./codex.mjs";
 
-export const OPENAI_PRICES = [
-  [/gpt-5\.6-terra/i, [2, 0.2, 12]], [/gpt-5\.6-luna/i, [0.2, 0.02, 1.2]],
-  [/^gpt-5\.6(?:-sol)?$/i, [4, 0.4, 20]], [/gpt-5\.3-codex/i, [1.75, 0.175, 14]],
-  [/gpt-5\.2(?:-codex)?/i, [1.75, 0.175, 14]],
-];
+// Shared with src-tauri/src/analytics/codex.rs. Keeping the model-family
+// matching and rates in data prevents the CLI and analytics window from
+// silently assigning different prices to the same rollout model.
+export const OPENAI_PRICES = Object.freeze(JSON.parse(readFileSync(
+  fileURLToPath(new URL("./openai-prices.json", import.meta.url)),
+  "utf8",
+)));
+
+function openAiRates(model) {
+  const candidate = String(model || "").toLowerCase();
+  const rule = OPENAI_PRICES.find(({ match, models }) =>
+    models.some((name) => match === "exact" ? candidate === name : candidate.includes(name)),
+  );
+  return rule ? [rule.input, rule.cached_input, rule.output] : null;
+}
 
 export function openAiCost(model, usage, profile = {}) {
   if (!usage) return null;
   const configured = [profile.input_cost_per_million, profile.cached_input_cost_per_million, profile.output_cost_per_million];
-  const rates = configured.every((n) => typeof n === "number") ? configured : OPENAI_PRICES.find(([re]) => re.test(String(model || "")))?.[1];
+  const rates = configured.every((n) => typeof n === "number") ? configured : openAiRates(model);
   if (!rates) return null;
   const input = Number(usage.input_tokens ?? usage.input ?? 0), cached = Number(usage.cached_input_tokens ?? usage.cached_input ?? 0);
   const cacheWrite = Number(usage.cache_write_input_tokens ?? usage.cache_write_input ?? 0), output = Number(usage.output_tokens ?? usage.output ?? 0);

@@ -31,6 +31,8 @@ describe("model engines", () => {
   it("prices OpenAI cache and output tokens in the provider", () => {
     expect(openAiCost("gpt-5.6-sol", { input_tokens: 100, cached_input_tokens: 40, output_tokens: 10 }))
       .toBe((60 * 4 + 40 * 0.4 + 10 * 20) / 1_000_000);
+    expect(openAiCost("gpt-5.6-sol-preview", { input_tokens: 100, cached_input_tokens: 40, output_tokens: 10 }))
+      .toBe((60 * 4 + 40 * 0.4 + 10 * 20) / 1_000_000);
   });
 });
 
@@ -79,7 +81,7 @@ describe("Candidate", () => {
 
   it("reports binary and guard independently during preflight", () => {
     const check = createCandidate({ provider: "openai", model: "gpt-5.6-sol" }).check({
-      bin: "codex", rulesFile: "Z:/definitely-absent/cu-guard.rules",
+      bin: "codex", hooksFile: "Z:/definitely-absent/hooks.json",
       run: () => ({ status: 0, stderr: "" }),
     });
     expect(check).toMatchObject({ ok: true, binary: { available: true }, guard: { active: false } });

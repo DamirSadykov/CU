@@ -1,10 +1,11 @@
 import { appendFileSync, mkdirSync, readFileSync, statSync, watch, writeFileSync } from "node:fs";
 import path from "node:path";
 import { withDataDir } from "../kernel/board-lock.mjs";
+import { formatRef, storageRef } from "../kernel/terms.mjs";
 
 const changeId = (value) => {
   const text = String(value?.number ?? value ?? "").trim();
-  return text ? (text.startsWith("c#") ? text : `c#${text.replace(/^#/, "")}`) : "";
+  return text ? storageRef(text) : "";
 };
 
 const taskId = (value) => {
@@ -89,7 +90,8 @@ export function writeVerifyLog(file, log) {
 }
 
 export function formatRunEvent(event) {
-  const prefix = [changeId(event?.change), taskId(event?.task)].filter(Boolean).join(" ");
+  const storedChange = changeId(event?.change);
+  const prefix = [storedChange ? formatRef(storedChange) : "", taskId(event?.task)].filter(Boolean).join(" ");
   const attempt = event?.attempt == null ? "" : ` attempt ${event.attempt}/${event.limit ?? "-"}`;
   const kind = String(event?.kind || "event");
   if (kind === "review") {
@@ -107,7 +109,7 @@ export function formatRunEvent(event) {
     const inherit = event.inherit_dropped ? ", inherit dropped" : "";
     return `${prefix}${attempt}: worker done${typeof event.cost === "number" ? ` $${Math.round(event.cost * 10000) / 10000}` : ""} [guard ${event.guard || "absent"}${fallback}${inherit}]`.trim();
   }
-  if (kind === "run_start" || kind === "run_end") return `${changeId(event?.change)}: ${kind.replace("_", " ")}`.trim();
+  if (kind === "run_start" || kind === "run_end") return `${storedChange ? formatRef(storedChange) : ""}: ${kind.replace("_", " ")}`.trim();
   if (kind === "worker_session") return `${prefix}${attempt}: worker session ${event.engine || "?"} ${event.session || ""}`.trim();
   if (kind === "attempt_snapshot") return `${prefix}${attempt}: snapshot ${String(event.snapshot || "").slice(0, 12)}`.trim();
   if (kind === "attempt_end") return `${prefix}${attempt}: attempt end ${event.outcome || "?"} (${event.reason || "?"})${event.detail ? ` — ${event.detail}` : ""}`.trim();

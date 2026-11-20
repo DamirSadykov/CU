@@ -46,7 +46,7 @@ const headline = computed(() => {
                         { id: 'board', label: 'Доска' },
                         { id: 'graph', label: 'Граф' },
                         { id: 'specs', label: 'Спеки' },
-                        { id: 'change', label: 'Change' },
+                        { id: 'change', label: 'План' },
                     ]"
                     @update:model-value="
                         (value: string) =>

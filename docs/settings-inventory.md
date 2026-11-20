@@ -26,7 +26,7 @@
 
 | Ключ | Scope | Вкладка → подпись в SettingsPanel | Кто читает | Умолчание | Предложенный вердикт и причина |
 |---|---|---|---|---|---|
-| `sessionKey` | ui | Провайдеры → «Session Key» | `App.vue` → Rust usage API | `""` | **keep** — обязательная учётная пара для Claude usage API. |
+| `sessionKey` | ui | Провайдеры → «Session Key» | `App.vue` → Rust usage API | `""` | **keep** — учётная пара для необязательного подключения Claude; пустые поля сохраняются и отключают опрос Claude. |
 | `orgId` | ui | Провайдеры → «Organization ID» | `App.vue` → Rust usage API | `""` | **keep** — второй обязательный идентификатор Claude usage API. |
 | `refreshInterval` | ui | Обновления → «Интервал обновления» | `App.vue` → Rust polling/AppConfig | `60` с | **keep** — понятный пользователю компромисс свежести и частоты запросов. |
 | `autoStartSession` | ui | Аккаунт → «Автостарт сессии» | `App.vue` → Rust AppConfig; `SessionCard.vue` | `false` | **keep** — самостоятельная автоматизация с заметным внешним эффектом. |
@@ -56,6 +56,7 @@
 | `runtimeInsightKinds` | ui | Выводы → колонка «Runtime» у каждой метрики | `App.vue` → Rust runtime insight engine | `["long_session", "cold_rewrites"]` | **merge** → `runtimeInsights`; хранить `{enabled, kinds}` вместе. |
 | `keepAwakeEnabled` | ui | Аккаунт → «Не давать Windows засыпать во время работы ИИ» | `App.vue` → Rust keep-awake worker | `false` | **keep** — явное управление поведением ОС с понятным opt-in. |
 | `systemInfoEnabled` | ui | Аккаунт → «Системная информация в мини-панели» | `MiniPanel.vue` | `true` | **keep** — пользователь решает, показывать ли системные CPU/RAM. |
+| `miniProvider` | ui | Аккаунт → «Провайдер мини-панели» | `MiniPanel.vue` | `"auto"` | **keep** — `claude` или `codex`; `auto` выбирает Claude при заполненной учётной паре, иначе Codex. Отсутствующие окна лимитов показываются как «—». |
 | `correctionsEnabled` | ui | Бюджет → «Метрика исхода — поправки пользователя» | `App.vue` → Rust analytics; `AnalyticsWindow.vue` | `false` | **keep** — отдельный privacy-sensitive opt-in сканирования транскриптов. |
 | `locale` | shared | Аккаунт → «Язык» | UI i18n; CLI `uiLocale()` | `null` (системный/текущий язык) | **keep** — единый язык UI и сообщений CLI. |
 | `uiTheme` | ui | Аккаунт → «Внешний вид / Основа» | theme bootstrap и Settings UI | `"system"` | **keep** — базовая светлая/тёмная политика независима от skin. |
@@ -66,7 +67,7 @@
 | `releasesCache` | ui | — нет поля | `kernel/changelog.ts` | `null` | **move** — производный cache ответа GitHub не относится к preferences. |
 | `externalStatusMap` | ui | Интеграции → «Маппинг статусов» | `EnrollmentPanel.vue`; `TodoWindow.vue` | `{}` | **keep** — видимая пользовательская настройка соответствия статусов, сохраняемая и переопределяемая в `settings.json`. |
 | `specsEnabled` | shared | Задачи → «Реестр спек для change'ей» | UI; CLI todos/session/start/stop/run-step | `false` | **keep** — явный master opt-in автоматического spec workflow. |
-| `flowLanguages` | hook | — нет поля; вручную в JSON, map по проекту | CLI `process/apply.mjs`, `lint.mjs` | `{}`; для проекта fallback `["cs"]` | **keep** — проектный выбор языков flow-check нужен CLI и уже естественно представлен map'ом. |
+| `flowLanguages` | shared | Задачи → «Проверки / Языки кода по проектам» | UI; CLI `process/apply.mjs`, `lint.mjs` | `{}`; для проекта fallback `["cs"]` | **keep** — проектный выбор языков flow-check нужен CLI и уже естественно представлен map'ом. |
 | `taskContextPriority` | shared | Задачи → «Приоритет задач в контексте» | UI; CLI SessionStart hook | `"medium"` | **keep** — регулирует объём автоматически вставляемого контекста. |
 | `hookContextEnabled` | shared | Задачи → «Контекст задач в сессиях» | UI; CLI SessionStart hook | `true` | **keep** — master switch инъекции задач и prerequisite workflow context. |
 | `workflowContextEnabled` | shared | Задачи → «Процесс ролей в начале сеанса» | UI; CLI SessionStart hook | `false` | **keep** — процесс ролей можно включать независимо от списка задач. |
@@ -74,6 +75,7 @@
 | `specRoot` | shared | — нет поля; вручную в JSON | Rust spec reader; CLI spec registry | `"docs/specs"` | **keep** — переносимый project-relative root нужен обоим реализациям реестра. |
 | `specDeltaGuard` | hook | — нет поля; вручную в JSON | CLI Stop hook | `"on"` | **merge** → `specs`/`specsEnabled`; это подрежим одной opt-in capability, отдельно он скрыт и инертен. |
 | `matchPlanCli` | hook | — нет поля; вручную в JSON | CLI plan hook; todo event matcher | `""` | **keep** — необязательный adapter path сохраняет отсутствие жёсткой зависимости от KB. |
+| `flowcheckExe` | — | — удалён | — | — | **removed** — путь вычисляется: `%APPDATA%/com.cu.app/tools/flowcheck.exe` или сборка `tools/flowcheck` репозитория CU; инструмент собирается из этого репозитория, своему пути взяться неоткуда. |
 | `specRepos` | hook | — нет поля; вручную в JSON, map repo → path | CLI spec registry | `{}` | **keep** — локальные пути внешних repo машинно-зависимы и не подходят UI sync. |
 
 ## Дрейф контракта
@@ -128,3 +130,16 @@ shared-ключ `runnerEnabled` (default `true`): выключенный, он �
 текста WORKFLOW, и план исполняет сам сеанс. Review вызывает только раннер,
 поэтому «План с проверкой» его не трогает. Контракт теперь — 44 ключа: 31 `ui`,
 8 `shared` и 5 `hook`.
+
+## Проверки
+
+2026-10-18 вкладка «Задачи» получила блок «Проверки»: поле пути к
+`flowcheck.exe` с выбором файла и таблицу проектов с флажками `cs`, `rs`,
+`ts`, `js`. Ключи `flowcheckExe` и `flowLanguages` переведены из ручных
+hook-ключей в `shared` с писателем `app` и прямым чтением (`direct`).
+Панель пишет `flowLanguages` слиянием: перечитывает map из файла и заменяет
+только запись изменённого проекта, поэтому записи проектов, которых нет в
+списке, сохраняются. Последний отмеченный язык снять нельзя: пустой список CLI
+всё равно читает как `["cs"]`. Список проектов — ключи map и проекты из
+`get_cc_projects`, тот же источник, что у поля проекта задачи. Контракт —
+44 ключа: 31 `ui`, 10 `shared` и 3 `hook`.

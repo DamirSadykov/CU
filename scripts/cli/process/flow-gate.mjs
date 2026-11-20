@@ -10,6 +10,21 @@ const tailLines = (value, count = 60) => {
   return lines.length <= count ? lines.join("\n") : lines.slice(-count).join("\n");
 };
 
+export function flowProblems(parsed) {
+  return (Array.isArray(parsed?.results) ? parsed.results : [])
+    .filter((result) => result?.status === "fail")
+    .flatMap((result) => (Array.isArray(result.problems) ? result.problems : [])
+      .map((problem) => String(problem ?? "").trim())
+      .filter(Boolean)
+      .map((problem) => `${String(result.method ?? "unknown method").trim() || "unknown method"}: ${problem}`));
+}
+
+const flowReason = (parsed, unchecked) => {
+  const findings = Array.isArray(parsed?.coverage?.findings) ? parsed.coverage.findings.length : 0;
+  const summary = `coverage: checked=${Number(parsed?.coverage?.checked) || 0}, changed=${Number(parsed?.coverage?.changed) || 0}, findings=${findings}; unchecked=${unchecked.length}`;
+  return [...flowProblems(parsed), summary].join("\n");
+};
+
 const unsupportedProduces = (task) => (Array.isArray(task?.produces) ? task.produces : [])
   .map((file) => String(file || "").trim().replace(/\\/g, "/"))
   .filter((file) => file && !supportedFlowExtensions.some((extension) => file.toLowerCase().endsWith(extension)))
@@ -38,15 +53,15 @@ export async function runFlowGate({ task, cwd, timeoutMs, exe, runCmd = runExe }
     const args = ["--spec", specPath, "--repo", cwd, "--base", task.step_base, "--coverage", "shadow", "--diagram", "result"];
     const result = await runCmd(exe, args, cwd, timeoutMs);
     const output = [result?.stdout, result?.stderr].filter((v) => String(v || "").trim()).join("\n");
-    let parsed = {};
-    try { parsed = JSON.parse(result?.stdout || "{}"); } catch {}
-    const unchecked = [...(Array.isArray(parsed.unchecked) ? parsed.unchecked : []), ...unsupportedProduces(task)];
+    let parsed;
+    try { parsed = JSON.parse(result?.stdout); } catch {}
+    const unchecked = [...(Array.isArray(parsed?.unchecked) ? parsed.unchecked : []), ...unsupportedProduces(task)];
     const coverage = parsed?.coverage?.findings ?? parsed?.coverage ?? [];
     const code = Number(result?.code);
     const diagram = typeof parsed?.diagram === "string" ? parsed.diagram : null;
     if (code === 0) return finish("pass", { reason: null, coverage, unchecked, diagram });
-    if (code === 2) return finish("cannot", { reason: tailLines(output) || "flowcheck cannot inspect this change", coverage, unchecked, diagram });
-    return finish("issue", { reason: tailLines(output) || "flowcheck found a flow issue", coverage, unchecked, diagram });
+    if (code === 2) return finish("cannot", { reason: parsed === undefined ? tailLines(output) || "flowcheck cannot inspect this change" : flowReason(parsed, unchecked), coverage, unchecked, diagram });
+    return finish("issue", { reason: parsed === undefined ? tailLines(output) || "flowcheck found a flow issue" : flowReason(parsed, unchecked), coverage, unchecked, diagram });
   } catch (err) {
     return finish("cannot", { reason: `flow gate crashed: ${(err && err.message) || err}` });
   } finally {

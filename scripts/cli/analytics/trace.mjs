@@ -5,6 +5,7 @@ import path from "node:path";
 import { appDataFile, writeJsonAtomic } from "../kernel/appdata.mjs";
 import { withDataDir } from "../kernel/board-lock.mjs";
 import { loadBoard } from "../kernel/board-io.mjs";
+import { parseRef } from "../kernel/terms.mjs";
 
 const pointsPath = () => appDataFile("restart-points.jsonl");
 const sessionsPath = () => appDataFile("task-sessions.jsonl");
@@ -72,8 +73,10 @@ function scenarioSummary(point) {
 function resolveTasks(token) {
   if (!token || token === "--all") return null;
   const board = loadBoard();
-  if (/^c#\d+$/i.test(token)) {
-    const n = Number(token.slice(2));
+  const tagged = String(token).trim().toLowerCase();
+  const planNumber = /^#?\d+$/.test(tagged) ? null : parseRef(token);
+  if (planNumber !== null) {
+    const n = planNumber;
     const change = (board.changes || []).find((c) => c && c.number === n);
     if (!change) return new Set();
     return new Set((board.todos || []).filter((t) => t?.change_id === change.id).map((t) => t.id));

@@ -47,6 +47,7 @@ import {
   discussionDeclaration,
   isReason,
   planCandidates,
+  planBrief,
   planFormatDoc,
   planFormatIssuesDoc,
   planFormatCuttingDoc,
@@ -55,6 +56,7 @@ import {
 } from "./plan-guard.mjs";
 import { criticRunsAsAgent, invokeDutySync } from "../agents/agents.mjs";
 import { planGuardWired } from "../kernel/claude-hooks.mjs";
+import { formatRef } from "../kernel/terms.mjs";
 
 const CLI = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "cli.mjs");
 
@@ -173,12 +175,12 @@ export function buildArchitectGateNotice(gate, planGuard = true) {
 
 export function buildEnterContext({ architectGate, planGuard = true } = {}) {
   const lines = [
-    "──────── PLAN MODE · the plan IS the graph file ────────",
-    "Write the plan as the YAML graph file the tracker records, one step per task.",
+    "──────── PLAN MODE · free brief + one YAML graph block ────────",
+    "Write the brief freely; add ONE ```yaml block the tracker records, one task per entry.",
     "READ THE BASE NOW — it contains the field legend, inference rules and examples:",
     `  ${FORMAT_DOC}`,
     "EVERY plan is REFUSED before the user sees it if malformed.",
-    `Only if a step parks: ${FORMAT_ISSUES_DOC}`,
+    `Only if a task parks: ${FORMAT_ISSUES_DOC}`,
     `Only if work must be split: ${FORMAT_CUTTING_DOC}`,
     "",
     "If this only settles a question and opens no work, start with:",
@@ -237,7 +239,7 @@ function kbLines(warnings) {
     "KB case-warnings for this plan (match-plan) — act on them BEFORE executing:",
     ...w.split("\n").map((l) => "  " + l),
     "",
-    `Persist them: node "${CLI}" todos comment add <id> --text "<...>" on the change`,
+    `Persist them: node "${CLI}" todos comment add <id> --text "<...>" on the plan`,
     "root (or on the task), so the warnings outlive this session.",
   ];
 }
@@ -251,12 +253,12 @@ export function buildExitContext(warnings) {
     "The tracker records an approved plan itself, and could not read this one as a",
     "graph — so it is yours to record. Save it as <plan>.yaml (scratchpad or a temp",
     "dir, NOT the repo) exactly as approved. Do not re-plan and do not reword a",
-    "title while saving: an unbound step finds its task by that phrase, VERBATIM.",
+    "title while saving: an unbound entry finds its task by that phrase, VERBATIM.",
     "",
     `  1. node "${CLI}" todos apply <plan>.yaml         — checks it, prints what changes`,
     `  2. node "${CLI}" todos apply <plan>.yaml --go    — records it`,
     "",
-    "A one-step plan is a file too — one step, bound with the `task` key to the",
+    "A one-task plan is a file too — one entry, bound with the `task` key to the",
     `task already on the board (the task field, §1 of the format: ${FORMAT_DOC}).`,
     "",
     "Re-applying the same file updates the graph instead of forking it.",
@@ -268,7 +270,7 @@ export function buildExitContext(warnings) {
       "KB case-warnings for this plan (match-plan) — act on them BEFORE executing:",
       ...w.split("\n").map((l) => "  " + l),
       "",
-      `Persist them: node "${CLI}" todos comment add <id> --text "<...>" on the change`,
+      `Persist them: node "${CLI}" todos comment add <id> --text "<...>" on the plan`,
       "root (or on the task), so the warnings outlive this session.",
     );
   }
@@ -453,6 +455,7 @@ export function recordPlan(planText, { session = "", apply = applyDocument, file
   for (const source of planCandidates(planText)) {
     const doc = readDocument(source);
     if (!doc.steps.length) continue;
+    if (!doc.vision) doc.vision = planBrief(planText, source);
     const key = JSON.stringify([doc.change, doc.steps.map((s) => [s.task, s.title])]);
     if (readings.has(key)) continue;
     if (!apply(doc, { go: false }).ok) continue;
@@ -503,7 +506,7 @@ export function buildRecordedContext({ doc, result, file }, warnings) {
       "new: " +
         steps.map((t) => `#${t.number}`).join(", ") +
         (result.root && result.created.includes(result.root)
-          ? ` (change root #${result.root.number})`
+          ? ` (plan root #${result.root.number})`
           : "") +
         ` — take one with: node "${CLI}" todos take <N>`,
     );
@@ -514,7 +517,7 @@ export function buildRecordedContext({ doc, result, file }, warnings) {
   if (result.change?.number != null) {
     lines.push(
       "",
-      `Start the autonomous run with background execution (\`run_in_background: true\`): node "${CLI}" todos run c#${result.change.number} --go`,
+      `Start the autonomous run with background execution (\`run_in_background: true\`): node "${CLI}" todos run ${formatRef(result.change)} --go`,
       "Do not observe or narrate its progress from this session. When it needs a decision, the process exits with the decision card and restart command as its final stdout lines.",
     );
   }

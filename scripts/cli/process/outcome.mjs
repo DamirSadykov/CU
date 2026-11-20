@@ -43,6 +43,7 @@ import { resolveTask, readTaskSessionEvents, loadBoard, loadBoardForWrite, saveB
 import { withBoardLock, withDataDir } from "../kernel/board-lock.mjs";
 import { appDataFile } from "../kernel/appdata.mjs";
 import { snapshotTree, diffNameStatus, gitHead } from "./red-gate.mjs";
+import { codexRolloutFiles } from "../kernel/codex-rollout.mjs";
 
 // Tools that CHANGE a file — the only evidence that something was produced.
 // `Read` carries a `file_path` too and is deliberately NOT here: reading a file
@@ -79,6 +80,8 @@ export function pathMatches(declared, touched) {
   return t.startsWith(d + "/") || t.includes("/" + d + "/");
 }
 
+const MTIME_UNTIL_SLACK_MS = 1000;
+
 export function outsideRepoEvidence({ cwd, repoRoot, since, until, statFile = fileMtime }) {
   if (!cwd || !since) return () => null;
   const root = repoRoot ? path.resolve(repoRoot) : null;
@@ -91,7 +94,7 @@ export function outsideRepoEvidence({ cwd, repoRoot, since, until, statFile = fi
     const abs = path.resolve(cwd, normalizePath(item));
     if (inside(abs)) return null;
     const mtime = statFile(abs);
-    if (!mtime || mtime < since || (until && mtime > until)) return null;
+    if (!mtime || mtime < since || (until && Date.parse(mtime) > Date.parse(until) + MTIME_UNTIL_SLACK_MS)) return null;
     return mtime;
   };
 }
@@ -439,12 +442,40 @@ function transcriptHasAgentCallSince(raw, since) {
   return false;
 }
 
+// A Codex rollout records direct tools as response items. Newer hosts wrap
+// apply_patch in the `exec` custom tool, whose input is the JavaScript call.
+// Both representations are accepted because rollouts survive CLI upgrades.
+export function codexRolloutHasWorkSince(raw, since) {
+  const boundary = Date.parse(since);
+  if (!Number.isFinite(boundary)) return false;
+  for (const line of String(raw || "").split("\n")) {
+    if (!line.includes("apply_patch") && !line.includes("spawn_agent")) continue;
+    let rec;
+    try { rec = JSON.parse(line); } catch { continue; }
+    const at = Date.parse(rec?.timestamp);
+    if (!Number.isFinite(at) || at < boundary) continue;
+    const payload = rec?.type === "response_item" ? rec.payload : null;
+    if (!payload || !["function_call", "custom_tool_call"].includes(payload.type)) continue;
+    const name = String(payload.name || payload.tool_name || payload.recipient_name || "");
+    const qualified = payload.namespace ? `${payload.namespace}.${name}` : name;
+    if (name === "apply_patch" || qualified.endsWith(".apply_patch")) return true;
+    if (name === "spawn_agent" || qualified.endsWith(".spawn_agent")) return true;
+    if (name === "exec" && /\btools\.apply_patch\s*\(/.test(String(payload.input || ""))) return true;
+  }
+  return false;
+}
+
 export function hasSessionWork(session, startAt) {
   for (const transcript of findSessionTranscripts(session)) {
     let raw;
     try { raw = readFileSync(transcript, "utf8"); } catch { continue; }
     if (transcriptHasAgentCallSince(raw, startAt)) return true;
     if (parseTouchedFiles(raw).touches.some((touch) => touch.mutates && touch.ts && touch.ts >= startAt)) return true;
+  }
+  for (const rollout of codexRolloutFiles(session) || []) {
+    let raw;
+    try { raw = readFileSync(rollout, "utf8"); } catch { continue; }
+    if (codexRolloutHasWorkSince(raw, startAt)) return true;
   }
   return false;
 }

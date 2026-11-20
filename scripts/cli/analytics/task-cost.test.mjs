@@ -11,7 +11,7 @@
 // command, '#'-prefixed refs).
 
 import { describe, it, expect } from "vitest";
-import { parseSessionEvidence, parseSessionMoves } from "./task-cost.mjs";
+import { parseCodexUsage, parseSessionEvidence, parseSessionMoves } from "./task-cost.mjs";
 
 // One transcript line: a Bash tool_use running `cmd` at `ts`.
 const bashLine = (cmd, ts = "2026-07-16T10:00:00Z") =>
@@ -27,6 +27,32 @@ const userLine = (text, extra = {}) =>
   JSON.stringify({ type: "user", message: { content: text }, ...extra });
 
 const CLI = 'node "D:\\\\app\\\\scripts\\\\cli.mjs"';
+
+describe("parseCodexUsage", () => {
+  it("prices suffixed Codex models with the shared window rule", () => {
+    const raw = [
+      JSON.stringify({ type: "session_meta", payload: { id: "codex-1", cwd: "D:\\\\work\\\\app" } }),
+      JSON.stringify({ type: "turn_context", payload: { model: "gpt-5.6-sol-preview" } }),
+      JSON.stringify({
+        type: "event_msg",
+        timestamp: "2026-10-19T10:00:00Z",
+        payload: {
+          type: "token_count",
+          info: {
+            total_token_usage: { input_tokens: 100, cached_input_tokens: 40, output_tokens: 10 },
+            last_token_usage: { input_tokens: 100, cached_input_tokens: 40, output_tokens: 10 },
+          },
+        },
+      }),
+    ].join("\n");
+    expect(parseCodexUsage(raw)).toMatchObject({
+      session: "codex-1",
+      project: "app",
+      model: "gpt-5.6-sol-preview",
+      cost_usd: (60 * 4 + 40 * 0.4 + 10 * 20) / 1_000_000,
+    });
+  });
+});
 
 describe("parseSessionMoves", () => {
   // The command was `set-status` until t#310 renamed it to `set status`; both

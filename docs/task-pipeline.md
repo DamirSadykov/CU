@@ -21,7 +21,7 @@ The CLI prints a compact, always-current version of this flow — run
   - A task can be `in_progress` **and** `blocked` at once — that's why they're two
     axes, not one status enum.
 - A node's **kind** is `auto` or `manual` (default). This is the marker that decides
-  **who closes it** (see step 3). Shown as a `⚡` glyph on auto nodes.
+  **who closes it** (see task 3). Shown as a `⚡` glyph on auto nodes.
 
 ## The flow
 
@@ -95,7 +95,7 @@ blocks it). Walk the frontier in dependency order:
 - **auto node** → do the work, **verify it**, then close and hand off:
   ```
   <cli> todos set status <id> done
-  <cli> todos handoff set <id> --text "<what it produced; next step; gotchas>"
+  <cli> todos handoff set <id> --text "<what it produced; next task; gotchas>"
   ```
   The handoff flows forward along dep edges (#141) to whatever depends on this.
 - **manual node** → **stop here.** Do the work if it's yours to do, but leave the
@@ -129,10 +129,10 @@ if you reach for it routinely, the graph is wrong — fix the edges instead.
 ### The handoff baton (#141)
 
 A task's `handoff` is what it **produced** — files/paths, interfaces, decisions,
-gotchas, the suggested next step — written for the task(s) that depend on it:
+gotchas, the suggested next task — written for the task(s) that depend on it:
 
 ```
-<cli> todos handoff set <id> --text "<what it produced; next step; gotchas>"
+<cli> todos handoff set <id> --text "<what it produced; next task; gotchas>"
 <cli> todos handoff <id>                  # read what <id> inherits from its prereqs
 ```
 
@@ -197,56 +197,56 @@ Trying to jump the chain is refused:
 # finish those first, or override with --force
 ```
 
-## Changes — a record of its own, addressed `c#N` (t#255 → renamed at t#345 → made a record at c#9)
+## Plans — records of their own, addressed `p#N`
 
 How a piece of work **bigger than one task** lives on the board — as a
-**change**. It was a *theme*, then a root TASK marked with a flag; since c#9 it
-is a **record in its own right**, kept in the `changes` section of the board
-file and addressed `c#N`. See `tasks#changes` for the invariants behind this;
+**plan**. It is a **record in its own right**, kept in the internal `changes`
+section of the board file and addressed `p#N`. See `tasks#changes` for the
+storage invariants behind this;
 here is how you drive it:
 
-- `c#N` has its **own counter, independent of task numbers** — `c#1` and `#1`
+- `p#N` has its **own counter, independent of task numbers** — `p#1` and `#1`
   are unrelated, so never pass a task number where an address is expected.
 - **Open one, then put tasks in it:**
 
   ```
-  <cli> change new "<title>" [--delta "<what this round changes and why now>"]
-  <cli> todos set change <task> c#N        # membership is a FIELD, not an edge
-  <cli> change list | change show c#N
+  <cli> plan new "<title>" [--delta "<what this round changes and why now>"]
+  <cli> todos set change <task> p#N        # membership is a FIELD, not an edge
+  <cli> plan list | plan show p#N
   ```
 
-  In plan mode you do not do this by hand: `todos apply` opens the change from
-  the plan and files every step into it.
+  In plan mode you do not do this by hand: `todos apply` opens the plan record
+  from the draft plan and files every task into it.
 - **Membership is the `change_id` field**, not a dep edge. It used to be an edge
   and that was the reason for the rewrite: one edge type meant both "blocks me"
   and "is part of me", and a forgotten edge silently dropped a task out of its
-  change, because "no edge" is a legal state of the graph.
-- **A change is worth opening from ~4–5 nodes**; below that the tasks speak for
-  themselves. Name it so it reads as a container (e.g. `CHANGE: <what>`).
-- **The status is not stored: a change is open while any of its tasks is open.**
-  Do not look for a flag — ask the membership. `change close` refuses while a
+  plan, because "no edge" is a legal state of the graph.
+- **A plan is worth opening from ~4–5 nodes**; below that the tasks speak for
+  themselves. Name it so it reads as a container (e.g. `PLAN: <what>`).
+- **The status is not stored: a plan is open while any of its tasks is open.**
+  Do not look for a flag — ask the membership. `plan close` refuses while a
   task is still open and stamps the moment it was declared finished; that stamp
   is a date for the history, never the answer to "is it open".
-- **The change's DELTA — what this round changes and why now** — lives on the
-  record (`change set delta c#N "…"`), not on any task. Vision is not a delta:
-  it lives in the spec the change points at (`docs/specs/README.md` §1). The
-  spec is the long-lived "what should exist and why"; a change is a temporary
+- **The plan's DELTA — what this round changes and why now** — lives on the
+  record (`plan set delta p#N "…"`), not on any task. Vision is not a delta:
+  it lives in the spec the plan points at (`docs/specs/README.md` §1). The
+  spec is the long-lived "what should exist and why"; a plan is a temporary
   delta against it and dies with its tasks.
 - Direction of reading matters: the **delta is read UPWARD** — working a task,
   it arrives on its own. `set status <id> in_progress` prints the delta of the
-  change the task belongs to next to the inherited handoff, the SessionStart
+  plan the task belongs to next to the inherited handoff, the SessionStart
   hook re-surfaces it for every in_progress task, and `todos vision <task>`
   re-reads it on demand.
 - The ceilings of the group — `budget_usd` and `parallel_limit` — belong to the
-  record (`change set budget|parallel c#N …`); the runner reads them there.
-- A change points at the spec section(s) it is a delta of with
-  `change set spec c#N <domain>#<slug>`; a single task narrows that to its own
-  step with `todos set spec <task> <domain>#<slug>` — see `tasks#spec-registry`.
+  record (`plan set budget|parallel p#N …`); the runner reads them there.
+- A plan points at the spec section(s) it is a delta of with
+  `plan set spec p#N <domain>#<slug>`; a single task narrows that to its own
+  section with `todos set spec <task> <domain>#<slug>` — see `tasks#spec-registry`.
 - **A board written before the migration still reads.** An old root task
-  carrying the `change` (or the even older `theme`) flag is understood as a
-  change with the address `t#N`, its members found by walking the dep edges up.
+  carrying the internal `change` (or the even older `theme`) flag is understood as a
+  plan record, its members found by walking the dep edges up.
   Nothing is ever written back in that shape — migrate such a board with
-  `<cli> change migrate`.
+  `<cli> plan migrate`.
 - **Setting it puts a gate at the other end.** Moving a linked task to
   `review`/`done` will not let the session stop until it has answered for each
   addressed section:
@@ -264,17 +264,17 @@ here is how you drive it:
   the tasks; a task number in it goes stale the moment the task closes, and the
   section stops being readable without the board open next to it. Say WHAT was
   decided without the number — who and when is `git blame` plus the section's
-  `change` stamp, which the machine writes. `spec lint` and `spec answer
+  `change` metadata stamp, which the machine writes. `spec lint` and `spec answer
   updated` both refuse a section that carries one.
 
 ## Plan mode — the task-forming ritual (t#253, rebuilt as a file format at t#314/t#321)
 
-Plan mode is where changes COME FROM, but **the plan is not a ritual you
-transcribe by hand any more.** A plan is a YAML file in the tracker's own
-process-graph language — one step per task — documented in full in
+Plan mode is where **draft plans** come from, but a draft plan is not a ritual
+you transcribe by hand any more. It is a YAML document in the tracker's own
+process-graph language — one graph node per task — documented in full in
 `docs/plan-format.md` (read it once per session, not once per plan; §4 has the
-graph skeleton and focused fragments). Parked-step diagnosis lives separately
-in `docs/plan-format-issues.md`, and plan/step splitting in
+graph skeleton and focused fragments). Parked-task diagnosis lives separately
+in `docs/plan-format-issues.md`, and plan/task splitting in
 `docs/plan-format-cutting.md`; each is opened only when its event occurs. This
 section is the short version of how the hooks carry them; the invariants
 themselves are `tasks#plan-mode`.
@@ -282,14 +282,14 @@ themselves are `tasks#plan-mode`.
 The shape, in brief (full rules in `docs/plan-format.md`):
 
 ```yaml
-change: "CHANGE: <name>"   # optional; without it the steps land rootless
-vision: |                  # the WHAT & WHY paragraph — becomes the change's description
-parallel: <N>              # steps the runner may drive at once
+change: "PLAN: <name>"     # compatibility key; without it tasks land rootless
+vision: |                  # WHAT & WHY — becomes the plan record's DELTA (`delta`)
+parallel: <N>              # tasks the runner may drive at once
 budget: <usd>              # the group's ceiling
 steps:
   <n>:
     title: <phrase>         # or: task: <N>  — continue a task already on the board
-    why: |                  # what this step rests on, its risk — becomes the task's description
+    why: |                  # what this task rests on, its risk — becomes its description
     needs: [<n>, <n>]       # REAL blockers only — the only place order lives
     produces: [<path>]
     verify: <cmd>
@@ -310,25 +310,25 @@ Three hooks, wired by the installer next to SessionStart/Stop:
   actually enforces the language.** It checks the plan text **before the user
   ever sees the confirmation prompt**: a text that isn't readable as the graph
   language, or that is but breaks a rule (a cycle in `needs`, an `on-issue`
-  with no `retry`, a `needs`/`on-issue` pointing at a step that doesn't exist,
-  a step with neither `title` nor `task`, a `task` naming no task on the board
-  or one already bound to an earlier step, …), is refused with the broken rule
+  with no `retry`, a `needs`/`on-issue` pointing at a task that doesn't exist,
+  a node with neither `title` nor `task`, a `task` naming no task on the board
+  or one already bound to an earlier task, …), is refused with the broken rule
   named, and the prompt never appears. The one declared
   way out is a first line `discussion: <what is being settled, and why it opens
   no task>` — for plan-mode use that only thinks a question through and starts
   no work; it passes untouched and records nothing. A bare `discussion: true`,
   a reason too short to name anything, or a plan mixing `discussion:` with real
-  steps is refused. These are the same rules `todos apply`/`todos lint` run, so
+  task nodes is refused. These are the same rules `todos apply`/`todos lint` run, so
   the wording never drifts between the three.
 - **Runner parking / cutting warning** routes the decision card to
   `docs/plan-format-issues.md`; its “split the work” action and the lint
   `large-step` warning route to `docs/plan-format-cutting.md`.
 - **PostToolUse on ExitPlanMode** (`cli.mjs plan-hook exit`) — **records an
-  approved plan itself; there is no manual step to run.** It reads the plan
+  approved draft plan itself; there is no manual command to run.** It reads the draft plan
   text and the harness's approved/rejected verdict off the tool payload, runs
   `applyDocument` (the same engine behind `todos apply <plan>.yaml --go`), and
-  reports back which tasks were created/matched. A plan the user turned down
-  records nothing. It also runs the deterministic **match-plan** step: if
+  reports back which tasks were created/matched. A draft plan the user turned down
+  records nothing. It also runs the deterministic **match-plan** task: if
   `matchPlanCli` in the tracker's settings.json names a kb-style CLI, the plan
   text goes through `match-plan --json` and any case-warnings are injected
   (and asked to be persisted as a comment) — zero warnings stay silent, and a
@@ -338,12 +338,12 @@ Three hooks, wired by the installer next to SessionStart/Stop:
   warnings never arrive and their absence is indistinguishable from "nothing to
   say" — t#271. Do not read a quiet plan mode as a clean one.
 
-`todos apply <plan>.yaml [--go]` and `todos lint [<change>] [--json]` are what
+`todos apply <plan>.yaml [--go]` and `todos lint [<plan>] [--json]` are what
 is **left over** for a plan the exit hook could not read as a document (prose,
 or a plan written outside plan mode) — that instruction is the fallback path,
 not the normal one — and for checking the recorded graph afterward. Re-applying
-the same file **updates** the graph instead of forking it: a step is matched to
-its task by `task: <N>` first, by title otherwise (children of the change
+the same file **updates** the graph instead of forking it: a node is matched to
+its task by `task: <N>` first, by title otherwise (children of the plan
 first, then the rest of the project's board).
 
 ### Field roles — one line each (t#253 review, updated at t#345)
@@ -352,15 +352,15 @@ Four text fields, four roles; the same sentence never lives in two of them:
 
 | Field | Role |
 |---|---|
-| `description` | WHAT & WHY of the change itself. A change root's description **is the change's DELTA** — what this round changes and why now, not a vision meant to outlive it (vision lives in the spec, `docs/specs/README.md` §1). |
-| `plan` | HOW only: the STEPS/ORDER text, when a plan was recorded onto a single task instead of a change root; rewritten on re-plan. |
+| `delta` | WHAT & WHY of the plan itself. A plan record's DELTA — what this round changes and why now, not a vision meant to outlive it (vision lives in the spec, `docs/specs/README.md` §1). |
+| `plan` | HOW only: the TASKS/ORDER text, when a draft plan was recorded onto a single task instead of a plan record; rewritten on re-plan. |
 | `handoff` | The RESULT baton passed down the dep graph (what was produced; next move; gotchas). |
-| `comments` | The journal: decisions, scope changes, gotchas along the way; append-only. |
+| `comments` | The journal: decisions, scope adjustments, gotchas along the way; append-only. |
 
 The v2 load migration in `todos.rs` (`migrate_plan_roles`) heals data recorded
 before this split: a `plan` that was just a phases-dir pointer is archived as a
 comment; a ritual-recorded plan sitting on an empty description is split (intro
-→ description, steps stay in `plan`).
+→ description, tasks stay in `plan`).
 
 Plan mode is NOT mandatory — a task created or taken without it works as before;
 the declarations (`produces`/`verify`/…) and dep edges just don't get written
@@ -380,13 +380,13 @@ In the tracker's graph window, **Dependencies** tab:
 - **corner dot** = pipeline state — red `blocked`, green `ready` (auto), amber
   `ready` (manual, i.e. waiting for you);
 - **`⚡`** = an auto node;
-- **an expanded change draws as an accordion section**, not a plain node: a
+- **an expanded plan draws as an accordion section**, not a plain node: a
   frame around its exclusive prerequisite subtree, the root as the section's
   header card on the left, its members laid out as an ordinary pipeline on the
   right — member→root edges are not drawn (the frame shows membership instead),
   edges crossing the section's border draw as usual. Click **`⊖`** on the root
   card to fold the whole section into one card showing `done/total`; click the
-  folded badge to unfold again. A change nested inside another change is drawn
+  folded badge to unfold again. A plan nested inside another plan is drawn
   as a plain node — only the outermost root gets the section treatment.
 - with a node selected, the **"Component only"** toolbar button cuts the view to
   that task's connectivity component (works on both tabs).

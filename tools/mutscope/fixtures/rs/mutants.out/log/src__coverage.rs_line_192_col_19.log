@@ -1,0 +1,1261 @@
+
+*** src/coverage.rs:192:19: replace != with == in na_for
+
+*** mutation diff:
+--- src/coverage.rs
++++ replace != with == in na_for
+@@ -184,17 +184,17 @@
+ fn named(specs: &[Spec], file: &str, key: &str) -> bool {
+     specs 
+         .iter() 
+         .any(|s| s.file == file && s.na.is_none() && !s.method.is_empty() && spec_key(s) == key) 
+ } 
+  
+ fn na_for(specs: &[Spec], file: &str, key: Option<&str>) -> Option<String> { 
+     specs.iter().find_map(|s| { 
+-        if s.file != file || s.na.is_none() { 
++        if s.file == /* ~ changed by cargo-mutants ~ */ file || s.na.is_none() { 
+             return None; 
+         } 
+         if s.method.is_empty() || key.is_some_and(|k| spec_key(s) == k) { 
+             Some(s.na.clone().unwrap()) 
+         } else { 
+             None 
+         } 
+     }) 
+
+
+*** C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe test --no-run --verbose --package=flowcheck@0.1.0
+       Fresh find-msvc-tools v0.1.14
+       Fresh shlex v2.0.1
+       Fresh cc v1.5.1
+       Fresh memchr v2.8.3
+       Fresh unicode-ident v1.0.26
+       Fresh itoa v1.0.18
+       Fresh windows-link v0.2.1
+       Fresh hashbrown v0.17.1
+       Fresh equivalent v1.0.2
+       Fresh windows-sys v0.61.2
+       Fresh tree-sitter-language v0.1.8
+       Fresh indexmap v2.14.2
+       Fresh once_cell_polyfill v1.70.2
+       Fresh anstyle v1.0.14
+       Fresh utf8parse v0.2.2
+       Fresh aho-corasick v1.1.5
+       Fresh proc-macro2 v1.0.107
+       Fresh zmij v1.0.23
+       Fresh anstyle-wincon v3.0.11
+       Fresh serde_core v1.0.229
+       Fresh anstyle-query v1.1.5
+       Fresh anstyle-parse v1.0.0
+       Fresh regex-syntax v0.8.11
+       Fresh colorchoice v1.0.5
+       Fresh is_terminal_polyfill v1.70.2
+       Fresh quote v1.0.47
+       Fresh anstream v1.0.0
+       Fresh regex-automata v0.4.18
+       Fresh clap_lex v1.1.1
+       Fresh strsim v0.11.1
+       Fresh heck v0.5.0
+       Fresh syn v3.0.6
+       Fresh clap_builder v4.6.7
+       Fresh regex v1.13.1
+       Fresh streaming-iterator v0.1.9
+       Fresh unsafe-libyaml v0.2.11
+       Fresh ryu v1.0.23
+       Fresh tree-sitter-typescript v0.23.2
+       Fresh tree-sitter-c-sharp v0.23.5
+       Fresh serde_derive v1.0.229
+       Fresh clap_derive v4.6.7
+       Fresh tree-sitter-javascript v0.23.1
+       Fresh serde_json v1.0.151
+       Fresh tree-sitter-rust v0.24.2
+       Fresh serde v1.0.229
+       Fresh tree-sitter v0.25.10
+       Fresh clap v4.6.7
+       Fresh serde_yaml v0.9.34+deprecated
+       Dirty flowcheck v0.1.0 (C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp): the file `src\coverage.rs` has changed (13436781567.048780500s, 48s after last build at 13436781519.254352400s)
+   Compiling flowcheck v0.1.0 (C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp)
+warning: field `na` is never read
+  --> tests\..\src\flow.rs:27:9
+   |
+22 | pub struct Spec {
+   |            ---- field in this struct
+...
+27 |     pub na: Option<String>,
+   |         ^^
+   |
+   = note: `Spec` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: fields `builtin_calls` and `builtin_value_methods` are never read
+  --> tests\..\src\lang.rs:34:9
+   |
+ 8 | pub struct LanguageSpec {
+   |            ------------ fields in this struct
+...
+34 |     pub builtin_calls: &'static [&'static str],
+   |         ^^^^^^^^^^^^^
+35 |     pub builtin_value_methods: &'static [&'static str],
+   |         ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `supported_file` is never used
+   --> tests\..\src\lang.rs:109:8
+    |
+109 | pub fn supported_file(file: &str) -> bool {
+    |        ^^^^^^^^^^^^^^
+
+warning: function `supported_file` is never used
+   --> tests\..\src\lang.rs:109:8
+    |
+109 | pub fn supported_file(file: &str) -> bool {
+    |        ^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name coverage --edition=2021 'tests\coverage.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=481c1ce6cd8e55d3 -C extra-filename=-70a785250148e163 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -C 'incremental=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\incremental' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'clap=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libclap-d90f2ea8b1cad81e.rlib' --extern 'serde=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde-a1364b032bcaaa58.rlib' --extern 'serde_json=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_json-4c733c5892a78242.rlib' --extern 'serde_yaml=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_yaml-bf5064495b63e533.rlib' --extern 'tree_sitter=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter-4a01923e7f000aef.rlib' --extern 'tree_sitter_c_sharp=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_c_sharp-1ea372eca527300b.rlib' --extern 'tree_sitter_javascript=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_javascript-0a810f1c71c0b947.rlib' --extern 'tree_sitter_rust=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_rust-13e23b953c1c33a0.rlib' --extern 'tree_sitter_typescript=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_typescript-40a2446fdafade13.rlib' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-d4e7868ca9ef2b43\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-c-sharp-43d2801d4eb0c18a\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-javascript-efb081e35acad485\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-rust-8154b2b9ca62018f\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-typescript-fae47cd35ac49d48\out'`
+warning: `flowcheck` (test "fixture") generated 3 warnings
+warning: `flowcheck` (test "skeleton") generated 3 warnings (3 duplicates)
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name flowcheck --edition=2021 'src\main.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=7a266424d907d6dc -C extra-filename=-d122590a3cbd15d5 --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -C 'incremental=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\incremental' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'clap=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libclap-d90f2ea8b1cad81e.rlib' --extern 'serde=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde-a1364b032bcaaa58.rlib' --extern 'serde_json=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_json-4c733c5892a78242.rlib' --extern 'serde_yaml=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_yaml-bf5064495b63e533.rlib' --extern 'tree_sitter=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter-4a01923e7f000aef.rlib' --extern 'tree_sitter_c_sharp=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_c_sharp-1ea372eca527300b.rlib' --extern 'tree_sitter_javascript=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_javascript-0a810f1c71c0b947.rlib' --extern 'tree_sitter_rust=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_rust-13e23b953c1c33a0.rlib' --extern 'tree_sitter_typescript=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_typescript-40a2446fdafade13.rlib' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-d4e7868ca9ef2b43\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-c-sharp-43d2801d4eb0c18a\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-javascript-efb081e35acad485\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-rust-8154b2b9ca62018f\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-typescript-fae47cd35ac49d48\out'`
+warning: `flowcheck` (test "rust") generated 3 warnings (3 duplicates)
+warning: `flowcheck` (test "extra") generated 3 warnings (3 duplicates)
+warning: `flowcheck` (test "render") generated 1 warning
+     Running `C:\Users\SuperUser020822\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name flowcheck --edition=2021 'src\main.rs' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=13f17803cb12cafe --out-dir 'C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' -C 'incremental=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\incremental' -L 'dependency=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps' --extern 'clap=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libclap-d90f2ea8b1cad81e.rlib' --extern 'serde=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde-a1364b032bcaaa58.rlib' --extern 'serde_json=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_json-4c733c5892a78242.rlib' --extern 'serde_yaml=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libserde_yaml-bf5064495b63e533.rlib' --extern 'tree_sitter=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter-4a01923e7f000aef.rlib' --extern 'tree_sitter_c_sharp=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_c_sharp-1ea372eca527300b.rlib' --extern 'tree_sitter_javascript=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_javascript-0a810f1c71c0b947.rlib' --extern 'tree_sitter_rust=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_rust-13e23b953c1c33a0.rlib' --extern 'tree_sitter_typescript=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\libtree_sitter_typescript-40a2446fdafade13.rlib' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-d4e7868ca9ef2b43\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-c-sharp-43d2801d4eb0c18a\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-javascript-efb081e35acad485\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-rust-8154b2b9ca62018f\out' -L 'native=C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\build\tree-sitter-typescript-fae47cd35ac49d48\out'`
+warning: `flowcheck` (test "ts") generated 3 warnings (3 duplicates)
+warning: struct `Cannot` is never constructed
+  --> tests\..\src\flow.rs:19:12
+   |
+19 | pub struct Cannot(pub String);
+   |            ^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: fields `change`, `preserve`, and `keep` are never read
+  --> tests\..\src\flow.rs:30:9
+   |
+22 | pub struct Spec {
+   |            ---- fields in this struct
+...
+30 |     pub change: Vec<Change>,
+   |         ^^^^^^
+31 |     #[serde(default)]
+32 |     pub preserve: Preserve,
+   |         ^^^^^^^^
+33 |     #[serde(default)]
+34 |     pub keep: Vec<String>,
+   |         ^^^^
+   |
+   = note: `Spec` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: multiple fields are never read
+  --> tests\..\src\flow.rs:39:9
+   |
+38 | pub struct Change {
+   |            ------ fields in this struct
+39 |     pub insert: Option<String>,
+   |         ^^^^^^
+40 |     pub before: Option<String>,
+   |         ^^^^^^
+41 |     pub after: Option<String>,
+   |         ^^^^^
+42 |     pub nth: Option<usize>,
+   |         ^^^
+43 |     pub guard: Option<String>,
+   |         ^^^^^
+44 |     #[serde(rename = "remove-call")]
+45 |     pub remove_call: Option<String>,
+   |         ^^^^^^^^^^^
+46 |     #[serde(rename = "remove-read")]
+47 |     pub remove_read: Option<String>,
+   |         ^^^^^^^^^^^
+   |
+   = note: `Change` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `0` is never read
+  --> tests\..\src\flow.rs:53:10
+   |
+53 |     Word(String),
+   |     ---- ^^^^^^
+   |     |
+   |     field in this variant
+   |
+   = note: `Preserve` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+   |
+53 -     Word(String),
+53 +     Word(()),
+   |
+
+warning: method `all` is never used
+  --> tests\..\src\flow.rs:61:8
+   |
+60 | impl Preserve {
+   | ------------- method in this implementation
+61 |     fn all(&self) -> bool {
+   |        ^^^
+
+warning: struct `ResultRow` is never constructed
+  --> tests\..\src\flow.rs:67:12
+   |
+67 | pub struct ResultRow {
+   |            ^^^^^^^^^
+
+warning: struct `TopStep` is never constructed
+  --> tests\..\src\flow.rs:89:12
+   |
+89 | pub struct TopStep {
+   |            ^^^^^^^
+
+warning: struct `FlowTree` is never constructed
+  --> tests\..\src\flow.rs:97:12
+   |
+97 | pub struct FlowTree {
+   |            ^^^^^^^^
+
+warning: struct `FlowNode` is never constructed
+   --> tests\..\src\flow.rs:104:12
+    |
+104 | pub struct FlowNode {
+    |            ^^^^^^^^
+
+warning: struct `FlowBranch` is never constructed
+   --> tests\..\src\flow.rs:114:12
+    |
+114 | pub struct FlowBranch {
+    |            ^^^^^^^^^^
+
+warning: struct `ClosureTree` is never constructed
+   --> tests\..\src\flow.rs:120:12
+    |
+120 | pub struct ClosureTree {
+    |            ^^^^^^^^^^^
+
+warning: struct `Step` is never constructed
+   --> tests\..\src\flow.rs:126:8
+    |
+126 | struct Step {
+    |        ^^^^
+
+warning: struct `Source` is never constructed
+   --> tests\..\src\flow.rs:133:8
+    |
+133 | struct Source {
+    |        ^^^^^^
+
+warning: multiple associated items are never used
+   --> tests\..\src\flow.rs:139:8
+    |
+138 | impl Source {
+    | ----------- associated items in this implementation
+139 |     fn parse(bytes: Vec<u8>, lang: &'static LanguageSpec) -> Result<Self, Cannot> {
+    |        ^^^^^
+...
+150 |     fn text(&self, n: Node) -> String {
+    |        ^^^^
+...
+155 |     fn display_text(&self, n: Node) -> String {
+    |        ^^^^^^^^^^^^
+...
+161 |     fn walk<'a>(&self, node: Node<'a>, out: &mut Vec<Node<'a>>) {
+    |        ^^^^
+...
+168 |     fn methods(&self) -> Vec<Node<'_>> {
+    |        ^^^^^^^
+...
+175 |     fn find_method(&self, name: &str, params: Option<&str>) -> Result<Node<'_>, Cannot> {
+    |        ^^^^^^^^^^^
+...
+216 |     fn method_name(&self, method: Node) -> Option<String> {
+    |        ^^^^^^^^^^^
+...
+272 |     fn callee(&self, node: Node) -> String {
+    |        ^^^^^^
+...
+291 |     fn steps(&self, method: Node) -> Vec<Step> {
+    |        ^^^^^
+...
+342 |     fn tree(&self, method: Node, changed: &HashSet<usize>) -> FlowTree {
+    |        ^^^^
+...
+505 |     fn locals(&self, method: Node) -> HashSet<String> {
+    |        ^^^^^^
+...
+521 |     fn flow(&self, method: Node, depth: usize, seen: &mut HashSet<usize>) -> Vec<Step> {
+    |        ^^^^
+...
+555 |     fn depth_limited(&self, method: Node, depth: usize, seen: &mut HashSet<usize>) -> Vec<String> {
+    |        ^^^^^^^^^^^^^
+...
+588 |     fn extra_flow(
+    |        ^^^^^^^^^^
+
+warning: function `matches` is never used
+   --> tests\..\src\flow.rs:633:4
+    |
+633 | fn matches(key: &str, name: &str) -> bool {
+    |    ^^^^^^^
+
+warning: function `key` is never used
+   --> tests\..\src\flow.rs:636:4
+    |
+636 | fn key(s: &Step) -> String {
+    |    ^^^
+
+warning: function `load_source` is never used
+   --> tests\..\src\flow.rs:639:4
+    |
+639 | fn load_source(repo: &Path, rev: Option<&str>, file: &str) -> Result<Source, Cannot> {
+    |    ^^^^^^^^^^^
+
+warning: function `is_call_to` is never used
+   --> tests\..\src\flow.rs:664:4
+    |
+664 | fn is_call_to(s: &Source, n: Node, name: &str) -> bool {
+    |    ^^^^^^^^^^
+
+warning: function `contains_call` is never used
+   --> tests\..\src\flow.rs:670:4
+    |
+670 | fn contains_call(s: &Source, n: Node, name: &str, aliases: &HashSet<String>) -> bool {
+    |    ^^^^^^^^^^^^^
+
+warning: function `unwrap` is never used
+   --> tests\..\src\flow.rs:678:4
+    |
+678 | fn unwrap<'a>(s: &Source, n: Option<Node<'a>>) -> Option<Node<'a>> {
+    |    ^^^^^^
+
+warning: function `is_guard_atom` is never used
+   --> tests\..\src\flow.rs:685:4
+    |
+685 | fn is_guard_atom(s: &Source, n: Node, name: &str, aliases: &HashSet<String>) -> bool {
+    |    ^^^^^^^^^^^^^
+
+warning: function `bool_literal` is never used
+   --> tests\..\src\flow.rs:688:4
+    |
+688 | fn bool_literal(s: &Source, n: Node) -> Option<bool> {
+    |    ^^^^^^^^^^^^
+
+warning: function `eq_form` is never used
+   --> tests\..\src\flow.rs:695:4
+    |
+695 | fn eq_form(s: &Source, n: Node, name: &str, aliases: &HashSet<String>) -> Option<bool> {
+    |    ^^^^^^^
+
+warning: function `true_implies_valid` is never used
+   --> tests\..\src\flow.rs:711:4
+    |
+711 | fn true_implies_valid(s: &Source, n: Option<Node>, name: &str, aliases: &HashSet<String>) -> bool {
+    |    ^^^^^^^^^^^^^^^^^^
+
+warning: function `invalid_implies_true` is never used
+   --> tests\..\src\flow.rs:737:4
+    |
+737 | fn invalid_implies_true(
+    |    ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `exits` is never used
+   --> tests\..\src\flow.rs:767:4
+    |
+767 | fn exits(s: &Source, n: Node) -> bool {
+    |    ^^^^^
+
+warning: function `top_level_call` is never used
+   --> tests\..\src\flow.rs:796:4
+    |
+796 | fn top_level_call(s: &Source, stmt: Node, name: &str) -> bool {
+    |    ^^^^^^^^^^^^^^
+
+warning: function `bare_call` is never used
+   --> tests\..\src\flow.rs:806:4
+    |
+806 | fn bare_call(s: &Source, stmt: Node, name: &str) -> bool {
+    |    ^^^^^^^^^
+
+warning: function `call_in_single_statement_try` is never used
+   --> tests\..\src\flow.rs:817:4
+    |
+817 | fn call_in_single_statement_try(s: &Source, stmt: Node, name: &str, mode: &str) -> bool {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `previous_named_sibling` is never used
+   --> tests\..\src\flow.rs:839:4
+    |
+839 | fn previous_named_sibling<'a>(block: Node<'a>, node: Node<'a>) -> Option<Node<'a>> {
+    |    ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `enclosing_aliases` is never used
+   --> tests\..\src\flow.rs:851:4
+    |
+851 | fn enclosing_aliases(s: &Source, node: Node, name: &str) -> HashSet<String> {
+    |    ^^^^^^^^^^^^^^^^^
+
+warning: function `guarded` is never used
+   --> tests\..\src\flow.rs:886:4
+    |
+886 | fn guarded(s: &Source, target: Node, name: &str, mode: &str) -> bool {
+    |    ^^^^^^^
+
+warning: function `rust_bool_guard` is never used
+   --> tests\..\src\flow.rs:954:4
+    |
+954 | fn rust_bool_guard(s: &Source, stmt: Node, name: &str, alias: bool) -> bool {
+    |    ^^^^^^^^^^^^^^^
+
+warning: function `rust_result_guard` is never used
+   --> tests\..\src\flow.rs:968:4
+    |
+968 | fn rust_result_guard(s: &Source, stmt: Node, name: &str) -> bool {
+    |    ^^^^^^^^^^^^^^^^^
+
+warning: function `changed_lines` is never used
+    --> tests\..\src\flow.rs:1007:4
+     |
+1007 | fn changed_lines(
+     |    ^^^^^^^^^^^^^
+
+warning: function `top_steps` is never used
+    --> tests\..\src\flow.rs:1049:4
+     |
+1049 | fn top_steps(steps: Vec<Step>, changed: &HashSet<usize>) -> Vec<TopStep> {
+     |    ^^^^^^^^^
+
+warning: function `check_method` is never used
+    --> tests\..\src\flow.rs:1061:8
+     |
+1061 | pub fn check_method(
+     |        ^^^^^^^^^^^^
+
+warning: function `find_node_by_id` is never used
+    --> tests\..\src\flow.rs:1266:4
+     |
+1266 | fn find_node_by_id<'a>(s: &'a Source, method: Node<'a>, node_id: usize) -> Option<Node<'a>> {
+     |    ^^^^^^^^^^^^^^^
+
+warning: multiple fields are never read
+  --> tests\..\src\lang.rs:12:9
+   |
+ 8 | pub struct LanguageSpec {
+   |            ------------ fields in this struct
+...
+12 |     pub invocation_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^
+13 |     pub new_expression_kind: Option<&'static str>,
+   |         ^^^^^^^^^^^^^^^^^^^
+14 |     pub macro_invocation_kind: Option<&'static str>,
+   |         ^^^^^^^^^^^^^^^^^^^^^
+15 |     pub member_access_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^^^
+16 |     pub local_kinds: &'static [&'static str],
+   |         ^^^^^^^^^^^
+17 |     pub identifier_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^
+18 |     pub parenthesized_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^^^
+19 |     pub prefix_unary_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^^
+20 |     pub binary_kind: &'static str,
+   |         ^^^^^^^^^^^
+21 |     pub exit_kinds: &'static [&'static str],
+   |         ^^^^^^^^^^
+22 |     pub block_kind: &'static str,
+   |         ^^^^^^^^^^
+23 |     pub conditional_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^
+24 |     pub branch_kinds: &'static [&'static str],
+   |         ^^^^^^^^^^^^
+25 |     pub loop_kinds: &'static [&'static str],
+   |         ^^^^^^^^^^
+26 |     pub try_kinds: &'static [&'static str],
+   |         ^^^^^^^^^
+27 |     pub case_kinds: &'static [&'static str],
+   |         ^^^^^^^^^^
+28 |     pub closure_kinds: &'static [&'static str],
+   |         ^^^^^^^^^^^^^
+29 |     pub expression_statement_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+30 |     pub await_kind: &'static str,
+   |         ^^^^^^^^^^
+31 |     pub local_declaration_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^^^^^^^
+32 |     pub variable_declarator_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^
+33 |     pub comment_kind: &'static str,
+34 |     pub builtin_calls: &'static [&'static str],
+   |         ^^^^^^^^^^^^^
+35 |     pub builtin_value_methods: &'static [&'static str],
+   |         ^^^^^^^^^^^^^^^^^^^^^
+
+warning: `flowcheck` (test "coverage") generated 39 warnings
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.30s
+  Executable `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\flowcheck-d122590a3cbd15d5.exe`
+  Executable `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\coverage-70a785250148e163.exe`
+  Executable `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\extra-1129a1722029a8f2.exe`
+  Executable `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\fixture-0bec295730151ddc.exe`
+  Executable `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\render-97f5fd11b387812c.exe`
+  Executable `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\rust-f6504c81b2665605.exe`
+  Executable `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\skeleton-f7094868c1bca6f6.exe`
+  Executable `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\ts-e8d57333d367eaab.exe`
+
+*** result: Success
+
+*** C:\\Users\\SuperUser020822\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\cargo.exe test --verbose --package=flowcheck@0.1.0 --no-fail-fast
+       Fresh shlex v2.0.1
+       Fresh find-msvc-tools v0.1.14
+       Fresh unicode-ident v1.0.26
+       Fresh memchr v2.8.3
+       Fresh windows-link v0.2.1
+       Fresh hashbrown v0.17.1
+       Fresh equivalent v1.0.2
+       Fresh itoa v1.0.18
+       Fresh cc v1.5.1
+       Fresh windows-sys v0.61.2
+       Fresh indexmap v2.14.2
+       Fresh once_cell_polyfill v1.70.2
+       Fresh anstyle v1.0.14
+       Fresh utf8parse v0.2.2
+       Fresh proc-macro2 v1.0.107
+       Fresh tree-sitter-language v0.1.8
+       Fresh zmij v1.0.23
+       Fresh anstyle-query v1.1.5
+       Fresh anstyle-parse v1.0.0
+       Fresh anstyle-wincon v3.0.11
+       Fresh aho-corasick v1.1.5
+       Fresh is_terminal_polyfill v1.70.2
+       Fresh regex-syntax v0.8.11
+       Fresh colorchoice v1.0.5
+       Fresh quote v1.0.47
+       Fresh serde_core v1.0.229
+       Fresh anstream v1.0.0
+       Fresh regex-automata v0.4.18
+       Fresh heck v0.5.0
+       Fresh clap_lex v1.1.1
+       Fresh syn v3.0.6
+       Fresh strsim v0.11.1
+       Fresh regex v1.13.1
+       Fresh streaming-iterator v0.1.9
+       Fresh unsafe-libyaml v0.2.11
+       Fresh ryu v1.0.23
+       Fresh serde_derive v1.0.229
+       Fresh clap_builder v4.6.7
+       Fresh clap_derive v4.6.7
+       Fresh tree-sitter-rust v0.24.2
+       Fresh serde_json v1.0.151
+       Fresh tree-sitter-javascript v0.23.1
+       Fresh tree-sitter-typescript v0.23.2
+       Fresh tree-sitter-c-sharp v0.23.5
+       Fresh serde v1.0.229
+       Fresh tree-sitter v0.25.10
+       Fresh clap v4.6.7
+       Fresh serde_yaml v0.9.34+deprecated
+warning: field `na` is never read
+  --> tests\..\src\flow.rs:27:9
+   |
+22 | pub struct Spec {
+   |            ---- field in this struct
+...
+27 |     pub na: Option<String>,
+   |         ^^
+   |
+   = note: `Spec` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: fields `builtin_calls` and `builtin_value_methods` are never read
+  --> tests\..\src\lang.rs:34:9
+   |
+ 8 | pub struct LanguageSpec {
+   |            ------------ fields in this struct
+...
+34 |     pub builtin_calls: &'static [&'static str],
+   |         ^^^^^^^^^^^^^
+35 |     pub builtin_value_methods: &'static [&'static str],
+   |         ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `supported_file` is never used
+   --> tests\..\src\lang.rs:109:8
+    |
+109 | pub fn supported_file(file: &str) -> bool {
+    |        ^^^^^^^^^^^^^^
+
+warning: struct `Cannot` is never constructed
+  --> tests\..\src\flow.rs:19:12
+   |
+19 | pub struct Cannot(pub String);
+   |            ^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: fields `change`, `preserve`, and `keep` are never read
+  --> tests\..\src\flow.rs:30:9
+   |
+22 | pub struct Spec {
+   |            ---- fields in this struct
+...
+30 |     pub change: Vec<Change>,
+   |         ^^^^^^
+31 |     #[serde(default)]
+32 |     pub preserve: Preserve,
+   |         ^^^^^^^^
+33 |     #[serde(default)]
+34 |     pub keep: Vec<String>,
+   |         ^^^^
+   |
+   = note: `Spec` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: multiple fields are never read
+  --> tests\..\src\flow.rs:39:9
+   |
+38 | pub struct Change {
+   |            ------ fields in this struct
+39 |     pub insert: Option<String>,
+   |         ^^^^^^
+40 |     pub before: Option<String>,
+   |         ^^^^^^
+41 |     pub after: Option<String>,
+   |         ^^^^^
+42 |     pub nth: Option<usize>,
+   |         ^^^
+43 |     pub guard: Option<String>,
+   |         ^^^^^
+44 |     #[serde(rename = "remove-call")]
+45 |     pub remove_call: Option<String>,
+   |         ^^^^^^^^^^^
+46 |     #[serde(rename = "remove-read")]
+47 |     pub remove_read: Option<String>,
+   |         ^^^^^^^^^^^
+   |
+   = note: `Change` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `0` is never read
+  --> tests\..\src\flow.rs:53:10
+   |
+53 |     Word(String),
+   |     ---- ^^^^^^
+   |     |
+   |     field in this variant
+   |
+   = note: `Preserve` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+   |
+53 -     Word(String),
+53 +     Word(()),
+   |
+
+warning: method `all` is never used
+  --> tests\..\src\flow.rs:61:8
+   |
+60 | impl Preserve {
+   | ------------- method in this implementation
+61 |     fn all(&self) -> bool {
+   |        ^^^
+
+warning: struct `ResultRow` is never constructed
+  --> tests\..\src\flow.rs:67:12
+   |
+67 | pub struct ResultRow {
+   |            ^^^^^^^^^
+
+warning: struct `TopStep` is never constructed
+  --> tests\..\src\flow.rs:89:12
+   |
+89 | pub struct TopStep {
+   |            ^^^^^^^
+
+warning: struct `FlowTree` is never constructed
+  --> tests\..\src\flow.rs:97:12
+   |
+97 | pub struct FlowTree {
+   |            ^^^^^^^^
+
+warning: struct `FlowNode` is never constructed
+   --> tests\..\src\flow.rs:104:12
+    |
+104 | pub struct FlowNode {
+    |            ^^^^^^^^
+
+warning: struct `FlowBranch` is never constructed
+   --> tests\..\src\flow.rs:114:12
+    |
+114 | pub struct FlowBranch {
+    |            ^^^^^^^^^^
+
+warning: struct `ClosureTree` is never constructed
+   --> tests\..\src\flow.rs:120:12
+    |
+120 | pub struct ClosureTree {
+    |            ^^^^^^^^^^^
+
+warning: struct `Step` is never constructed
+   --> tests\..\src\flow.rs:126:8
+    |
+126 | struct Step {
+    |        ^^^^
+
+warning: struct `Source` is never constructed
+   --> tests\..\src\flow.rs:133:8
+    |
+133 | struct Source {
+    |        ^^^^^^
+
+warning: multiple associated items are never used
+   --> tests\..\src\flow.rs:139:8
+    |
+138 | impl Source {
+    | ----------- associated items in this implementation
+139 |     fn parse(bytes: Vec<u8>, lang: &'static LanguageSpec) -> Result<Self, Cannot> {
+    |        ^^^^^
+...
+150 |     fn text(&self, n: Node) -> String {
+    |        ^^^^
+...
+155 |     fn display_text(&self, n: Node) -> String {
+    |        ^^^^^^^^^^^^
+...
+161 |     fn walk<'a>(&self, node: Node<'a>, out: &mut Vec<Node<'a>>) {
+    |        ^^^^
+...
+168 |     fn methods(&self) -> Vec<Node<'_>> {
+    |        ^^^^^^^
+...
+175 |     fn find_method(&self, name: &str, params: Option<&str>) -> Result<Node<'_>, Cannot> {
+    |        ^^^^^^^^^^^
+...
+216 |     fn method_name(&self, method: Node) -> Option<String> {
+    |        ^^^^^^^^^^^
+...
+272 |     fn callee(&self, node: Node) -> String {
+    |        ^^^^^^
+...
+291 |     fn steps(&self, method: Node) -> Vec<Step> {
+    |        ^^^^^
+...
+342 |     fn tree(&self, method: Node, changed: &HashSet<usize>) -> FlowTree {
+    |        ^^^^
+...
+505 |     fn locals(&self, method: Node) -> HashSet<String> {
+    |        ^^^^^^
+...
+521 |     fn flow(&self, method: Node, depth: usize, seen: &mut HashSet<usize>) -> Vec<Step> {
+    |        ^^^^
+...
+555 |     fn depth_limited(&self, method: Node, depth: usize, seen: &mut HashSet<usize>) -> Vec<String> {
+    |        ^^^^^^^^^^^^^
+...
+588 |     fn extra_flow(
+    |        ^^^^^^^^^^
+
+warning: function `matches` is never used
+   --> tests\..\src\flow.rs:633:4
+    |
+633 | fn matches(key: &str, name: &str) -> bool {
+    |    ^^^^^^^
+
+warning: function `key` is never used
+   --> tests\..\src\flow.rs:636:4
+    |
+636 | fn key(s: &Step) -> String {
+    |    ^^^
+
+warning: function `load_source` is never used
+   --> tests\..\src\flow.rs:639:4
+    |
+639 | fn load_source(repo: &Path, rev: Option<&str>, file: &str) -> Result<Source, Cannot> {
+    |    ^^^^^^^^^^^
+
+warning: function `is_call_to` is never used
+   --> tests\..\src\flow.rs:664:4
+    |
+664 | fn is_call_to(s: &Source, n: Node, name: &str) -> bool {
+    |    ^^^^^^^^^^
+
+warning: function `contains_call` is never used
+   --> tests\..\src\flow.rs:670:4
+    |
+670 | fn contains_call(s: &Source, n: Node, name: &str, aliases: &HashSet<String>) -> bool {
+    |    ^^^^^^^^^^^^^
+
+warning: function `unwrap` is never used
+   --> tests\..\src\flow.rs:678:4
+    |
+678 | fn unwrap<'a>(s: &Source, n: Option<Node<'a>>) -> Option<Node<'a>> {
+    |    ^^^^^^
+
+warning: function `is_guard_atom` is never used
+   --> tests\..\src\flow.rs:685:4
+    |
+685 | fn is_guard_atom(s: &Source, n: Node, name: &str, aliases: &HashSet<String>) -> bool {
+    |    ^^^^^^^^^^^^^
+
+warning: function `bool_literal` is never used
+   --> tests\..\src\flow.rs:688:4
+    |
+688 | fn bool_literal(s: &Source, n: Node) -> Option<bool> {
+    |    ^^^^^^^^^^^^
+
+warning: function `eq_form` is never used
+   --> tests\..\src\flow.rs:695:4
+    |
+695 | fn eq_form(s: &Source, n: Node, name: &str, aliases: &HashSet<String>) -> Option<bool> {
+    |    ^^^^^^^
+
+warning: function `true_implies_valid` is never used
+   --> tests\..\src\flow.rs:711:4
+    |
+711 | fn true_implies_valid(s: &Source, n: Option<Node>, name: &str, aliases: &HashSet<String>) -> bool {
+    |    ^^^^^^^^^^^^^^^^^^
+
+warning: function `invalid_implies_true` is never used
+   --> tests\..\src\flow.rs:737:4
+    |
+737 | fn invalid_implies_true(
+    |    ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `exits` is never used
+   --> tests\..\src\flow.rs:767:4
+    |
+767 | fn exits(s: &Source, n: Node) -> bool {
+    |    ^^^^^
+
+warning: function `top_level_call` is never used
+   --> tests\..\src\flow.rs:796:4
+    |
+796 | fn top_level_call(s: &Source, stmt: Node, name: &str) -> bool {
+    |    ^^^^^^^^^^^^^^
+
+warning: function `bare_call` is never used
+   --> tests\..\src\flow.rs:806:4
+    |
+806 | fn bare_call(s: &Source, stmt: Node, name: &str) -> bool {
+    |    ^^^^^^^^^
+
+warning: function `call_in_single_statement_try` is never used
+   --> tests\..\src\flow.rs:817:4
+    |
+817 | fn call_in_single_statement_try(s: &Source, stmt: Node, name: &str, mode: &str) -> bool {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `previous_named_sibling` is never used
+   --> tests\..\src\flow.rs:839:4
+    |
+839 | fn previous_named_sibling<'a>(block: Node<'a>, node: Node<'a>) -> Option<Node<'a>> {
+    |    ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `enclosing_aliases` is never used
+   --> tests\..\src\flow.rs:851:4
+    |
+851 | fn enclosing_aliases(s: &Source, node: Node, name: &str) -> HashSet<String> {
+    |    ^^^^^^^^^^^^^^^^^
+
+warning: function `guarded` is never used
+   --> tests\..\src\flow.rs:886:4
+    |
+886 | fn guarded(s: &Source, target: Node, name: &str, mode: &str) -> bool {
+    |    ^^^^^^^
+
+warning: function `rust_bool_guard` is never used
+   --> tests\..\src\flow.rs:954:4
+    |
+954 | fn rust_bool_guard(s: &Source, stmt: Node, name: &str, alias: bool) -> bool {
+    |    ^^^^^^^^^^^^^^^
+
+warning: function `rust_result_guard` is never used
+   --> tests\..\src\flow.rs:968:4
+    |
+968 | fn rust_result_guard(s: &Source, stmt: Node, name: &str) -> bool {
+    |    ^^^^^^^^^^^^^^^^^
+
+warning: function `changed_lines` is never used
+    --> tests\..\src\flow.rs:1007:4
+     |
+1007 | fn changed_lines(
+     |    ^^^^^^^^^^^^^
+
+warning: function `top_steps` is never used
+    --> tests\..\src\flow.rs:1049:4
+     |
+1049 | fn top_steps(steps: Vec<Step>, changed: &HashSet<usize>) -> Vec<TopStep> {
+     |    ^^^^^^^^^
+
+warning: function `check_method` is never used
+    --> tests\..\src\flow.rs:1061:8
+     |
+1061 | pub fn check_method(
+     |        ^^^^^^^^^^^^
+
+warning: function `find_node_by_id` is never used
+    --> tests\..\src\flow.rs:1266:4
+     |
+1266 | fn find_node_by_id<'a>(s: &'a Source, method: Node<'a>, node_id: usize) -> Option<Node<'a>> {
+     |    ^^^^^^^^^^^^^^^
+
+warning: multiple fields are never read
+  --> tests\..\src\lang.rs:12:9
+   |
+ 8 | pub struct LanguageSpec {
+   |            ------------ fields in this struct
+...
+12 |     pub invocation_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^
+13 |     pub new_expression_kind: Option<&'static str>,
+   |         ^^^^^^^^^^^^^^^^^^^
+14 |     pub macro_invocation_kind: Option<&'static str>,
+   |         ^^^^^^^^^^^^^^^^^^^^^
+15 |     pub member_access_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^^^
+16 |     pub local_kinds: &'static [&'static str],
+   |         ^^^^^^^^^^^
+17 |     pub identifier_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^
+18 |     pub parenthesized_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^^^
+19 |     pub prefix_unary_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^^
+20 |     pub binary_kind: &'static str,
+   |         ^^^^^^^^^^^
+21 |     pub exit_kinds: &'static [&'static str],
+   |         ^^^^^^^^^^
+22 |     pub block_kind: &'static str,
+   |         ^^^^^^^^^^
+23 |     pub conditional_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^
+24 |     pub branch_kinds: &'static [&'static str],
+   |         ^^^^^^^^^^^^
+25 |     pub loop_kinds: &'static [&'static str],
+   |         ^^^^^^^^^^
+26 |     pub try_kinds: &'static [&'static str],
+   |         ^^^^^^^^^
+27 |     pub case_kinds: &'static [&'static str],
+   |         ^^^^^^^^^^
+28 |     pub closure_kinds: &'static [&'static str],
+   |         ^^^^^^^^^^^^^
+29 |     pub expression_statement_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+30 |     pub await_kind: &'static str,
+   |         ^^^^^^^^^^
+31 |     pub local_declaration_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^^^^^^^
+32 |     pub variable_declarator_kind: &'static str,
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^
+33 |     pub comment_kind: &'static str,
+34 |     pub builtin_calls: &'static [&'static str],
+   |         ^^^^^^^^^^^^^
+35 |     pub builtin_value_methods: &'static [&'static str],
+   |         ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `supported_file` is never used
+   --> tests\..\src\lang.rs:109:8
+    |
+109 | pub fn supported_file(file: &str) -> bool {
+    |        ^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+       Fresh flowcheck v0.1.0 (C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp)
+warning: `flowcheck` (test "rust") generated 3 warnings
+warning: `flowcheck` (test "coverage") generated 39 warnings
+warning: `flowcheck` (test "extra") generated 3 warnings (3 duplicates)
+warning: `flowcheck` (test "fixture") generated 3 warnings (3 duplicates)
+warning: `flowcheck` (test "ts") generated 3 warnings (3 duplicates)
+warning: `flowcheck` (test "render") generated 1 warning
+warning: `flowcheck` (test "skeleton") generated 3 warnings (3 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\flowcheck-d122590a3cbd15d5.exe`
+
+running 3 tests
+test flow::extra::tests::removes_only_as_many_matching_steps_as_are_allowed ... ok
+test flow::lang::tests::chained_callees_keep_only_the_last_link ... ok
+test flow::tests::subsequence_missing_resumes_after_unmatched_step ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\coverage-70a785250148e163.exe`
+
+running 10 tests
+test flow::extra::tests::removes_only_as_many_matching_steps_as_are_allowed ... ok
+test flow::lang::tests::chained_callees_keep_only_the_last_link ... ok
+test flow::tests::subsequence_missing_resumes_after_unmatched_step ... ok
+warning: in the working copy of 'src/A.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Other.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/A.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/A.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/A.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/A.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/A.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/A.cs', LF will be replaced by CRLF the next time Git touches it
+test declared_overload_does_not_cover_another_overload ... ok
+test file_na_is_reported_without_reading_the_file ... FAILED
+test method_na_is_unchecked_and_empty_reason_is_cannot ... ok
+test neighboring_method_is_a_shadow_finding ... ok
+test renamed_base_method_is_outside_delta ... ok
+test whitespace_and_comments_do_not_create_a_finding ... ok
+test changed_file_omitted_from_spec_is_a_finding ... ok
+
+failures:
+
+---- file_na_is_reported_without_reading_the_file stdout ----
+
+thread 'file_na_is_reported_without_reading_the_file' (6364) panicked at tests\coverage.rs:221:5:
+assertion `left == right` failed
+  left: "file"
+ right: "file-na"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    file_na_is_reported_without_reading_the_file
+
+test result: FAILED. 9 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.82s
+
+error: test failed, to rerun pass `-p flowcheck --test coverage`
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\extra-1129a1722029a8f2.exe`
+
+running 7 tests
+test extra::tests::removes_only_as_many_matching_steps_as_are_allowed ... ok
+test flow::extra::tests::removes_only_as_many_matching_steps_as_are_allowed ... ok
+test flow::lang::tests::chained_callees_keep_only_the_last_link ... ok
+test flow::tests::subsequence_missing_resumes_after_unmatched_step ... ok
+test an_inserted_helper_body_is_not_reported ... ok
+test extracting_a_same_file_helper_is_not_an_extra_step ... ok
+test reports_an_undeclared_call_without_failing_the_flow_check ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.47s
+
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\fixture-0bec295730151ddc.exe`
+
+running 28 tests
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+test comment_after_return_still_exits ... ok
+test fixture_good ... ok
+test fixture_m8_wrong_else ... ok
+test fixture_m6_and_cond ... ok
+test fixture_m5_partial_exit ... ok
+test fixture_m1_no_getphone ... ok
+test expansion_cut_by_depth_is_reported ... ok
+test discarded_result_is_detected_on_the_call_node ... ok
+test flow::extra::tests::removes_only_as_many_matching_steps_as_are_allowed ... ok
+test flow::lang::tests::chained_callees_keep_only_the_last_link ... ok
+test fixture_m4_after_send ... ok
+test flow::tests::subsequence_missing_resumes_after_unmatched_step ... ok
+test fixture_m3_result_dropped ... ok
+test fixture_m2_one_branch ... ok
+test fixture_m7_or_enter ... ok
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+test fixture_ok_alias ... ok
+test overload_without_params_is_cannot_not_an_arbitrary_method ... ok
+test fixture_ok_log_block ... ok
+test fixture_ok_eq_false ... ok
+test fixture_ok_or_cond ... ok
+test fixture_ok_positive_if ... ok
+test fixture_ok_ternary_guard ... ok
+test fixture_ok_throw ... ok
+test flow_expands_each_sibling_branch ... ok
+test local_declaration_is_an_after_anchor ... ok
+test preserve_defaults_to_all ... ok
+test same_line_calls_are_checked_individually ... ok
+test shallow_expansion_reports_no_depth_limit ... ok
+
+test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.40s
+
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\render-97f5fd11b387812c.exe`
+
+running 18 tests
+test flow::extra::tests::removes_only_as_many_matching_steps_as_are_allowed ... ok
+test flow::lang::tests::chained_callees_keep_only_the_last_link ... ok
+test base_side_is_only_rendered_for_changed_exits ... ok
+test flow::tests::subsequence_missing_resumes_after_unmatched_step ... ok
+test builtin_namespace_calls_are_hidden_unless_the_delta_names_them ... ok
+test plan_counts_nth_across_the_method_and_closures ... ok
+test plan_keeps_delta_and_omits_field_reads ... ok
+test plan_strikes_a_standalone_removed_call ... ok
+test qualified_c_sharp_builtin_calls_are_hidden ... ok
+test result_keeps_replacement_when_other_calls_shift_its_index ... ok
+test result_marks_missing_planned_call ... ok
+test result_marks_planned_calls_ok ... ok
+test result_respects_nth_when_marking_an_out_of_place_call ... ok
+test split_parts_repeat_the_last_call_as_a_continuation ... ok
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/cli/process/run.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/cli/process/flow-gate.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/cli/process/run.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/cli/process/flow-gate.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+test run_flow_gate_shows_replaced_call_and_hides_builtins ... ok
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+test notifier_after_send_results_keep_the_guard_and_send_for_csharp_and_js ... ok
+test long_finish_step_is_folded_below_mermaid_limit ... ok
+test real_finish_step_is_a_small_top_level_diagram ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.60s
+
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\rust-f6504c81b2665605.exe`
+
+running 23 tests
+test flow::extra::tests::removes_only_as_many_matching_steps_as_are_allowed ... ok
+test flow::lang::tests::chained_callees_keep_only_the_last_link ... ok
+test flow::tests::subsequence_missing_resumes_after_unmatched_step ... ok
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+test m6 ... ok
+test m7 ... ok
+test good ... ok
+test log ... ok
+test m5 ... ok
+test eq_false ... ok
+test m2 ... ok
+test m1 ... ok
+test m4 ... ok
+test alias ... ok
+test guard_in_closure_does_not_guard_the_method ... ok
+test m3 ... ok
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+test trait_and_impl_methods_and_macros_are_steps ... ok
+test m8 ... ok
+test or_cond ... ok
+test positive ... ok
+test ternary ... ok
+test throwing ... ok
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+test result_guards_and_rust_forms_are_accepted ... ok
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+test translated_variants_match_csharp_statuses ... ok
+
+test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 13.43s
+
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\skeleton-f7094868c1bca6f6.exe`
+
+running 6 tests
+test flow::extra::tests::removes_only_as_many_matching_steps_as_are_allowed ... ok
+test flow::lang::tests::chained_callees_keep_only_the_last_link ... ok
+test flow::tests::subsequence_missing_resumes_after_unmatched_step ... ok
+warning: in the working copy of 'src/flow-gate.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/finish-step.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+test closures_are_not_part_of_the_main_flow ... ok
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.rs', LF will be replaced by CRLF the next time Git touches it
+test notifier_exit_branches_are_present_for_every_language ... ok
+test calls_and_exits_remain_in_their_branch ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.85s
+
+     Running `C:\Users\SUPERU~1\AppData\Local\Temp\cargo-mutants-flowcheck-FFD6qy.tmp\target\debug\deps\ts-e8d57333d367eaab.exe`
+
+running 13 tests
+test flow::extra::tests::removes_only_as_many_matching_steps_as_are_allowed ... ok
+test flow::lang::tests::chained_callees_keep_only_the_last_link ... ok
+test flow::tests::subsequence_missing_resumes_after_unmatched_step ... ok
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+test changing_an_argument_in_a_chain_preserves_its_steps ... ok
+test await_and_optional_calls_are_calls_and_none_guard_accepts_await ... ok
+test guard_inside_then_callback_does_not_guard_outer_flow ... ok
+test nth_checks_only_the_requested_anchor_occurrence ... ok
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+test arrow_function_object_property_and_new_expression_are_named_steps ... ok
+test none_and_throws_accept_a_call_as_the_only_try_statement ... ok
+test try_guard_must_be_directly_before_the_anchor ... ok
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+test throws_guard_requires_a_bare_call_before_the_anchor ... ok
+test tsx_cjs_and_js_extensions_select_the_javascript_family ... ok
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/Notifier.js', LF will be replaced by CRLF the next time Git touches it
+test translated_variants_have_csharp_statuses_in_ts_and_js ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.91s
+
+error: 1 target failed:
+    `-p flowcheck --test coverage`
+
+*** result: Failure(101)

@@ -578,39 +578,27 @@ describe("runChange — lifecycle review", () => {
 });
 
 describe("runChange — gates", () => {
-  it("closes an empty manual gate without an attempt and continues into its dependent", async () => {
+  it("keeps a manual task without produces or verify in review and does not report a successful run", async () => {
     const data = board(
       changeRoot(1, [2, 3, 4]),
       auto(2),
       task(3, { depends_on: deps(2) }),
       auto(4, { depends_on: deps(3) }),
     );
-    const comments = [];
-    const h = harness({
-      recordIssue: async ({ comment }) => { comments.push(comment); return { written: true }; },
-    });
+    const h = harness();
     const r = await go(data, "1", h.effects);
 
     expect(isEmptyHumanGate(data.todos[2])).toBe(true);
-    expect(h.calls.steps).toEqual([2, 4]);
-    expect(h.calls.reviews).toEqual([2, 4]);
-    expect(statusOf(r, 3)).toBe("done");
-    expect(statusOf(r, 4)).toBe("done");
-    expect(r.steps.map((step) => step.result)).toEqual(["done", "gate-skipped", "done"]);
-    expect(r.steps[1]).toMatchObject({ attempt: null, cost_usd: null, outcome: "ok" });
+    expect(h.calls.steps).toEqual([2]);
+    expect(h.calls.reviews).toEqual([2]);
+    expect(statusOf(r, 3)).toBe("review");
+    expect(statusOf(r, 4)).toBe("queue");
+    expect(r.steps.map((step) => step.result)).toEqual(["done", "gate"]);
+    expect(r.steps[1]).toMatchObject({ attempt: null, cost_usd: null, outcome: null, gate: true });
     expect(r.board.todos.find((t) => t.number === 3).attempts).toBeUndefined();
-    expect(comments).toEqual([expect.objectContaining({ author: "runner", body: expect.stringMatching(/^GATE_SKIPPED\n.*no produces or verify/) })]);
-    expect(r.stop).toBeNull();
-    expect(r.complete).toBe(true);
-
-    const eventsFile = path.join(sandboxAppData, "com.cu.app", "run-events.jsonl");
-    const events = readFileSync(eventsFile, "utf8").trim().split("\n").map(JSON.parse);
-    const skipped = events
-      .filter((event) => event.change === "c#1" && event.task === "t#3" && event.kind === "gate_skipped");
-    expect(skipped).toEqual([expect.objectContaining({ reason: expect.stringMatching(/nothing for a human to approve/) })]);
-    expect(events.filter((event) => event.run === skipped[0].run && event.task === "t#3")
-      .map((event) => event.kind)).toEqual(["gate_skipped"]);
-    expect(formatRunEvent(skipped[0])).toMatch(/^c#1 t#3: gate skipped/);
+    expect(r.stop).toMatchObject({ kind: "gate", task: { number: 3 }, reason: "нет produces и verify — решает человек" });
+    expect(r.complete).toBe(false);
+    expect(r.spend.unmeasured_steps).toBe(0);
   });
 
   it("a manual node with produces still goes to the executor and the reviewer", async () => {
@@ -698,16 +686,17 @@ describe("runChange — gates", () => {
     expect(r.stop.reason).toMatch(/already in review/);
   });
 
-  it("skips an empty manual gate left in review by an earlier run and releases its dependent", async () => {
+  it("keeps an empty manual gate left in review and leaves its dependent blocked", async () => {
     const data = board(changeRoot(1, [2, 3]), task(2, { status: "review" }), auto(3, { depends_on: deps(2) }));
     const h = harness();
     const r = await go(data, "1", h.effects);
 
-    expect(h.calls.steps).toEqual([3]);
-    expect(statusOf(r, 2)).toBe("done");
-    expect(statusOf(r, 3)).toBe("done");
-    expect(r.steps.map((step) => step.result)).toEqual(["gate-skipped", "done"]);
-    expect(r.stop).toBeNull();
+    expect(h.calls.steps).toEqual([]);
+    expect(statusOf(r, 2)).toBe("review");
+    expect(statusOf(r, 3)).toBe("queue");
+    expect(r.steps.map((step) => step.result)).toEqual(["gate"]);
+    expect(r.stop).toMatchObject({ kind: "gate", task: { number: 2 }, reason: "нет produces и verify — решает человек" });
+    expect(r.complete).toBe(false);
   });
 
   it("keeps running an independent branch past a node waiting in review", async () => {
@@ -851,19 +840,19 @@ describe("runChange — issue, transition and the retry limit", () => {
     expect(r.card).toContain("verify line 6");
     expect(r.card).not.toContain("verify line 5");
     expect(r.card).toContain("todos set retry t#2 3");
-    expect(r.card).toContain("todos run c#1 --go");
+    expect(r.card).toContain("todos run p#1 --go");
     expect(comments.at(-1).body).toContain("Decision card — retry");
   });
 
-  it("labels the run header with c# for a change", async () => {
+  it("labels the run header with p# for a plan", async () => {
     const r = await runChange({ data: board(changeRoot(1, [2]), auto(2)), change: "1", dry: true });
-    expect(formatRunReport(r)).toMatch(/^change c#1 /);
+    expect(formatRunReport(r)).toMatch(/^plan p#1 /);
   });
 
   it("tells the architect to launch a dry run in the background without watching it", async () => {
     const r = await runChange({ data: board(changeRoot(1, [2]), auto(2)), change: "1", dry: true });
     const text = formatRunReport(r);
-    expect(text).toContain("todos run c#1 --go");
+    expect(text).toContain("todos run p#1 --go");
     expect(text).toContain("run_in_background: true");
     expect(text).toContain("do not observe or narrate");
     expect(text).not.toContain("todos run watch");
@@ -889,7 +878,7 @@ describe("runChange — issue, transition and the retry limit", () => {
       },
       complete: false,
     });
-    expect(text).toMatch(/Decision card — gate[\s\S]*restart: todos run c#1 --go\n$/);
+    expect(text).toMatch(/Decision card — gate[\s\S]*restart: todos run p#1 --go\n$/);
   });
 
   it("never starts attempt M+1", async () => {
@@ -1123,13 +1112,19 @@ describe("runChange — the red gate's verdict", () => {
 });
 
 describe("runChange — flow gate", () => {
-  it("retries a flow issue and sends its reason to the task comment", async () => {
+  it("parks a flow issue as a plan delta without a second attempt and keeps its reason in the task comment", async () => {
     const data = board(changeRoot(1, [2], { budget_usd: 10 }), auto(2, { retry_limit: 2, step_base: "base", flow: { file: "src/Notifier.cs", method: "Send" } }));
     const h = harness({ flowGate: async () => ({ status: "issue", reason: "missing guard", coverage: [], unchecked: [], duration_ms: 7 }) });
     const r = await go(data, "1", h.effects);
+    expect(h.calls.steps).toEqual([2]);
     expect(h.calls.verifies).toEqual([]);
-    expect(r.stop.kind).toBe("retry");
+    expect(r.stop).toMatchObject({ kind: "flow-delta", reason: "дельта плана" });
+    expect(r.card).toContain("flow problems:\nmissing guard");
+    expect(r.card).toContain("поправить flow задачи и перезапустить");
+    expect(r.card).toContain("указать flow: n/a с причиной");
+    expect(r.card).toContain("принять как есть");
     expect(r.board.todos.find((t) => t.number === 2).comments[0].body).toContain("flow\nmissing guard");
+    expect(statusOf(r, 2)).toBe("review");
   });
 
   it("parks flow cannot without retrying or running verify", async () => {
@@ -1516,8 +1511,8 @@ describe("runChange — budget", () => {
       expect.objectContaining({ spent: 0.8, ceiling: 0.6, attempt: 1, source: "historical" }),
     ]);
     expect(warnings.map(formatRunEvent)).toEqual([
-      "c#123201 t#123202 attempt 1/-: budget warn attempt — $0.8 spent of $0.6",
-      "c#123201 t#123202 attempt 1/-: budget warn historical — $0.8 spent of $0.6",
+      "p#123201 t#123202 attempt 1/-: budget warn attempt — $0.8 spent of $0.6",
+      "p#123201 t#123202 attempt 1/-: budget warn historical — $0.8 spent of $0.6",
     ]);
   });
 
@@ -1639,7 +1634,7 @@ describe("runChange — dry run", () => {
       changeRoot(1, [2, 3, 4], { budget_usd: 10, parallel_limit: 2 }),
       auto(2, { budget_usd: 2 }),
       auto(3, { budget_usd: 3 }),
-      task(4, { depends_on: deps(2, 3) }), // empty manual gate: the plan skips it
+      task(4, { depends_on: deps(2, 3) }), // empty manual gate: a human must decide it
     );
     const r = await runChange({ data, change: "1", effects: h.effects, dry: true, history: [] });
 
@@ -1648,11 +1643,11 @@ describe("runChange — dry run", () => {
     expect(r.dry).toBe(true);
     expect(r.waves).toEqual([[2, 3], [4]]);
     expect(r.steps.map((s) => s.task.number)).toEqual([2, 3, 4]);
-    expect(r.steps.map((s) => s.gate)).toEqual([false, false, false]);
-    expect(r.steps.map((s) => s.result)).toEqual(["done", "done", "gate-skipped"]);
+    expect(r.steps.map((s) => s.gate)).toEqual([false, false, true]);
+    expect(r.steps.map((s) => s.result)).toEqual(["done", "done", "gate"]);
     expect(r.spend.usd).toBe(5); // 2 + 3 by the DECLARED budgets; the gate declares none
-    expect(r.stop).toBeNull();
-    expect(r.complete).toBe(true);
+    expect(r.stop).toMatchObject({ kind: "gate", task: { number: 4 }, reason: "нет produces и verify — решает человек" });
+    expect(r.complete).toBe(false);
     // The caller's board is untouched: statuses on the original object stand.
     expect(data.todos.map((t) => t.status)).toEqual(["queue", "queue", "queue", "queue"]);
   });
@@ -1726,7 +1721,7 @@ describe("liveEffects — the board seam", () => {
 });
 
 describe("run change references", () => {
-  it("suggests c#N when #N names an existing change but no task graph", () => {
+  it("accepts #N as a plan reference when that plan exists", () => {
     const cli = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "cli.mjs");
     const dir = mkdtempSync(path.join(os.tmpdir(), "cut-run-change-ref-"));
     const appDir = path.join(dir, "com.claude-usage-tracker.app");
@@ -1740,8 +1735,8 @@ describe("run change references", () => {
       const result = spawnSync(process.execPath, [cli, "todos", "run", "#8"], {
         encoding: "utf8", env: { ...process.env, APPDATA: dir }, windowsHide: true,
       });
-      expect(result.status).toBe(1);
-      expect(result.stderr).toContain("did you mean c#8?");
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain("p#8");
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -1857,13 +1852,13 @@ describe("finishStep", () => {
     expect(t.status).toBe("review");
   });
 
-  it("produces the issue result for a failed step", async () => {
+  it("produces the issue result for a failed task", async () => {
     const t = auto(4);
     const ctx = finishCtx(t);
     const out = await finishStep(ctx, t, { result: { ok: false, error: "boom" }, review: null });
 
     expect(out.kind).toBe("issue");
-    expect(out.reason).toMatch(/step failed: boom/);
+    expect(out.reason).toMatch(/task failed: boom/);
     expect(t.status).toBe("queue");
   });
 
@@ -2348,7 +2343,7 @@ describe("the runs journal", () => {
       },
     ];
     const text = formatRunHistory(records, summarizeRuns(records));
-    expect(text).toMatch(/c#24/);
+    expect(text).toMatch(/p#24/);
     expect(text).toMatch(/one pass/);
     expect(text).toMatch(/\$0\.26/);
     expect(text).toMatch(/\(inherit\)/);

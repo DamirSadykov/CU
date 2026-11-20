@@ -10,6 +10,7 @@ import { execFileSync } from "node:child_process";
 import { appDataDir, appDataFile, writeJsonAtomic } from "../kernel/appdata.mjs";
 import { withDataDir } from "../kernel/board-lock.mjs";
 import { boardPath, changeAddress, findChange, loadBoard } from "../kernel/board-io.mjs";
+import { formatRef, parseRef, storageRef } from "../kernel/terms.mjs";
 
 const SHORT_INTERVAL_SECONDS = 30;
 const READ_TOOLS = new Set(["Read", "read_file", "view_image"]);
@@ -282,7 +283,7 @@ function subagentFacts(mainFile) {
 
 function commitsFor(changeNumber, repo) {
   try {
-    const raw = execFileSync("git", ["-C", repo, "log", "--all", "--fixed-strings", "--grep", `c#${changeNumber}`, "--date=iso-strict", "--format=%H%x09%ad%x09%s"], {
+    const raw = execFileSync("git", ["-C", repo, "log", "--all", "--fixed-strings", "--grep", storageRef(changeNumber), "--grep", formatRef(changeNumber), "--date=iso-strict", "--format=%H%x09%ad%x09%s"], {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"],
     });
@@ -297,7 +298,7 @@ function runsFor(records, change, taskNumbers) {
   const number = Number(change.number);
   const memberNumbers = new Set(taskNumbers.values());
   return (records || []).filter((record) => {
-    const n = Number(record?.change?.number ?? String(record?.change || "").replace(/^c#/, ""));
+    const n = parseRef(record?.change?.number ?? record?.change);
     return n === number || (record?.steps || []).some((step) => memberNumbers.has(taskNumber(step?.task)));
   }).map((record) => ({
     ts: record.ts || null,
@@ -409,7 +410,7 @@ function signalRegistry(tasks, runs, sessions, changeNumber) {
           ref,
           run.ts,
           step.reason,
-          `runs.jsonl c#${changeNumber} run ${runIndex + 1} attempt ${step.attempt}`,
+          `runs.jsonl ${formatRef(changeNumber)} run ${runIndex + 1} attempt ${step.attempt}`,
         );
       }
     }

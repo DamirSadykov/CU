@@ -91,11 +91,11 @@ describe("project overview", () => {
     expect(closedTaskAverage([], "30d", TODAY)).toEqual({ value: null, previous: null, delta: null, count: 0 });
   });
 
-  it("filters change rows by open/closed and by c# or text", () => {
+  it("filters change rows by open/closed and by p# or text", () => {
     const rows = projectOverview("p", [row("a", 1, { change_id: "c2", status: "done" })], [change("c1", 12, { project: "p", title: "Экран проекта" }), change("c2", 40)], "30d", TODAY).changes;
     expect(filterChangeRows(rows, false, "").map((item) => item.number)).toEqual([12]);
     expect(filterChangeRows(rows, true, "").map((item) => item.number)).toEqual([40]);
-    expect(filterChangeRows(rows, false, "c#12").map((item) => item.number)).toEqual([12]);
+    expect(filterChangeRows(rows, false, "p#12").map((item) => item.number)).toEqual([12]);
     expect(filterChangeRows(rows, false, "экран").map((item) => item.number)).toEqual([12]);
     expect(filterChangeRows(rows, false, "40")).toEqual([]);
   });

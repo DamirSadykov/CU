@@ -34,6 +34,7 @@ use std::collections::{HashMap, HashSet};
 use serde::Serialize;
 
 use crate::board::task_sessions::{self, TaskBlock};
+use crate::board::terms::format_ref;
 use crate::board::todos::{Todo, TodoFile};
 use crate::contracts::analytics_read::BlockTotals;
 
@@ -750,9 +751,9 @@ fn node_key(n: &GraphNode) -> String {
 /// same task printed twice.
 fn group_title(g: &GraphGroup) -> String {
     if g.number > 0 {
-        format!("change #{}", g.number)
+        format!("plan {}", format_ref(g.number))
     } else {
-        format!("change {}", trim_subject(&g.subject))
+        format!("plan {}", trim_subject(&g.subject))
     }
 }
 
@@ -1482,7 +1483,7 @@ mod tests {
     fn the_frame_caption_does_not_repeat_the_root_subject() {
         let g = built(&sample());
         let text = to_mermaid(&g);
-        assert!(text.contains("subgraph g273[\"change #35;273\"]"));
+        assert!(text.contains("subgraph g273[\"plan p#35;273\"]"));
         // The full subject lives on the root node inside the frame, once.
         assert_eq!(text.matches("Тема прогона").count(), 1);
         assert_eq!(to_d2(&g).matches("Тема прогона").count(), 1);

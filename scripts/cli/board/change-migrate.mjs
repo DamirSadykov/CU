@@ -1,6 +1,7 @@
 import { createChange, changeAddress, findChangeByTitle, parseArgs } from "./change.mjs";
 import { boardPath, loadBoard, loadBoardForWrite, saveBoard } from "../kernel/board-io.mjs";
 import { withBoardLock, withDataDir } from "../kernel/board-lock.mjs";
+import { formatRef } from "../kernel/terms.mjs";
 
 const isLegacyRoot = (t) => !!(t && (t.change ?? t.theme));
 
@@ -87,7 +88,7 @@ export function describe(data) {
   let next = 1;
   for (const { root, members, nestedRoots } of entries) {
     const existing = findChangeByTitle(data, root.subject, root.project ?? null);
-    const address = existing ? changeAddress(existing) : `c#${next++}`;
+    const address = existing ? changeAddress(existing) : formatRef(next++);
     lines.push(
       `${existing ? "=" : "+"} ${address} ← #${root.number} "${root.subject}" · ${members.length} задач(и)` +
         (root.project ? ` · ${root.project}` : ""),

@@ -219,7 +219,7 @@ export function retroReadDirs(factsFile) {
 
 function resolveChange(board, ref) {
   const change = findChange(board, ref);
-  if (!change || change.legacy) throw new Error(`refusing: no change ${ref}`);
+  if (!change || change.legacy) throw new Error(`refusing: no plan ${ref}`);
   return change;
 }
 
@@ -336,14 +336,14 @@ export async function run(args) {
   const sessionFlag = args.indexOf("--session");
   if (sessionFlag >= 0) {
     const session = args[sessionFlag + 1];
-    if (!session || session.startsWith("--")) throw new Error("usage: cli change retro --session <guid>");
+    if (!session || session.startsWith("--")) throw new Error("usage: cli plan retro --session <guid>");
     const result = runRetroSession(session);
     if (!result.parsed) process.stdout.write(`warning: retro report saved, but agent output could not be parsed; no proposals are written for a session retro\n${result.reportFile}\n`);
     else process.stdout.write(`ok: session ${session} retro — report only, no proposals written\n${result.reportFile}\n`);
     return;
   }
   const ref = args.find((arg) => !arg.startsWith("--"));
-  if (!ref) throw new Error("usage: cli change retro <c#N> | --session <guid>");
+  if (!ref) throw new Error("usage: cli plan retro <p#N> | --session <guid>");
   const result = runRetro(ref);
   if (!result.parsed) {
     process.stdout.write(`warning: retro report saved, but agent output could not be parsed; proposals were not written\n${result.reportFile}\n`);

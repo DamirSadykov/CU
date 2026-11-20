@@ -40,6 +40,9 @@ import os from "node:os";
 import path from "node:path";
 import { writeJsonAtomic } from "../kernel/appdata.mjs";
 import { withDataDir } from "../kernel/board-lock.mjs";
+import { readTaskSessionEvents } from "../board/todos.mjs";
+import { openAiCost } from "../agents/providers.mjs";
+import { codexRolloutFiles } from "../kernel/codex-rollout.mjs";
 
 // ── transcript location (mirrors corrections.mjs) ────────────────────────────
 function claudeProjectsDir() {
@@ -69,7 +72,10 @@ function fail(msg) {
 // worth attributing separately — their tokens roll up under the parent session).
 function resolveTranscripts({ project, all }) {
   const root = claudeProjectsDir();
-  if (!root || !existsSync(root)) fail(`no transcripts dir: ${root}`);
+  // A Codex-only installation has no ~/.claude/projects. Codex targets are
+  // added from the binding journal below, so an absent Claude tree is an empty
+  // source rather than an error.
+  if (!root || !existsSync(root)) return [];
   let dirs;
   if (all) {
     dirs = listProjectDirs(root);
@@ -79,11 +85,10 @@ function resolveTranscripts({ project, all }) {
         path.basename(d).endsWith(encodeCwd(project)) ||
         path.basename(d).endsWith(project),
     );
-    if (!dirs.length) fail(`no project dir matching: ${project}`);
+    if (!dirs.length) dirs = [];
   } else {
     const here = path.join(root, encodeCwd(process.cwd()));
-    if (!existsSync(here)) fail(`no transcripts for this project: ${here}`);
-    dirs = [here];
+    dirs = existsSync(here) ? [here] : [];
   }
   const out = [];
   for (const dir of dirs) {
@@ -97,6 +102,32 @@ function resolveTranscripts({ project, all }) {
     }
   }
   out.sort((a, b) => a.session.localeCompare(b.session));
+  return out;
+}
+
+function scopeProjectName(project) {
+  const value = String(project || process.cwd()).replace(/[\\/]+$/, "");
+  return value.split(/[\\/]/).pop() || value;
+}
+
+// Codex rollout discovery is deliberately journal-driven. A rollout can
+// mention many task numbers in prompts and tool output; task-sessions.jsonl is
+// the strong statement that the session belongs to a task, and also keeps us
+// from walking every rollout merely to publish attribution.
+function resolveCodexRollouts({ project, all }) {
+  const wantedProject = all ? null : scopeProjectName(project);
+  const sessions = new Set();
+  for (const event of readTaskSessionEvents()) {
+    if (!event?.session) continue;
+    if (wantedProject && event.project && scopeProjectName(event.project) !== wantedProject) continue;
+    sessions.add(String(event.session));
+  }
+  const out = [];
+  for (const session of [...sessions].sort()) {
+    for (const file of codexRolloutFiles(session) || []) {
+      out.push({ session, file, projectDir: null, provider: "openai", wantedProject });
+    }
+  }
   return out;
 }
 
@@ -286,6 +317,61 @@ function projectFromRaw(raw) {
   return null;
 }
 
+// Codex emits one token_count record per turn, but may repeat the same
+// last-turn snapshot when only rate-limit data changes. This mirrors the
+// window's ingest identity and pricing semantics: total counters identify a
+// snapshot when present; otherwise timestamp + token buckets do.
+export function parseCodexUsage(raw) {
+  let model = "codex-unknown";
+  let project = null;
+  let session = null;
+  let lastTs = null;
+  let cost = 0;
+  const usage = {
+    input_tokens: 0,
+    cached_input_tokens: 0,
+    cache_write_input_tokens: 0,
+    output_tokens: 0,
+  };
+  const seen = new Set();
+  for (const line of String(raw || "").split("\n")) {
+    let rec;
+    try { rec = JSON.parse(line); } catch { continue; }
+    const payload = rec?.payload;
+    if (rec?.type === "session_meta") {
+      if (typeof payload?.id === "string") session = payload.id;
+      if (typeof payload?.cwd === "string") project = scopeProjectName(payload.cwd);
+      continue;
+    }
+    if (rec?.type === "turn_context") {
+      if (typeof payload?.model === "string") model = payload.model;
+      if (typeof payload?.cwd === "string") project = scopeProjectName(payload.cwd);
+      continue;
+    }
+    if (rec?.type !== "event_msg" || payload?.type !== "token_count") continue;
+    const turn = payload?.info?.last_token_usage;
+    if (!turn) continue;
+    const values = {
+      input_tokens: Number(turn.input_tokens || 0),
+      cached_input_tokens: Number(turn.cached_input_tokens || 0),
+      cache_write_input_tokens: Number(turn.cache_write_input_tokens || 0),
+      output_tokens: Number(turn.output_tokens || 0),
+    };
+    if (!Object.values(values).some((n) => Number.isFinite(n) && n !== 0)) continue;
+    const total = payload.info.total_token_usage;
+    const key = total
+      ? `total:${Number(total.input_tokens || 0)}:${Number(total.cached_input_tokens || 0)}:${Number(total.cache_write_input_tokens || 0)}:${Number(total.output_tokens || 0)}`
+      : `at:${rec.timestamp || ""}:${values.input_tokens}:${values.cached_input_tokens}:${values.cache_write_input_tokens}:${values.output_tokens}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    for (const name of Object.keys(usage)) usage[name] += values[name];
+    const turnCost = openAiCost(model, values);
+    if (typeof turnCost === "number") cost += turnCost;
+    if (typeof rec.timestamp === "string" && (!lastTs || rec.timestamp > lastTs)) lastTs = rec.timestamp;
+  }
+  return { session, project, model, usage, cost_usd: cost, last_ts: lastTs };
+}
+
 function analyze(targets) {
   const sessions = [];
   for (const t of targets) {
@@ -294,6 +380,26 @@ function analyze(targets) {
       raw = readFileSync(t.file, "utf8");
     } catch {
       continue; // vanished mid-run
+    }
+    if (t.provider === "openai") {
+      const parsed = parseCodexUsage(raw);
+      if (t.wantedProject && parsed.project && parsed.project !== t.wantedProject) continue;
+      let mtime = null;
+      try { mtime = statSync(t.file).mtime.toISOString(); } catch { /* keep row */ }
+      sessions.push({
+        session: parsed.session || t.session,
+        provider: "openai",
+        project_dir: null,
+        project: parsed.project,
+        modified_at: mtime,
+        model: parsed.model,
+        usage: parsed.usage,
+        cost_usd: parsed.cost_usd,
+        moves: [],
+        touched: [],
+        mentions: [],
+      });
+      continue;
     }
     const ev = parseSessionEvidence(raw);
     // Mention-only sessions ARE published: the join's interval fallback fires
@@ -345,32 +451,34 @@ function buildDoc(f, sessions) {
 
 function cmdScan(args) {
   const f = parseFlags(args);
-  const sessions = analyze(resolveTranscripts(f));
+  const sessions = analyze([...resolveTranscripts(f), ...resolveCodexRollouts(f)]);
   if (f.json) {
     process.stdout.write(JSON.stringify(buildDoc(f, sessions), null, 2) + "\n");
     return;
   }
   for (const s of sessions) {
-    process.stdout.write(`${s.session}  (${s.project || s.project_dir})\n`);
+    const provider = s.provider ? ` [${s.provider}]` : "";
+    const cost = typeof s.cost_usd === "number" ? ` $${s.cost_usd.toFixed(6)}` : "";
+    process.stdout.write(`${s.session}${provider}  (${s.project || s.project_dir || "unknown"})${cost}\n`);
     for (const m of s.moves) {
       process.stdout.write(`    ${m.ref} -> ${m.statuses.join(",")}\n`);
     }
     if (s.touched.length) process.stdout.write(`    touched: ${s.touched.join(", ")}\n`);
     if (s.mentions.length) process.stdout.write(`    mentions: ${s.mentions.join(", ")}\n`);
   }
-  process.stdout.write(`${sessions.length} session(s) with evidence\n`);
+  process.stdout.write(`${sessions.length} session(s)\n`);
 }
 
 function cmdPublish(args) {
   const f = parseFlags(args);
-  const sessions = analyze(resolveTranscripts(f));
+  const sessions = analyze([...resolveTranscripts(f), ...resolveCodexRollouts(f)]);
   const file = withDataDir((dir) => {
     const target = path.join(dir, "task-attribution.json");
     writeJsonAtomic(target, buildDoc(f, sessions));
     return target;
   });
   process.stdout.write(
-    `ok: published attribution (${sessions.length} session(s) with evidence) -> ${file}\n`,
+    `ok: published attribution (${sessions.length} session(s)) -> ${file}\n`,
   );
 }
 

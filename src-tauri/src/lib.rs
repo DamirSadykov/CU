@@ -16,6 +16,7 @@ pub use external::{enroll, identity};
 pub use kernel::{board_lock, data_dir, report, sysmon};
 
 use std::collections::{HashMap, HashSet};
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
@@ -92,6 +93,165 @@ fn env_label(identifier: &str) -> Option<&'static str> {
 #[tauri::command]
 fn app_env_label(app: AppHandle) -> Option<String> {
     env_label(&app.config().identifier).map(str::to_string)
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+struct ProviderDetection {
+    claude: bool,
+    codex: bool,
+}
+
+fn executable_on_path(command: &str, path: Option<&OsStr>, path_ext: Option<&OsStr>) -> bool {
+    let Some(path) = path else {
+        return false;
+    };
+
+    #[cfg(windows)]
+    let candidates: Vec<String> = {
+        let mut suffixes = vec![String::new()];
+        suffixes.extend(
+            path_ext
+                .and_then(OsStr::to_str)
+                .unwrap_or(".COM;.EXE;.BAT;.CMD")
+                .split(';')
+                .filter(|ext| !ext.is_empty())
+                .map(|ext| {
+                    if ext.starts_with('.') {
+                        ext.to_string()
+                    } else {
+                        format!(".{ext}")
+                    }
+                }),
+        );
+        suffixes
+            .into_iter()
+            .map(|suffix| format!("{command}{suffix}"))
+            .collect()
+    };
+    #[cfg(not(windows))]
+    let candidates = vec![command.to_string()];
+
+    std::env::split_paths(path).any(|dir| {
+        candidates
+            .iter()
+            .any(|candidate| dir.join(candidate).is_file())
+    })
+}
+
+fn detect_providers_at(
+    home: Option<&Path>,
+    codex_home: Option<&Path>,
+    path: Option<&OsStr>,
+    path_ext: Option<&OsStr>,
+) -> ProviderDetection {
+    let claude = home.is_some_and(|dir| dir.join(".claude").exists())
+        || executable_on_path("claude", path, path_ext);
+    let codex_dir = codex_home
+        .map(PathBuf::from)
+        .or_else(|| home.map(|dir| dir.join(".codex")));
+    let codex = codex_dir.is_some_and(|dir| dir.join("auth.json").is_file());
+    ProviderDetection { claude, codex }
+}
+
+/// Detect locally usable coding providers without attempting authentication.
+/// Claude is considered present when its home directory or CLI exists; Codex
+/// requires the authentication file because a bare installation cannot load
+/// account limits.
+#[tauri::command]
+async fn detect_providers() -> ProviderDetection {
+    let home = dirs::home_dir();
+    let codex_home = std::env::var_os("CODEX_HOME")
+        .filter(|value| !value.is_empty())
+        .map(PathBuf::from);
+    let path = std::env::var_os("PATH");
+    let path_ext = std::env::var_os("PATHEXT");
+    detect_providers_at(
+        home.as_deref(),
+        codex_home.as_deref(),
+        path.as_deref(),
+        path_ext.as_deref(),
+    )
+}
+
+#[cfg(test)]
+mod detect_providers_tests {
+    use super::*;
+
+    static NEXT_TEMP: AtomicU64 = AtomicU64::new(0);
+
+    fn temp_dir(label: &str) -> PathBuf {
+        let id = NEXT_TEMP.fetch_add(1, Ordering::Relaxed);
+        let dir = std::env::temp_dir().join(format!(
+            "cu_detect_providers_{label}_{}_{}",
+            std::process::id(),
+            id
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    #[test]
+    fn detect_providers_finds_home_directories_and_codex_auth() {
+        let home = temp_dir("home");
+        std::fs::create_dir(home.join(".claude")).unwrap();
+        std::fs::create_dir(home.join(".codex")).unwrap();
+        std::fs::write(home.join(".codex").join("auth.json"), "{}").unwrap();
+
+        let found = detect_providers_at(Some(&home), None, None, None);
+        assert_eq!(
+            found,
+            ProviderDetection {
+                claude: true,
+                codex: true
+            }
+        );
+        let _ = std::fs::remove_dir_all(home);
+    }
+
+    #[test]
+    fn detect_providers_honours_codex_home_and_claude_path() {
+        let home = temp_dir("empty_home");
+        let codex_home = temp_dir("codex_home");
+        let bin = temp_dir("bin");
+        std::fs::write(codex_home.join("auth.json"), "{}").unwrap();
+        #[cfg(windows)]
+        let executable = bin.join("claude.CMD");
+        #[cfg(not(windows))]
+        let executable = bin.join("claude");
+        std::fs::write(executable, "").unwrap();
+        let path = std::env::join_paths([&bin]).unwrap();
+
+        let found = detect_providers_at(
+            Some(&home),
+            Some(&codex_home),
+            Some(path.as_os_str()),
+            Some(OsStr::new(".EXE;.CMD")),
+        );
+        assert_eq!(
+            found,
+            ProviderDetection {
+                claude: true,
+                codex: true
+            }
+        );
+        let _ = std::fs::remove_dir_all(home);
+        let _ = std::fs::remove_dir_all(codex_home);
+        let _ = std::fs::remove_dir_all(bin);
+    }
+
+    #[test]
+    fn detect_providers_requires_codex_auth_file() {
+        let home = temp_dir("no_auth");
+        std::fs::create_dir(home.join(".codex")).unwrap();
+        assert_eq!(
+            detect_providers_at(Some(&home), None, None, None),
+            ProviderDetection {
+                claude: false,
+                codex: false
+            }
+        );
+        let _ = std::fs::remove_dir_all(home);
+    }
 }
 
 fn now_ms() -> u64 {
@@ -886,8 +1046,8 @@ const SYSMON_INTERVAL: Duration = Duration::from_secs(2);
 
 // Mini window size per layout: compact 2×2 (CPU/RAM on) vs the original
 // two-row 5h/7d bars (off). Logical px — applied on each `configure`.
-const MINI_SIZE_FULL: (f64, f64) = (186.0, 64.0);
-const MINI_SIZE_BARS: (f64, f64) = (180.0, 80.0);
+const MINI_SIZE_FULL: (f64, f64) = (186.0, 80.0);
+const MINI_SIZE_BARS: (f64, f64) = (180.0, 96.0);
 
 /// Resize the mini window and tell it which layout to render. Called from
 /// `configure` so a toggle in settings takes effect immediately.
@@ -988,6 +1148,14 @@ fn configure(
     apply_mini_layout(&app, system_info);
     notify.notify_one(); // apply immediately, don't wait out the interval
     Ok(())
+}
+
+#[tauri::command]
+fn set_cc_analytics_enabled(
+    enabled: bool,
+    state: tauri::State<'_, Mutex<AppConfig>>,
+) {
+    state.lock().unwrap().cc_analytics_enabled = enabled;
 }
 
 #[tauri::command]
@@ -1094,18 +1262,11 @@ async fn ingest_cc_usage(
 #[tauri::command]
 async fn get_codex_limits(
     enabled: bool,
-    stats: tauri::State<'_, Arc<StatsDb>>,
 ) -> Result<Option<codex::CodexRateLimits>, String> {
     if !enabled {
         return Ok(None);
     }
-    let Some(base) = codex::codex_dir() else {
-        return Ok(None);
-    };
-    let db = stats.inner().clone();
-    tauri::async_runtime::spawn_blocking(move || codex::latest_limits(&base, &db))
-        .await
-        .map_err(|e| e.to_string())?
+    analytics::codex_account::read_limits().await
 }
 
 #[tauri::command]
@@ -2914,39 +3075,45 @@ fn codex_hooks_path(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(home.join(".codex").join("hooks.json"))
 }
 
-const CODEX_GUARD_RULES: &str = include_str!("../../scripts/cli/guard/cu-guard.rules");
-
 fn codex_guard_rules_path(app: &AppHandle) -> Result<PathBuf, String> {
     let home = app.path().home_dir().map_err(|e| e.to_string())?;
     Ok(home.join(".codex").join("rules").join("cu-guard.rules"))
 }
 
-/// Install or repair only CU's execpolicy file. An exact file is left alone so
-/// repeated installs do not change its timestamp; sibling rule files are never
-/// enumerated or rewritten.
-fn install_codex_guard_file(path: &Path, rules: &str) -> Result<bool, String> {
-    if std::fs::read_to_string(path).ok().as_deref() == Some(rules) {
-        return Ok(false);
+fn retire_codex_guard_file(path: &Path) -> Result<bool, String> {
+    let contents = match std::fs::read(path) {
+        Ok(contents) => contents,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(false),
+        Err(e) => return Err(e.to_string()),
+    };
+    for index in 0.. {
+        let extension = if index == 0 {
+            "rules.disabled".to_string()
+        } else {
+            format!("rules.disabled-{index}")
+        };
+        let backup = path.with_extension(extension);
+        match std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&backup)
+        {
+            Ok(mut file) => {
+                use std::io::Write;
+                file.write_all(&contents).map_err(|e| e.to_string())?;
+                file.sync_all().map_err(|e| e.to_string())?;
+                break;
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
+                if std::fs::read(&backup).map_err(|e| e.to_string())? == contents {
+                    break;
+                }
+            }
+            Err(e) => return Err(e.to_string()),
+        }
     }
-    if let Some(dir) = path.parent() {
-        std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
-    }
-    let tmp = path.with_extension("rules.tmp");
-    std::fs::write(&tmp, rules.as_bytes()).map_err(|e| e.to_string())?;
-    std::fs::rename(&tmp, path).map_err(|e| e.to_string())?;
+    std::fs::remove_file(path).map_err(|e| e.to_string())?;
     Ok(true)
-}
-
-fn uninstall_codex_guard_file(path: &Path) -> Result<bool, String> {
-    match std::fs::remove_file(path) {
-        Ok(()) => Ok(true),
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(false),
-        Err(e) => Err(e.to_string()),
-    }
-}
-
-fn codex_guard_is_active(path: &Path) -> bool {
-    std::fs::read_to_string(path).ok().as_deref() == Some(CODEX_GUARD_RULES)
 }
 
 const CODEX_SESSION_START_MATCHER: &str = "startup|resume|clear|compact";
@@ -3002,6 +3169,32 @@ fn wire_codex_session_start(root: &mut serde_json::Value, command: &str) {
     }
 }
 
+fn wire_codex_guard(root: &mut serde_json::Value, script: &str) {
+    wire_hook_event_matched(
+        root,
+        "PreToolUse",
+        "Bash",
+        &format!("node \"{script}\" guard --host codex"),
+    );
+}
+
+fn migrate_codex_guard(hooks_path: &Path, rules_path: &Path, script: &str) -> Result<bool, String> {
+    let (migrated, _) = update_hook_config_if(hooks_path, |root| {
+        if !rules_path.exists() && !settings_has_cc_hook(root, "SessionStart") {
+            return None;
+        }
+        let wired = wired_script_path(root, "SessionStart")
+            .filter(|path| Path::new(path).exists())
+            .unwrap_or_else(|| script.to_string());
+        wire_codex_guard(root, &wired);
+        Some(())
+    })?;
+    if migrated.is_some() {
+        retire_codex_guard_file(rules_path)?;
+    }
+    Ok(migrated.is_some())
+}
+
 fn heal_codex_hook_file(hooks_path: &Path, script: &str) -> Option<()> {
     let (healed, _) = update_hook_config_if(hooks_path, |root| {
         if !settings_has_cc_hook(root, "SessionStart") {
@@ -3014,6 +3207,7 @@ fn heal_codex_hook_file(hooks_path: &Path, script: &str) -> Option<()> {
             return None;
         }
         wire_codex_session_start(root, &format!("node \"{script}\" hook --host codex"));
+        wire_codex_guard(root, script);
         Some(())
     })
     .ok()?;
@@ -3030,18 +3224,17 @@ fn heal_codex_hook(app: &AppHandle) -> Option<String> {
 #[derive(Serialize)]
 struct CodexHookStatus {
     installed: bool,
-    guard_active: bool,
+    guard_installed: bool,
+    legacy_guard_present: bool,
     script_path: String,
     wired_path: String,
     wired_path_exists: bool,
     hooks_path: String,
-    rules_path: String,
 }
 
 #[tauri::command]
 fn codex_hook_status(app: AppHandle) -> Result<CodexHookStatus, String> {
     let hooks_path = codex_hooks_path(&app)?;
-    let rules_path = codex_guard_rules_path(&app)?;
     let root = std::fs::read_to_string(&hooks_path)
         .ok()
         .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok());
@@ -3054,12 +3247,15 @@ fn codex_hook_status(app: AppHandle) -> Result<CodexHookStatus, String> {
             .as_ref()
             .map(|v| settings_has_cc_hook(v, "SessionStart"))
             .unwrap_or(false),
-        guard_active: codex_guard_is_active(&rules_path),
+        guard_installed: root
+            .as_ref()
+            .map(|v| settings_has_cc_hook_matched(v, "PreToolUse", "Bash"))
+            .unwrap_or(false),
+        legacy_guard_present: codex_guard_rules_path(&app)?.exists(),
         script_path: cc_hook_script_path(&app).unwrap_or_default(),
         wired_path_exists: !wired.is_empty() && Path::new(&wired).exists(),
         wired_path: wired,
         hooks_path: hooks_path.to_string_lossy().replace('\\', "/"),
-        rules_path: rules_path.to_string_lossy().replace('\\', "/"),
     })
 }
 
@@ -3072,16 +3268,15 @@ fn install_codex_hook(app: AppHandle) -> Result<String, String> {
     let hooks_path = codex_hooks_path(&app)?;
     update_hook_config(&hooks_path, |root| {
         wire_codex_session_start(root, &format!("node \"{script}\" hook --host codex"));
+        wire_codex_guard(root, &script);
     })?;
-    install_codex_guard_file(&codex_guard_rules_path(&app)?, CODEX_GUARD_RULES)?;
+    retire_codex_guard_file(&codex_guard_rules_path(&app)?)?;
     Ok(script)
 }
 
-/// Remove only CU's execpolicy file. Other files under ~/.codex/rules are user
-/// policy and deliberately remain untouched.
 #[tauri::command]
 fn uninstall_codex_guard(app: AppHandle) -> Result<bool, String> {
-    uninstall_codex_guard_file(&codex_guard_rules_path(&app)?)
+    retire_codex_guard_file(&codex_guard_rules_path(&app)?)
 }
 
 /// Last-seen `id -> status` map, shared between the file watcher and the write
@@ -3408,7 +3603,41 @@ fn apply_todo_import(app: AppHandle, path: String) -> Result<todos::ImportReport
 
 #[tauri::command]
 async fn open_todo_window(app: AppHandle) {
-    kernel::windows::open_todos(&app);
+    kernel::windows::open_todos(&app, None);
+}
+
+#[tauri::command]
+async fn take_todos_open_task(
+    state: tauri::State<'_, kernel::windows::WindowOpenState>,
+) -> Result<Option<u32>, ()> {
+    Ok(state.take_todos_task())
+}
+
+fn setup_deep_links(app: &AppHandle) {
+    use tauri_plugin_deep_link::DeepLinkExt;
+
+    let deep_link = app.deep_link();
+    #[cfg(debug_assertions)]
+    if std::env::var("CU_DEV_DEEPLINK").as_deref() == Ok("1") {
+        if let Err(error) = deep_link.register_all() {
+            warn!("deep link: register_all failed: {error}");
+        }
+    }
+    let handle = app.clone();
+    deep_link.on_open_url(move |event| {
+        for url in event.urls() {
+            kernel::deep_link::handle_url(&handle, url.as_str());
+        }
+    });
+    match deep_link.get_current() {
+        Ok(Some(urls)) => {
+            for url in urls {
+                kernel::deep_link::handle_url(app, url.as_str());
+            }
+        }
+        Ok(None) => {}
+        Err(error) => warn!("deep link: get_current failed: {error}"),
+    }
 }
 
 fn show_settings_window(app: &AppHandle, tab: Option<String>) {
@@ -3567,12 +3796,16 @@ pub fn run() {
                 .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepAll)
                 .build(),
         )
-        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            if kernel::deep_link::is_deep_link_launch(&args) {
+                return;
+            }
             if let Some(window) = app.get_webview_window("main") {
                 let _ = window.show();
                 let _ = window.set_focus();
             }
         }))
+        .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
@@ -3618,22 +3851,13 @@ pub fn run() {
             if let Some(healed) = heal_codex_hook(app.handle()) {
                 info!("Re-pointed the Codex hook at {healed} (the wired script was gone)");
             }
-            // An installed CU Codex integration owns exactly one rules file.
-            // Heal a stale one on upgrades; a missing one means the user
-            // uninstalled the guard, so it is not recreated here.
-            if codex_hook_status(app.handle().clone())
-                .map(|status| status.installed)
-                .unwrap_or(false)
-            {
-                if let Ok(path) = codex_guard_rules_path(app.handle()) {
-                    if path.exists()
-                        && install_codex_guard_file(&path, CODEX_GUARD_RULES).unwrap_or(false)
-                    {
-                        info!(
-                            "Installed or repaired Codex guard rules at {}",
-                            path.display()
-                        );
-                    }
+            if let (Ok(hooks), Ok(rules), Ok(script)) = (
+                codex_hooks_path(app.handle()),
+                codex_guard_rules_path(app.handle()),
+                cc_hook_script_path(app.handle()),
+            ) {
+                if let Err(error) = migrate_codex_guard(&hooks, &rules, &script) {
+                    log::warn!("Could not migrate the global CU Codex guard: {error}");
                 }
             }
 
@@ -3690,6 +3914,7 @@ pub fn run() {
             app.manage(cache::BoardCache::default());
             app.manage(graph_cache::GraphCache::default());
             app.manage(kernel::windows::WindowOpenState::default());
+            setup_deep_links(app.handle());
             let notify = Arc::new(Notify::new());
             app.manage(notify.clone());
 
@@ -3803,6 +4028,7 @@ pub fn run() {
             crate::spec::spec_domains,
             crate::spec::spec_section,
             refresh_now,
+            set_cc_analytics_enabled,
             open_claude,
             ensure_project,
             start_session,
@@ -3824,6 +4050,7 @@ pub fn run() {
             report_frontend_error,
             set_pin,
             app_env_label,
+            detect_providers,
             open_analytics_window,
             open_kit_window,
             get_analytics_ext,
@@ -3873,6 +4100,7 @@ pub fn run() {
             open_todo_window,
             open_settings_window,
             get_settings_open_tab,
+            take_todos_open_task,
             enrollment_status,
             enroll_bind,
             enroll_reset,
@@ -4189,7 +4417,7 @@ mod hook_install_tests {
     }
 
     #[test]
-    fn codex_guard_install_heal_uninstall_are_idempotent_and_spare_foreign_rules() {
+    fn codex_guard_migration_preserves_rules_and_foreign_hooks() {
         let dir = std::env::temp_dir().join("cu_codex_guard_rules_test");
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
@@ -4197,19 +4425,80 @@ mod hook_install_tests {
         let foreign = dir.join("personal.rules");
         let foreign_text = "prefix_rule(pattern=[\"safe\"], decision=\"allow\")\n";
         std::fs::write(&foreign, foreign_text).unwrap();
-
-        assert_eq!(install_codex_guard_file(&ours, CODEX_GUARD_RULES), Ok(true));
+        let hooks = dir.join("hooks.json");
+        let foreign_hooks = serde_json::json!({ "hooks": {
+            "SessionStart": [{ "hooks": [{ "type": "command", "command": "foreign-start" }] }],
+            "PreToolUse": [{ "matcher": "Bash", "hooks": [{ "type": "command", "command": "foreign-guard" }] }]
+        }});
+        std::fs::write(&hooks, serde_json::to_vec(&foreign_hooks).unwrap()).unwrap();
+        std::fs::write(&ours, "old CU policy\n").unwrap();
         assert_eq!(
-            install_codex_guard_file(&ours, CODEX_GUARD_RULES),
+            migrate_codex_guard(&hooks, &ours, "C:/CU/scripts/cli.mjs"),
+            Ok(true)
+        );
+        assert!(!ours.exists());
+        let backup = ours.with_extension("rules.disabled");
+        assert_eq!(std::fs::read_to_string(&backup).unwrap(), "old CU policy\n");
+        let installed: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(&hooks).unwrap()).unwrap();
+        assert_eq!(
+            commands_for(&installed, "SessionStart"),
+            vec!["foreign-start"]
+        );
+        assert_eq!(
+            commands_for(&installed, "PreToolUse"),
+            vec![
+                "foreign-guard",
+                r#"node "C:/CU/scripts/cli.mjs" guard --host codex"#,
+            ]
+        );
+        assert_eq!(
+            migrate_codex_guard(&hooks, &ours, "C:/CU/scripts/cli.mjs"),
             Ok(false)
         );
-        assert!(codex_guard_is_active(&ours));
-        std::fs::write(&ours, "stale\n").unwrap();
-        assert!(!codex_guard_is_active(&ours));
-        assert_eq!(install_codex_guard_file(&ours, CODEX_GUARD_RULES), Ok(true));
-        assert_eq!(uninstall_codex_guard_file(&ours), Ok(true));
-        assert_eq!(uninstall_codex_guard_file(&ours), Ok(false));
+        assert_eq!(std::fs::read_to_string(&backup).unwrap(), "old CU policy\n");
+        std::fs::write(&ours, "new CU policy\n").unwrap();
+        assert_eq!(retire_codex_guard_file(&ours), Ok(true));
+        assert_eq!(retire_codex_guard_file(&ours), Ok(false));
+        assert_eq!(
+            std::fs::read_to_string(ours.with_extension("rules.disabled-1")).unwrap(),
+            "new CU policy\n"
+        );
+        assert_eq!(std::fs::read_to_string(&backup).unwrap(), "old CU policy\n");
         assert_eq!(std::fs::read_to_string(&foreign).unwrap(), foreign_text);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn codex_guard_migration_only_upgrades_an_existing_cu_integration() {
+        let dir = std::env::temp_dir().join("cu_codex_guard_upgrade_test");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let hooks = dir.join("hooks.json");
+        let rules = dir.join("cu-guard.rules");
+        assert_eq!(
+            migrate_codex_guard(&hooks, &rules, "C:/CU/scripts/cli.mjs"),
+            Ok(false)
+        );
+        assert!(!hooks.exists());
+        assert!(!rules.exists());
+        let mut root = serde_json::json!({});
+        wire_codex_session_start(
+            &mut root,
+            r#"node "C:/CU/scripts/cli.mjs" hook --host codex"#,
+        );
+        std::fs::write(&hooks, serde_json::to_vec(&root).unwrap()).unwrap();
+        assert_eq!(
+            migrate_codex_guard(&hooks, &rules, "C:/CU/scripts/cli.mjs"),
+            Ok(true)
+        );
+        let first = std::fs::read(&hooks).unwrap();
+        assert_eq!(
+            migrate_codex_guard(&hooks, &rules, "C:/CU/scripts/cli.mjs"),
+            Ok(true)
+        );
+        assert_eq!(std::fs::read(&hooks).unwrap(), first);
+        assert!(!rules.exists());
         let _ = std::fs::remove_dir_all(&dir);
     }
 

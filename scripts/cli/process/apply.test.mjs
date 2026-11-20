@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from "vitest";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -8,6 +8,28 @@ import { parseYamlSubset, readDocument, validate, applyDocument, inferDocument, 
 import { loadBoard, withDeferredSave, saveBoard, setField } from "../board/todos.mjs";
 
 const cli = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "cli.mjs");
+
+function pinCsFlowLanguages(appData) {
+  const dir = path.join(appData, "com.claude-usage-tracker.app");
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(path.join(dir, "settings.json"), JSON.stringify({
+    flowLanguages: { fixture: ["cs"], [path.basename(process.cwd())]: ["cs"] },
+  }));
+}
+
+let hostAppData;
+let isolatedAppData;
+beforeAll(() => {
+  hostAppData = process.env.APPDATA;
+  isolatedAppData = mkdtempSync(path.join(os.tmpdir(), "apply-appdata-"));
+  pinCsFlowLanguages(isolatedAppData);
+  process.env.APPDATA = isolatedAppData;
+});
+afterAll(() => {
+  if (hostAppData === undefined) delete process.env.APPDATA;
+  else process.env.APPDATA = hostAppData;
+  rmSync(isolatedAppData, { recursive: true, force: true });
+});
 
 describe("the YAML subset apply reads", () => {
   it("reads nested mappings, block scalars and both list forms", () => {
@@ -567,6 +589,7 @@ describe("apply records the graph", () => {
 
   beforeEach(() => {
     dir = mkdtempSync(path.join(os.tmpdir(), "cut-apply-"));
+    pinCsFlowLanguages(dir);
     // The app data directory is the tracker's to create, exactly as in real use.
     mkdirSync(path.join(dir, "com.claude-usage-tracker.app"), { recursive: true });
     writeFileSync(path.join(dir, "graph.yaml"), GRAPH);
@@ -807,6 +830,7 @@ describe("a graph is written all at once or not at all", () => {
 
   beforeEach(() => {
     dir = mkdtempSync(path.join(os.tmpdir(), "cut-defer-"));
+    pinCsFlowLanguages(dir);
     file = path.join(dir, "todos.json");
   });
   afterEach(() => rmSync(dir, { recursive: true, force: true }));
@@ -869,6 +893,7 @@ describe("a step may name the task it IS", () => {
 
   beforeEach(() => {
     dir = mkdtempSync(path.join(os.tmpdir(), "cut-bind-"));
+    pinCsFlowLanguages(dir);
     mkdirSync(path.join(dir, "com.claude-usage-tracker.app"), { recursive: true });
   });
   afterEach(() => {
@@ -993,6 +1018,7 @@ describe("apply and a stale description (t#739)", () => {
 
   beforeEach(() => {
     dir = mkdtempSync(path.join(os.tmpdir(), "cut-stale-desc-"));
+    pinCsFlowLanguages(dir);
     mkdirSync(path.join(dir, "com.claude-usage-tracker.app"), { recursive: true });
   });
   afterEach(() => {
@@ -1087,6 +1113,7 @@ describe("apply requires a change for new work", () => {
 
   beforeEach(() => {
     dir = mkdtempSync(path.join(os.tmpdir(), "cut-apply-change-"));
+    pinCsFlowLanguages(dir);
     mkdirSync(path.join(dir, "com.claude-usage-tracker.app"), { recursive: true });
   });
 
@@ -1102,7 +1129,7 @@ describe("apply requires a change for new work", () => {
     );
   });
 
-  it("takes a one-step plan bound to an existing task — it opens nothing", () => {
+  it("takes a one-task plan bound to an existing task — it opens nothing", () => {
     todos("add", "Уже на доске");
     const n = board().todos[0].number;
     const out = todos("apply", write("bound.yaml", "steps:", "  1:", `    task: ${n}`, "    verify: npm test"), "--go");

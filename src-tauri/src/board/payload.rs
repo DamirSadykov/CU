@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
 use serde::Serialize;
+use serde_json::Value;
 
 use super::todos::{Change, StatusChange, Todo, TodoFile};
 
@@ -30,6 +31,8 @@ pub struct TodoRow {
     pub updated_at: String,
     pub closed_at: Option<String>,
     pub status_history: Vec<StatusChange>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mutation: Option<Value>,
     pub ref_count: usize,
     pub comment_count: usize,
 }
@@ -72,6 +75,12 @@ pub fn row(todo: &Todo) -> TodoRow {
         updated_at: todo.updated_at.clone(),
         closed_at: completion_at(todo),
         status_history: todo.status_history.clone(),
+        mutation: todo
+            .ext
+            .get("process")
+            .and_then(Value::as_object)
+            .and_then(|process| process.get("mutation"))
+            .cloned(),
         ref_count: reference_count(todo),
         comment_count: todo.comments.len(),
     }
@@ -155,5 +164,29 @@ mod tests {
         let row = row(&todo);
         assert_eq!(row.description.chars().count(), DESCRIPTION_LIMIT);
         assert!(row.description.ends_with('…'));
+    }
+
+    #[test]
+    fn row_carries_the_process_mutation_result() {
+        let mut todo = Todo::default();
+        todo.ext.insert(
+            "process".into(),
+            serde_json::json!({
+                "mutation": {
+                    "levels": [0, 1],
+                    "killed": 2,
+                    "survived": [],
+                    "noCoverage": [],
+                    "quarantined": [],
+                    "duration_ms": 42,
+                    "status": "pass"
+                },
+                "unrelated": true
+            }),
+        );
+
+        let mutation = row(&todo).mutation.expect("mutation result");
+        assert_eq!(mutation["status"], "pass");
+        assert_eq!(mutation["killed"], 2);
     }
 }

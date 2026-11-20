@@ -35,3 +35,18 @@ declare module "*/duty-mode.mjs" {
   }
   export function dutyModeReader(manifest: unknown): DutyModeReader;
 }
+
+declare module "node:fs" {
+    interface DirectoryEntry {
+        name: string;
+        isDirectory(): boolean;
+    }
+
+    export function readFileSync(path: URL, encoding: "utf8"): string;
+    export function readdirSync(path: URL, options: { withFileTypes: true }): DirectoryEntry[];
+}
+
+declare module "node:path" {
+    export function extname(path: string): string;
+    export function relative(from: string, to: string): string;
+}

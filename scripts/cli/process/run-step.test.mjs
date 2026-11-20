@@ -260,7 +260,7 @@ describe("buildStepPrompt", () => {
     const data = chain();
     writeFileSync(boardFile(), JSON.stringify(data));
     const prompt = buildStepPrompt({ task: taskOf(data, "id-3"), board: data });
-    expect(prompt).toContain("no change root above this node");
+    expect(prompt).toContain("no plan above this task");
   });
 
   it("names the nodes waiting on this one and what they promised", () => {
@@ -545,14 +545,14 @@ describe("buildReviewPrompt · CHANGES OF THIS STEP", () => {
     expect(prompt).toContain("CHANGES OF THIS STEP");
     expect(prompt).toContain("M src/parser.rs");
     expect(prompt).toContain("A src/new.rs");
-    expect(prompt).toContain("not findings of this step");
+    expect(prompt).toContain("not findings of this task");
   });
 
   it("says the own diff is unknown when there is no step base, and states the rule in general terms", () => {
     const prompt = buildReviewPrompt({ task, appData: tmp });
     expect(prompt).toContain("CHANGES OF THIS STEP");
     expect(prompt).toContain("unknown");
-    expect(prompt).toContain("not findings of this step");
+    expect(prompt).toContain("not findings of this task");
   });
 
   it("lists outside changes separately only when they are present", () => {
@@ -563,7 +563,7 @@ describe("buildReviewPrompt · CHANGES OF THIS STEP", () => {
     });
     expect(prompt).toContain("CHANGES OUTSIDE THIS STEP");
     expect(prompt).toContain("M src/unrelated.rs");
-    expect(prompt).toContain("not by this step's executor");
+    expect(prompt).toContain("not by this task's executor");
     expect(buildReviewPrompt({ task, appData: tmp, outsideChanges: [] }))
       .not.toContain("CHANGES OUTSIDE THIS STEP");
   });
@@ -1057,7 +1057,7 @@ describe("clampOutput / parseClaudeResult", () => {
   it("tells review to report out-of-scope defects without rejecting the step", () => {
     const prompt = buildReviewPrompt({ task: { number: 7, subject: "scope", produces: ["src/a.mjs"], verify: "npm test" } });
     expect(prompt).toContain("Report out-of-scope defects too");
-    expect(prompt).toContain("do not use them to reject this step");
+    expect(prompt).toContain("do not use them to reject this task");
   });
 
   it("parses structured findings and downgrades unsupported critical/high findings", () => {

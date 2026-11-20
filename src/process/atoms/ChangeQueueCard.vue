@@ -61,7 +61,8 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
 .queue-card-id {
     flex: none;
     font-family: var(--mono);
-    font-size: 11.5px;
+    font-size: var(--fs-11);
+    line-height: var(--lh-11);
     font-weight: 600;
     color: var(--accent);
 }
@@ -69,8 +70,10 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
     flex: 1;
     min-width: 0;
     font-family: var(--mono);
-    font-size: 10px;
-    color: var(--text-4);
+    font-size: var(--fs-11);
+    font-weight: 600;
+    line-height: var(--lh-11);
+    color: var(--text-3);
     text-align: right;
     white-space: nowrap;
     overflow: hidden;
@@ -83,8 +86,8 @@ const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
     color: var(--warn);
 }
 .queue-card-title {
-    font-size: 11.8px;
-    line-height: 1.4;
+    font-size: var(--fs-13);
+    line-height: var(--lh-13);
     color: var(--text-2);
 }
 </style>

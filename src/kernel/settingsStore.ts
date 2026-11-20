@@ -9,11 +9,13 @@ import type { AlertTiers, AlertTypes } from "./thresholds";
 import settingsContract from "../../scripts/cli/kernel/settings-contract.json";
 
 export type FlowLanguage = "cs" | "rs" | "ts" | "js";
-export const DEFAULT_FLOW_LANGUAGES: readonly FlowLanguage[] = ["cs"];
+export const FLOW_LANGUAGES: readonly FlowLanguage[] = ["cs", "rs", "ts", "js"];
+export const DEFAULT_FLOW_LANGUAGES: readonly FlowLanguage[] = ["ts", "js"];
 
 export type QuietHoursSetting = { enabled: boolean; start: string; end: string };
 export type RuntimeInsightsSetting = { enabled: boolean; kinds: string[] };
 export type SpecsSetting = { enabled: boolean; deltaGuard: "on" | "off" };
+export type ProviderSelection = "claude" | "codex" | "both";
 
 // Single read-only access layer for settings.json (issue: unify settings reads).
 //
@@ -46,6 +48,7 @@ export interface SettingsSnapshot {
     alertTiers: AlertTiers;
     alertTypes: AlertTypes;
     quietHours: QuietHoursSetting;
+    providerSelection: ProviderSelection | null;
     ccAnalyticsEnabled: boolean;
     dailyBudget: number | null;
     goalCostPerHourMax: number | null;
@@ -59,6 +62,7 @@ export interface SettingsSnapshot {
     runtimeInsights: RuntimeInsightsSetting;
     keepAwakeEnabled: boolean;
     systemInfoEnabled: boolean;
+    miniProvider: "auto" | "claude" | "codex";
     correctionsEnabled: boolean;
     specs: SpecsSetting;
     // Raw persisted locale — null when unset. Callers decide whether to apply it
@@ -90,6 +94,7 @@ export function defaultSettings(): SettingsSnapshot {
         alertTiers: normalizeAlertTiers(undefined),
         alertTypes: normalizeAlertTypes(undefined),
         quietHours: { enabled: false, start: "23:00", end: "08:00" },
+        providerSelection: null,
         ccAnalyticsEnabled: false,
         dailyBudget: null,
         goalCostPerHourMax: null,
@@ -103,6 +108,7 @@ export function defaultSettings(): SettingsSnapshot {
         runtimeInsights: { enabled: false, kinds: ["long_session", "cold_rewrites"] },
         keepAwakeEnabled: false,
         systemInfoEnabled: true,
+        miniProvider: "auto",
         correctionsEnabled: false,
         specs: { enabled: false, deltaGuard: "on" },
         locale: null,
@@ -239,6 +245,8 @@ export async function readSettingsSnapshot(): Promise<SettingsSnapshot> {
         if (runtimeChanged) await runtimeStore.save();
 
         s.sessionKey = (await get<string>("sessionKey")) ?? s.sessionKey;
+        const miniProvider = await get<string>("miniProvider");
+        s.miniProvider = miniProvider === "claude" || miniProvider === "codex" ? miniProvider : "auto";
         s.orgId = (await get<string>("orgId")) ?? s.orgId;
         s.refreshInterval = (await get<number>("refreshInterval")) ?? s.refreshInterval;
         s.autoStartSession = (await get<boolean>("autoStartSession")) ?? s.autoStartSession;
@@ -260,6 +268,12 @@ export async function readSettingsSnapshot(): Promise<SettingsSnapshot> {
             start: quietHours?.start ?? s.quietHours.start,
             end: quietHours?.end ?? s.quietHours.end,
         };
+        const providerSelection = await get<string>("providerSelection");
+        s.providerSelection = providerSelection === "claude"
+            || providerSelection === "codex"
+            || providerSelection === "both"
+            ? providerSelection
+            : null;
         s.ccAnalyticsEnabled = (await get<boolean>("ccAnalyticsEnabled")) ?? s.ccAnalyticsEnabled;
         s.dailyBudget = typeof dailyBudget === "number" ? dailyBudget : null;
         s.goalCostPerHourMax = (await get<number | null>("goalCostPerHourMax")) ?? null;

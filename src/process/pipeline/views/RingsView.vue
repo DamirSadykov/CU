@@ -18,6 +18,7 @@ import { board as mockBoard } from "../boardMock";
 import { useBoard } from "../useBoard";
 import { projectTodos, type FilterableTodoRow, type TodoFilters } from "../../../board/todoFilter";
 import { graphHits, stepGraphHit } from "../graphNavigation";
+import { formatRef } from "../../../../scripts/cli/kernel/terms.mjs";
 
 const props = withDefaults(defineProps<{
     query?: string;
@@ -68,7 +69,7 @@ const idOfLabel = computed(
 
 const filteredIds = computed(() => {
     if (!props.filters || !live.value) return null;
-    const filters = { ...props.filters, query: "", showDone: true };
+    const filters = { ...props.filters, query: "", view: "all" as const };
     return new Set(projectTodos(board.value as unknown as FilterableTodoRow[], filters).visible.map((todo) => todo.id));
 });
 const visibleTasks = computed(() => board.value.filter((todo) => !filteredIds.value || filteredIds.value.has(todo.id)));
@@ -216,6 +217,11 @@ const focusNumber = computed(() => {
     if (!todo) return "";
     return todo.number ? `#${todo.number}` : todo.id;
 });
+const focusLabel = computed(() =>
+    focusTodo.value?.change && focusTodo.value.number
+        ? formatRef(focusTodo.value.number)
+        : focusNumber.value,
+);
 
 const pivotProject = computed(() => {
     if (focusTodo.value) return focusTodo.value.project ?? null;
@@ -758,9 +764,9 @@ watch(
                     class="rings-focus"
                     :class="{ match: isMatch(focusTodo.id), current: props.activeHit === focusTodo.id }"
                 tone="spec"
-                :title="`${focusNumber} · ${focusTodo.subject}`"
+                :title="`${focusLabel} · ${focusTodo.subject}`"
             >
-                <span class="rings-focus-id">{{ focusNumber }}</span>
+                <span class="rings-focus-id">{{ focusLabel }}</span>
                 <span class="rings-focus-sep">·</span>
                 <span class="rings-focus-title">{{ focusTodo.subject }}</span>
                 <span class="rings-focus-close" @click.stop="dropFocus">✕</span>
@@ -890,11 +896,7 @@ watch(
                     <RingCard
                         :data-node="focusTodo.id"
                         tone="focus"
-                        :label="
-                            focusTodo.change
-                                ? `тема · change ${focusNumber}`
-                                : focusNumber
-                        "
+                        :label="focusLabel"
                         :title="focusTodo.subject"
                         :badge="focusBadge"
                     />
@@ -923,7 +925,7 @@ watch(
             <div class="rings-side">
                 <SidePanel
                     :title="
-                        focusTodo ? `Связи фокуса · ${focusNumber}` : 'Связи фокуса'
+                        focusTodo ? `Связи фокуса · ${focusLabel}` : 'Связи фокуса'
                     "
                 >
                     <template v-if="focusTodo">
@@ -978,7 +980,7 @@ watch(
                             class="rings-open"
                             @click="openNode(focusTodo!.id)"
                         >
-                            Открыть {{ focusNumber }} в дереве
+                            Открыть {{ focusLabel }} в дереве
                         </ToolButton>
                     </template>
                 </SidePanel>
@@ -1046,8 +1048,8 @@ watch(
 <style scoped>
 .rings-field {
     margin-left: 6px;
-    font-size: 11px;
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    color: var(--text-3);
 }
 .rings-focus {
     min-width: 0;
@@ -1071,7 +1073,7 @@ watch(
 .rings-focus-close {
     flex: none;
     margin-left: 2px;
-    font-size: 11px;
+    font-size: var(--fs-13);
     opacity: 0.75;
     cursor: pointer;
 }
@@ -1085,12 +1087,12 @@ watch(
     padding: 0 11px;
     border: 1px solid var(--stroke-strong);
     border-radius: var(--r-ctl);
-    font-size: 11.5px;
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    color: var(--text-3);
 }
 .rings-hints {
-    font-size: 11px;
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    color: var(--text-3);
 }
 
 .rings-canvas {
@@ -1119,12 +1121,12 @@ watch(
 }
 .rings-empty-title {
     margin-bottom: 8px;
-    font-size: 13px;
+    font-size: var(--fs-16);
     font-weight: 600;
 }
 .rings-empty-text {
     margin: 0;
-    font-size: 11.8px;
+    font-size: var(--fs-13);
     line-height: 1.5;
     color: var(--text-3);
 }
@@ -1183,14 +1185,14 @@ watch(
 }
 .rings-plaque-title {
     font-family: var(--mono);
-    font-size: 11.5px;
+    font-size: var(--fs-11);
     color: var(--text-2);
     overflow: hidden;
     text-overflow: ellipsis;
 }
 .rings-plaque-close {
-    font-size: 11px;
-    color: var(--text-4);
+    font-size: var(--fs-13);
+    color: var(--text-3);
     cursor: pointer;
 }
 .rings-plaque-close:hover {
@@ -1199,8 +1201,8 @@ watch(
 .rings-plaque-note {
     display: block;
     margin-top: 3px;
-    font-size: 11px;
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    color: var(--text-3);
 }
 .rings-plaque-action {
     margin-top: 7px;
@@ -1208,8 +1210,8 @@ watch(
     border: 0;
     background: none;
     color: var(--accent);
-    font: inherit;
-    font-size: 11px;
+    font: 400 var(--fs-13)/var(--lh-13) var(--segoe);
+    font-size: var(--fs-13);
     cursor: pointer;
 }
 .rings-side {
@@ -1245,22 +1247,22 @@ watch(
     gap: 10px;
     margin-top: 8px;
     padding: 0 6px;
-    font-size: 11.5px;
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    color: var(--text-3);
 }
 .rings-more-action {
     padding: 0;
     border: 0;
     background: none;
     color: var(--accent);
-    font: inherit;
-    font-size: 11.5px;
+    font: 400 var(--fs-13)/var(--lh-13) var(--segoe);
+    font-size: var(--fs-13);
     cursor: pointer;
 }
 .rings-empty {
-    font-size: 11.5px;
+    font-size: var(--fs-12);
     line-height: 1.45;
-    color: var(--text-4);
+    color: var(--text-3);
 }
 .rings-empty-more {
     display: block;
@@ -1280,11 +1282,11 @@ watch(
 }
 .rings-pick-id {
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: var(--fs-11);
     color: var(--accent);
 }
 .rings-pick-title {
-    font-size: 12.5px;
+    font-size: var(--fs-13);
     line-height: 1.35;
     color: var(--text);
 }
@@ -1294,12 +1296,12 @@ watch(
     justify-content: space-between;
     gap: 10px;
     margin-top: 8px;
-    font-size: 11.5px;
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    color: var(--text-3);
 }
 .rings-pick-value {
     font-family: var(--mono);
-    font-size: 11.5px;
+    font-size: var(--fs-11);
     color: var(--text-2);
     text-align: right;
 }

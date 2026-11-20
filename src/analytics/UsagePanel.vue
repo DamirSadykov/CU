@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
-import type { UsageData, UsageLevels, ForecastData, CodexRateLimits } from "../contracts/types";
+import type { UsageData, UsageLevels, ForecastData } from "../contracts/types";
 import { formatEta } from "./alertFormat";
-import CodexUsageCards from "./CodexUsageCards.vue";
 
 const { t, locale } = useI18n();
 
@@ -11,7 +10,6 @@ const props = defineProps<{
   usage: UsageData;
   levels: UsageLevels;
   forecast: ForecastData | null;
-  codexLimits: CodexRateLimits | null;
   loading: boolean;
   autoStartEnabled: boolean;
   autoStartStatus: string;
@@ -174,7 +172,6 @@ const prepaidBalance = computed(() => props.usage.prepaid_balance);
 
 <template>
   <div class="cards">
-    <CodexUsageCards v-if="codexLimits" :limits="codexLimits" />
     <!-- Daily budget -->
     <div v-if="dailyBudgetEnabled && dailyBudget > 0" class="card">
       <div class="card-row">
@@ -405,7 +402,8 @@ const prepaidBalance = computed(() => props.usage.prepaid_balance);
 }
 
 .auto-status {
-  font-size: 12px;
+  font-size: var(--fs-12);
+  line-height: var(--lh-12);
   color: var(--text-3);
   display: inline-flex;
   align-items: center;
@@ -419,7 +417,7 @@ const prepaidBalance = computed(() => props.usage.prepaid_balance);
   border-radius: var(--card-radius);
   background: color-mix(in srgb, var(--paper) 4%, transparent);
   color: var(--text-2);
-  font-size: 12px;
+  font-size: var(--fs-13);
   cursor: pointer;
   transition: background 120ms;
 }

@@ -26,6 +26,8 @@ const COMMON: LanguageSpec = LanguageSpec {
     new_expression_kind: Some("new_expression"),
     macro_invocation_kind: None,
     member_access_kind: "member_expression",
+    arguments_field: "arguments",
+    argument_kind: None,
     local_kinds: &[
         "formal_parameter",
         "required_parameter",

@@ -11,7 +11,9 @@
 // never throws. `appData` is the Roaming base (process.env.APPDATA); pass it in so
 // callers that already resolved it don't re-derive, or omit it to resolve here.
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { appDataFile, roamingBase } from "./appdata.mjs";
 
 export { roamingBase };
@@ -155,17 +157,54 @@ export function specRepoPath(repoKey, appData) {
 }
 
 const FLOW_LANGUAGES = new Set(["cs", "rs", "ts", "js"]);
+const DEFAULT_FLOW_LANGUAGES = ["ts", "js"];
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 export function flowLanguages(project, appData) {
   const all = readSettings(appData).flowLanguages;
   const configured = all && typeof all === "object" && !Array.isArray(all) ? all[String(project || "")] : null;
-  if (!Array.isArray(configured)) return ["cs"];
+  if (!Array.isArray(configured)) return [...DEFAULT_FLOW_LANGUAGES];
   const selected = [...new Set(configured.filter((value) => typeof value === "string" && FLOW_LANGUAGES.has(value)))];
-  return selected.length ? selected : ["cs"];
+  return selected.length ? selected : [...DEFAULT_FLOW_LANGUAGES];
 }
 
-export function flowcheckExe(appData) {
-  const v = readSettings(appData).flowcheckExe;
-  return typeof v === "string" && v.trim() ? v.trim() : "";
+export function flowcheckExeCandidates(appData, repoRoot = REPO_ROOT) {
+  return [
+    appDataFile(path.join("tools", "flowcheck.exe"), appData),
+    path.join(repoRoot, "tools", "flowcheck", "target", "release", "flowcheck.exe"),
+  ];
+}
+
+export function flowcheckExe(appData, { exists = existsSync, repoRoot = REPO_ROOT } = {}) {
+  return flowcheckExeCandidates(appData, repoRoot).find((candidate) => exists(candidate)) ?? "";
+}
+
+export const DEFAULT_MUTATIONS = Object.freeze({ enabled: false, step: true, plan: true, stepMaxLevel: 1 });
+
+export function mutations(project, appData) {
+  const all = readSettings(appData).mutations;
+  const map = all && typeof all === "object" && !Array.isArray(all) ? all : {};
+  const v = map[String(project || "")];
+  const value = v && typeof v === "object" && !Array.isArray(v) ? v : {};
+  return {
+    enabled: typeof value.enabled === "boolean" ? value.enabled : false,
+    step: typeof value.step === "boolean" ? value.step : true,
+    plan: typeof value.plan === "boolean" ? value.plan : true,
+    stepMaxLevel: Number.isInteger(value.stepMaxLevel) && value.stepMaxLevel >= 0 && value.stepMaxLevel <= 3
+      ? value.stepMaxLevel
+      : 1,
+  };
+}
+
+export function mutscopeDirCandidates(appData, repoRoot = REPO_ROOT) {
+  return [
+    path.join(repoRoot, "tools", "mutscope"),
+    appDataFile(path.join("tools", "mutscope"), appData),
+  ];
+}
+
+export function mutscopeDir(appData, { exists = existsSync, repoRoot = REPO_ROOT } = {}) {
+  return mutscopeDirCandidates(appData, repoRoot).find((candidate) =>
+    exists(path.join(candidate, "stryker.mjs")) && exists(path.join(candidate, "node_modules", "@stryker-mutator", "core"))) ?? "";
 }
 
 export function parkedStepExpiryHours(appData) {

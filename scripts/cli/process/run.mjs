@@ -64,10 +64,10 @@
 // tidiness — is the binding constraint of an autonomous run.
 
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { execFile, execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { readFileSync, appendFileSync, mkdirSync } from "node:fs";
+import { readFileSync, appendFileSync, existsSync, mkdirSync } from "node:fs";
 
 import {
   resolveTask,
@@ -86,6 +86,7 @@ import { findChange } from "../board/change.mjs";
 import { assertAgentDutiesAvailable, resolveDuty } from "../agents/agents.mjs";
 import { withDataDir } from "../kernel/board-lock.mjs";
 import { appDataDir, appDataFile } from "../kernel/appdata.mjs";
+import { formatRef, storageRef } from "../kernel/terms.mjs";
 import {
   gitHead,
   gitBase,
@@ -96,16 +97,21 @@ import {
   recoverMarkers,
 } from "./red-gate.mjs";
 import { restoreCheckpoint } from "./checkpoint.mjs";
+import { FILE_ANCHOR, downgradeUnchanged } from "./review-core.mjs";
+import { DEFAULT_PARALLEL_LIMIT, buildWave, declaredRed, resolveParallelLimit } from "./wave.mjs";
 import { appendRunEvent, createVerifyLog, runEventsPath, verifyLogPath, watchRunEvents, writeVerifyLog } from "./run-events.mjs";
 import { pathMatches } from "./outcome.mjs";
 import { runFlowGate } from "./flow-gate.mjs";
+import { mutationResult, runMutationGate } from "./mutation-gate.mjs";
+import { DEFAULT_STEP_TIMEOUT_MS } from "./run-step.mjs";
 import { flowDeclared } from "./graph-rules.mjs";
-import { flowcheckExe, parkedStepExpiryHours } from "../kernel/settings.mjs";
+import { flowcheckExe, mutations as mutationSettings, mutscopeDir, parkedStepExpiryHours } from "../kernel/settings.mjs";
+
+export { DEFAULT_PARALLEL_LIMIT, buildWave, resolveParallelLimit };
 
 const PLAN_ISSUES_DOC = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "docs", "plan-format-issues.md");
 const PLAN_CUTTING_DOC = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "docs", "plan-format-cutting.md");
 
-export const DEFAULT_PARALLEL_LIMIT = 1;
 export const MIN_HISTORICAL_BUDGET_USD = 0.5;
 export const MIN_SIMILAR_BUDGET_SAMPLES = 3;
 export const MIN_SIZE_BUDGET_SAMPLES = 5;
@@ -224,7 +230,6 @@ function touchesFinding(ranges, line) {
 }
 const num = (t) => (t && t.number != null ? `#${t.number}` : t ? t.id : "?");
 const declaredVerify = (t) => (t && t.verify && String(t.verify).trim()) || "";
-const declaredRed = (t) => (t && t.red && String(t.red).trim()) || "";
 const declaredFlow = (t) => flowDeclared(t?.flow);
 const isSensitive = (t) => String(t?.risk || "").trim().toLowerCase() === "sensitive";
 
@@ -349,9 +354,133 @@ export function simulationEffects() {
     ownChanges: async () => ({ ok: true, skip: true }),
     redGate: async () => ({ ok: true, field: "failed-on-base", reason: null }),
     flowGate: async () => ({ status: "pass", reason: null, coverage: [], unchecked: [], duration_ms: 0 }),
+    mutationGate: async () => ({ status: "skipped", reason: "dry" }),
+    planMutationGate: async () => ({ status: "skipped", reason: "dry" }),
     recordFlowDiagram: async () => ({ written: false }),
     stepCost: async ({ budgetUsd }) => budgetUsd,
   };
+}
+
+const PLAN_MUTATION_LEVELS = [2, 3];
+const PLAN_MUTATION_EXTENSIONS = new Set([".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".mts", ".cts"]);
+
+const emptyMutation = (status, reason, duration_ms = 0) => ({
+  levels: [], killed: 0, survived: [], noCoverage: [], quarantined: [], duration_ms, status, reason,
+});
+
+export function planMutationCandidates(members = []) {
+  const candidates = [];
+  const seen = new Set();
+  for (const task of members) {
+    const mutation = task?.mutation ?? task?.ext?.process?.mutation;
+    for (const mutant of [...(mutation?.survived ?? []), ...(mutation?.noCoverage ?? [])]) {
+      if (!mutant?.selector || seen.has(mutant.selector)) continue;
+      seen.add(mutant.selector);
+      candidates.push(mutant);
+    }
+  }
+  return candidates;
+}
+
+async function withTimeout(operation, timeoutMs) {
+  let timer;
+  try {
+    return await Promise.race([
+      operation,
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`plan mutation gate timed out after ${timeoutMs}ms`)), Math.max(1, timeoutMs));
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export async function runPlanMutationGate({ members = [], cwd = process.cwd(), timeoutMs, mutscopeDir: directory } = {}) {
+  const started = Date.now();
+  const finish = (status, reason) => emptyMutation(status, reason, Date.now() - started);
+  const root = typeof directory === "string" ? directory.trim() : "";
+  if (!root) return finish("skipped", "mutscope directory is not configured");
+  if (!existsSync(path.join(root, "stryker.mjs"))) return finish("skipped", `mutscope is unavailable: ${path.join(root, "stryker.mjs")} does not exist`);
+  const candidates = planMutationCandidates(members)
+    .filter((mutant) => PLAN_MUTATION_EXTENSIONS.has(path.posix.extname(String(mutant.file ?? "").replaceAll("\\", "/")).toLowerCase()));
+  if (!candidates.length) return finish("skipped", "plan has no surviving JavaScript or TypeScript mutants to promote");
+
+  try {
+    const operation = (async () => {
+      const scope = await import(pathToFileURL(path.join(root, "scope.mjs")).href);
+      const stryker = await import(pathToFileURL(path.join(root, "stryker.mjs")).href);
+      if (typeof scope.discoverTestLadder !== "function" || typeof stryker.runStrykerLadder !== "function"
+        || typeof stryker.createStrykerRunner !== "function") {
+        throw new Error("mutscope does not expose the plan-promotion API");
+      }
+      const byFile = new Map();
+      for (const mutant of candidates) {
+        const file = String(mutant.file).replaceAll("\\", "/");
+        if (!byFile.has(file)) byFile.set(file, []);
+        byFile.get(file).push(mutant.selector);
+      }
+      const ladders = await Promise.all([...byFile.keys()].map((file) =>
+        scope.discoverTestLadder({ root: cwd, changedFile: file, language: "js" }),
+      ));
+      const seenTests = new Set();
+      const ladder = PLAN_MUTATION_LEVELS.map((level) => ({
+        level,
+        tests: ladders.flatMap((entries) => entries.find((entry) => entry.level === level)?.tests ?? [])
+          .filter((test) => {
+            if (seenTests.has(test)) return false;
+            seenTests.add(test);
+            return true;
+          }),
+      }));
+      return stryker.runStrykerLadder({
+        mutate: [...byFile.values()].flat(),
+        ladder,
+        from: PLAN_MUTATION_LEVELS[0],
+        to: PLAN_MUTATION_LEVELS.at(-1),
+        cwd,
+        runLevel: stryker.createStrykerRunner({ cwd }),
+        quarantine: typeof stryker.createThreadQuarantine === "function" ? stryker.createThreadQuarantine({ cwd }) : undefined,
+      });
+    })();
+    const report = await withTimeout(operation, timeoutMs ?? DEFAULT_STEP_TIMEOUT_MS);
+    return mutationResult(report, Date.now() - started);
+  } catch (error) {
+    return finish("cannot", `plan mutation gate cannot run: ${error?.message || error}`);
+  }
+}
+
+const mutationTaskDescription = (change, mutation) => {
+  const lines = [
+    `Mutants that survived the final level 2-3 check for ${formatRef(change)}.`,
+    "",
+    ...mutation.survived.map((m) => `[survived] ${m.selector} ${m.mutator || ""} -> ${m.replacement ?? ""}`.trim()),
+    ...mutation.noCoverage.map((m) => `[no coverage] ${m.selector} ${m.mutator || ""} -> ${m.replacement ?? ""}`.trim()),
+  ];
+  return lines.join("\n").trim();
+};
+
+export function recordPlanMutation(data, { changeId, mutation }) {
+  const change = (data?.changes ?? []).find((entry) => entry?.id === changeId);
+  if (!change) return { written: false, error: `plan ${changeId} not found on the board` };
+  const existing = change.mutation ?? change.ext?.process?.mutation;
+  if (existing?.status) return { written: false, mutation: existing, task: null };
+  const remaining = [...(mutation?.survived ?? []), ...(mutation?.noCoverage ?? [])];
+  let task = null;
+  if (remaining.length) {
+    task = newTodo(data, {
+      subject: `[mutation] Survivors after ${formatRef(change)}`,
+      description: mutationTaskDescription(change, mutation),
+      status: "backlog",
+      project: change.project || null,
+      by: "runner",
+    });
+    task.links = [change.id];
+    task.mutation = mutation;
+  }
+  change.mutation = { ...mutation, task: task?.number ?? null };
+  change.updated_at = new Date().toISOString();
+  return { written: true, mutation: change.mutation, task };
 }
 
 function trackerCliPath() {
@@ -596,6 +725,45 @@ export function liveEffects({ cwd } = {}) {
       const exe = flowcheckExe();
       return runFlowGate({ task, cwd, timeoutMs, exe });
     },
+    mutationGate: async ({ task, cwd, timeoutMs }) => {
+      const configured = mutationSettings(task.project);
+      const mutation = !configured.enabled
+        ? { levels: [], killed: 0, survived: [], noCoverage: [], quarantined: [], duration_ms: 0, status: "skipped", reason: "mutation checks are disabled" }
+        : !configured.step
+          ? { levels: [], killed: 0, survived: [], noCoverage: [], quarantined: [], duration_ms: 0, status: "skipped", reason: "step mutation checks are disabled" }
+          : await runMutationGate({ task, cwd, timeoutMs, mutscopeDir: mutscopeDir(), maxLevel: configured.stepMaxLevel });
+      const write = withDataDir((dir) => {
+        const file = path.join(dir, "todos.json");
+        const data = loadBoardForWrite(file);
+        const todo = data.todos.find((t) => t && t.id === task.id);
+        if (!todo) return { written: false, error: `task ${task.id} not found on the board` };
+        todo.mutation = mutation;
+        todo.updated_at = new Date().toISOString();
+        saveBoard(file, data);
+        return { written: true };
+      });
+      return write.written ? mutation : { ...mutation, write_error: write.error };
+    },
+    planMutationGate: async ({ change, members, cwd, timeoutMs }) => {
+      const configured = mutationSettings(change.project ?? members.find((member) => member?.project)?.project);
+      const mutation = !configured.enabled
+        ? emptyMutation("skipped", "mutation checks are disabled")
+        : !configured.plan
+          ? emptyMutation("skipped", "plan mutation checks are disabled")
+          : await runPlanMutationGate({ members, cwd, timeoutMs, mutscopeDir: mutscopeDir() });
+      return withDataDir((dir) => {
+        const file = path.join(dir, "todos.json");
+        const data = loadBoardForWrite(file);
+        const recorded = recordPlanMutation(data, { changeId: change.id, mutation });
+        if (!recorded.written) {
+          return recorded.mutation
+            ? recorded
+            : { ...recorded, mutation: { ...mutation, write_error: recorded.error } };
+        }
+        saveBoard(file, data);
+        return recorded;
+      });
+    },
     // What a step really cost lives in the tracker's blocks (SQLite, Rust side),
     // but the headless run already reports its own total — `executeStep` returns
     // it as `costUsd` (from `total_cost_usd` of the JSON result). Read that name,
@@ -625,7 +793,7 @@ export function runLogPath() {
 export function emitRunEvent(ctx, event) {
   if (ctx.dry || !ctx.events) return;
   const task = event.task == null ? null : `t#${String(event.task).replace(/^t?#/, "")}`;
-  appendRunEvent({ run: ctx.runId, change: `c#${ctx.root.number}`, ...event, task });
+  appendRunEvent({ run: ctx.runId, change: storageRef(ctx.root), ...event, task });
 }
 
 export function runStartEvent(ctx, parallel) {
@@ -763,6 +931,7 @@ export function runRecordOf(report, { inherit = false } = {}) {
       verify: s.verify ?? null,
       red: s.red ?? null,
       flow: s.flow ?? null,
+      mutation: s.mutation ?? null,
       cost_usd: typeof s.cost_usd === "number" ? s.cost_usd : null,
       size: stepSize(s.size) || null,
       risk: riskBucket(s.risk),
@@ -797,7 +966,7 @@ export const ATTEMPT_END_REASONS = Object.freeze([
   "verify", "missing_produces", "reconcile", "mechanics", "undecided", "interrupted",
 ]);
 
-const ATTEMPT_END_KINDS = new Set(["issue", "convergence", "mechanics", "undecided", "flow-cannot"]);
+const ATTEMPT_END_KINDS = new Set(["issue", "convergence", "mechanics", "undecided", "flow-cannot", "flow-delta"]);
 
 export const ATTEMPT_END_DETAIL_LIMIT = 2000;
 
@@ -886,7 +1055,7 @@ export function formatDecisionCard(stop, { task = null, change = null, spent = 0
     ? " (no node budget available)"
     : ` of $${effectiveBudget} ${stop.budget_source === "historical" ? "historical" : "declared"} budget`;
   out.push(`node: t#${task.number}; spent: $${round(spent)}${budgetLabel}\n`);
-  out.push(`diagnose this parked step: ${PLAN_ISSUES_DOC}\n`);
+  out.push(`diagnose this parked task: ${PLAN_ISSUES_DOC}\n`);
   if (tail) out.push(`verify tail (last 20 lines):\n${tailLines(tail, 20)}\n`);
   if (findings.length) {
     out.push("last review findings:\n");
@@ -894,7 +1063,15 @@ export function formatDecisionCard(stop, { task = null, change = null, spent = 0
       out.push(`  [${finding.level || "unknown"}] ${finding.file || "(file not specified)"}${finding.line ? `:${finding.line}` : ""} ${finding.text || ""}\n`);
   }
   const retry = (limit ?? 0) + 2;
-  const changeRef = change?.number == null ? "c#<change>" : `c#${change.number}`;
+  const changeRef = change?.number == null ? "p#<plan>" : formatRef(change);
+  if (stop.kind === "flow-delta") {
+    if (stop.problems) out.push(`flow problems:\n${String(stop.problems).trim()}\n`);
+    out.push("actions:\n");
+    out.push(`  поправить flow задачи и перезапустить: todos run ${changeRef} --go\n`);
+    out.push("  указать flow: n/a с причиной и перезапустить\n");
+    out.push(`  принять как есть: todos set status t#${task.number} done\n`);
+    return out.join("");
+  }
   out.push("actions:\n");
   out.push(`  accept as is: todos set status t#${task.number} done\n`);
   out.push(`  allow more attempts: todos set retry t#${task.number} ${retry}\n`);
@@ -1065,7 +1242,7 @@ export async function beginStep(ctx, task, wave = []) {
     if (!ctx.stepBaseWarned) {
       ctx.stepBaseWarned = true;
       process.stderr.write(
-        `run: step base unavailable for ${ctx.cwd}${based.error ? `: ${based.error}` : ""} — continuing without it, this run's produces/scope checks are best-effort\n`,
+        `run: task base unavailable for ${ctx.cwd}${based.error ? `: ${based.error}` : ""} — continuing without it, this run's produces/scope checks are best-effort\n`,
       );
     }
   }
@@ -1205,28 +1382,14 @@ async function recordOutOfScopeFindings(ctx, task, findings) {
   }
 }
 
-async function recordGateSkippedComment(ctx, task, reason) {
-  const comment = {
-    id: randomUUID(),
-    author: "runner",
-    body: `GATE_SKIPPED\n${reason}`,
-    created_at: new Date().toISOString(),
-  };
-  (task.comments ??= []).push(comment);
-  if (typeof ctx.effects.recordIssue === "function") {
-    try { await ctx.effects.recordIssue({ task, comment }); } catch {}
-  }
-  return comment;
-}
-
-function resultBase(ctx, task, result, review, baton, cost, ownChanges, outsideChanges) {
+function resultBase(ctx, task, result, review, baton, cost, ownChanges, outsideChanges, mutation = null) {
   const attempt = ctx.attempts.get(task.id);
   const limit = retryLimitOf(task);
   if (typeof review?.costUsd === "number" && Number.isFinite(review.costUsd))
     cost = (typeof cost === "number" ? cost : 0) + review.costUsd;
 
   return {
-    task, attempt, limit, cost, baton, session: result.sessionId || null,
+    task, attempt, limit, cost, baton, mutation, session: result.sessionId || null,
     requestedMode: result.requestedMode || null,
     startMode: result.startMode || "unknown",
     parentSession: result.parentSession || null,
@@ -1358,7 +1521,7 @@ async function finishAttempt(ctx, task, outcome) {
 // issue / verify+reconcile / close. Anything that moves ANOTHER node (the
 // `?issue` transition) is only RETURNED as an intent here — it is applied in
 // board order afterwards, never from inside a single node's own step.
-export async function finishStep(ctx, task, { result, review, baton, cost, ownChanges, outsideChanges }) {
+export async function finishStep(ctx, task, { result, review, baton, cost, ownChanges, outsideChanges, mutation = null }) {
   const scopedFindings = scopeReviewFindings(
     review?.findings,
     task,
@@ -1366,7 +1529,7 @@ export async function finishStep(ctx, task, { result, review, baton, cost, ownCh
     () => repoRoot(ctx),
   );
   if (review && Array.isArray(review.findings)) review = { ...review, findings: scopedFindings };
-  const base = resultBase(ctx, task, result, review, baton, cost, ownChanges, outsideChanges);
+  const base = resultBase(ctx, task, result, review, baton, cost, ownChanges, outsideChanges, mutation);
   const { attempt, limit } = base;
 
   const findings = scopedFindings;
@@ -1427,7 +1590,7 @@ export async function finishStep(ctx, task, { result, review, baton, cost, ownCh
       kind: "issue",
       routeEscalated: task._runner_high_route_attempt === attempt,
       endReason: result.timedOut ? "timeout" : "worker_error",
-      reason: `step failed: ${error}`,
+      reason: `task failed: ${error}`,
     });
   }
 
@@ -1481,7 +1644,7 @@ export async function finishStep(ctx, task, { result, review, baton, cost, ownCh
     if (flow.status !== "pass") {
       await recordIssueComment(ctx, task, { attempt, limit, source: "flow", text: clampChars(flow.reason || "flowcheck found a flow issue", 6000) });
       return finishAttempt(ctx, task, {
-        ...base, kind: "issue", routeEscalated: task._runner_high_route_attempt === attempt,
+        ...base, kind: "flow-delta",
         endReason: "flow",
         reason: flow.reason || "flowcheck found a flow issue",
       });
@@ -1577,7 +1740,7 @@ function missingProduces(report, reason) {
 function formatNeighbourDamage(damaged) {
   const lines = damaged.map((d) => `${d.state} ${d.path}`).join("\n");
   return (
-    `this step reverted or deleted work of earlier steps of the run, outside its own produces:\n${lines}`
+    `this task reverted or deleted work of earlier tasks of the run, outside its own produces:\n${lines}`
   );
 }
 
@@ -1611,7 +1774,7 @@ async function checkNeighbourDamage(ctx, task, result, baton, cost) {
       routeEscalated: task._runner_high_route_attempt === base.attempt,
       endReason: "reverted",
       endPaths: damage.damaged.map((d) => d.path),
-      reason: `step reverted or deleted work of earlier steps outside its own produces: ${damage.damaged.map((d) => d.path).join(", ")}`,
+      reason: `task reverted or deleted work of earlier tasks outside its own produces: ${damage.damaged.map((d) => d.path).join(", ")}`,
     }),
   };
 }
@@ -1632,13 +1795,11 @@ async function retryReviewContext(ctx, task, ownChanges) {
 
 function downgradeUntouchedRetryFindings(review, context) {
   if (!review || !Array.isArray(review.findings) || !Array.isArray(context?.attemptDiff)) return review;
-  const prior = new Set((context.previousAttempt?.findings || []).map(findingKey));
-  const touched = new Set(context.attemptDiff.map((c) => String(c?.path || "").replace(/\\/g, "/")));
-  const findings = review.findings.map((f) => {
-    const file = String(f?.file || "").replace(/\\/g, "/");
-    if ((f?.level === "critical" || f?.level === "high") && !prior.has(findingKey(f)) && file && !touched.has(file))
-      return { ...f, level: "medium", evidence: `${f.evidence || ""}${f.evidence ? "; " : ""}outside this retry's diff` };
-    return f;
+  const findings = downgradeUnchanged(review.findings, {
+    prior: context.previousAttempt?.findings || [],
+    changed: new Set(context.attemptDiff.map((c) => FILE_ANCHOR.place({ file: c?.path }))),
+    anchor: FILE_ANCHOR,
+    note: "outside this retry's diff",
   });
   return { ...review, findings };
 }
@@ -1649,19 +1810,17 @@ function downgradeUntouchedRetryFindings(review, context) {
 // its verdict and branches.
 async function runOne(ctx, task, wave = []) {
   if (isEmptyHumanGate(task)) {
-    const reason = "empty manual gate — no produces or verify were declared, so there is nothing for a human to approve";
-    const moved = await moveTo(ctx, task, "done");
+    const reason = "нет produces и verify — решает человек";
+    const moved = await moveTo(ctx, task, "review");
     if (!moved.ok) {
       return {
         task, kind: "undecided", attempt: null, limit: retryLimitOf(task), cost: 0,
         session: null, review: null,
-        reason: `empty manual gate could not be closed: ${moved.error}`,
+        reason: `empty manual gate could not be moved to review: ${moved.error}`,
       };
     }
-    await recordGateSkippedComment(ctx, task, reason);
-    emitRunEvent(ctx, { task: task.number, kind: "gate_skipped", reason });
     return {
-      task, kind: "gate-skipped", attempt: null, limit: retryLimitOf(task), cost: null,
+      task, kind: "gate", attempt: null, limit: retryLimitOf(task), cost: null,
       session: null, review: null, reason,
     };
   }
@@ -1697,6 +1856,20 @@ async function runOne(ctx, task, wave = []) {
   const outsideChanges = damage ? damage.outsideChanges : null;
   const retryContext = await retryReviewContext(ctx, task, ownChanges);
 
+  let mutation = null;
+  if (result.ok !== false && typeof ctx.effects.mutationGate === "function") {
+    try {
+      mutation = await ctx.effects.mutationGate({ task, cwd: ctx.cwd, timeoutMs: ctx.timeoutMs });
+    } catch (err) {
+      mutation = {
+        levels: [], killed: 0, survived: [], noCoverage: [], quarantined: [], duration_ms: 0,
+        status: "cannot", reason: `mutation gate crashed: ${String(err?.message || err)}`,
+      };
+    }
+    task.mutation = mutation;
+    emitRunEvent(ctx, { task: task.number, kind: "mutation", attempt: begun.attempt, limit: begun.limit, ...mutation });
+  }
+
   let review = null;
   if (result.ok !== false && typeof ctx.effects.reviewStep === "function") {
     try {
@@ -1708,13 +1881,14 @@ async function runOne(ctx, task, wave = []) {
         ownChanges,
         outsideChanges,
         retryContext,
+        mutation,
       });
       review = downgradeUntouchedRetryFindings(review, retryContext);
     } catch (err) {
       review = { approved: false, ok: false, error: String(err?.message || err) };
     }
   }
-  return finishStep(ctx, task, { result, review, baton, cost, ownChanges, outsideChanges });
+  return finishStep(ctx, task, { result, review, baton, cost, ownChanges, outsideChanges, mutation });
 }
 
 // The `?issue` transition and every stop it can produce. All of it runs in board
@@ -1934,42 +2108,16 @@ export function buildRunContext({ data, change, effects = {}, dry = true, cwd = 
 }
 
 const EMPTY_FRONTIER_REASON =
-  "the frontier is empty while the change is still open — no node has all of its prerequisites closed, so the graph lies: edges are missing or a cycle is written into depends_on";
+  "the frontier is empty while the plan is still open — no task has all of its prerequisites closed, so the graph lies: edges are missing or a cycle is written into depends_on";
 
 const REVIEW_GATE_REASON =
-  "already in review from an earlier step — the runner never takes a node back out of the human's column";
+  "already in review from an earlier task — the runner never takes a task back out of the human's column";
 
 const budgetExhaustedReason = (spent, budget, notStarted) =>
-  `group budget exhausted — $${round(spent)} of $${budget} spent; the step boundary is where the run stops, so #${notStarted.number} was NOT started and nothing was rolled back`;
+  `group budget exhausted — $${round(spent)} of $${budget} spent; the task boundary is where the run stops, so #${notStarted.number} was NOT started and nothing was rolled back`;
 
 const retryExhaustedReason = (attempt, limit) =>
   `attempt ${attempt + 1} would be past the declared limit — ${attempt}/<=${limit}; attempt M+1 never starts`;
-
-export function buildWave(ready, limit) {
-  if (!ready.length) return [];
-  if (declaredRed(ready[0])) return [ready[0]];
-  const wave = [];
-  const produced = new Set();
-  for (const t of ready) {
-    if (wave.length >= limit || declaredRed(t)) break;
-    const paths = (Array.isArray(t.produces) ? t.produces : [])
-      .filter(Boolean)
-      .map((p) => String(p).replace(/\\/g, "/"));
-    if (paths.some((p) => produced.has(p))) continue;
-    wave.push(t);
-    for (const p of paths) produced.add(p);
-  }
-  return wave;
-}
-
-export function resolveParallelLimit(root, override) {
-  return (
-    (typeof override === "number" && override > 0 && Math.floor(override)) ||
-    (typeof root.parallel_limit === "number" && root.parallel_limit > 0
-      ? Math.floor(root.parallel_limit)
-      : DEFAULT_PARALLEL_LIMIT)
-  );
-}
 
 export async function applyResult(ctx, r, { dry, log }) {
   ctx.endingAttempt = ATTEMPT_END_KINDS.has(r.kind) ? r : null;
@@ -1977,7 +2125,7 @@ export async function applyResult(ctx, r, { dry, log }) {
     ctx.spent += r.cost;
     ctx.nodeSpent.set(r.task.id, (ctx.nodeSpent.get(r.task.id) || 0) + r.cost);
     ctx.attemptCosts?.set(r.task.id, [...(ctx.attemptCosts.get(r.task.id) || []), r.cost]);
-  } else if (r.kind !== "retry-exhausted" && r.kind !== "gate-skipped") {
+  } else if (r.kind !== "retry-exhausted" && r.kind !== "gate-skipped" && !(r.kind === "gate" && r.attempt === null)) {
     ctx.unknownCost += 1;
   }
   const record = {
@@ -2003,6 +2151,7 @@ export async function applyResult(ctx, r, { dry, log }) {
     verify: r.verify ?? null,
     red: r.red ?? null,
     flow: r.flow ?? null,
+    mutation: r.mutation ?? null,
     outcome: r.kind === "done" || r.kind === "gate-skipped" ? "ok" : r.kind === "issue" ? "issue" : null,
     result: r.kind,
     reason: r.reason || null,
@@ -2030,6 +2179,13 @@ export async function applyResult(ctx, r, { dry, log }) {
     ctx.parked.add(r.task.id);
     await moveTo(ctx, r.task, "review");
     park(ctx, "flow-cannot", r.task, r.reason, { flow: r.flow ?? null });
+    record.status = r.task.status;
+    return record;
+  }
+  if (r.kind === "flow-delta") {
+    ctx.parked.add(r.task.id);
+    await moveTo(ctx, r.task, "review");
+    park(ctx, "flow-delta", r.task, "дельта плана", { problems: r.reason, flow: r.flow ?? null });
     record.status = r.task.status;
     return record;
   }
@@ -2163,7 +2319,7 @@ export async function runChange({
     const wave = buildWave(runnable, limit);
     ctx.waves.push(wave.map((t) => t.number));
     if (ctx.steps.length + wave.length > bound) {
-      park(ctx, "empty-frontier", null, `runaway guard: more than ${bound} steps in one run — the graph or the seam is looping`);
+      park(ctx, "empty-frontier", null, `runaway guard: more than ${bound} tasks in one run — the graph or the seam is looping`);
       break;
     }
     let live_ = 0;
@@ -2179,7 +2335,7 @@ export async function runChange({
             return finishAttempt(ctx, t, {
               task: t, kind: "mechanics", attempt, limit: retryLimitOf(t), cost: null,
               session: null, review: null, endReason: ctx.interrupted ? "interrupted" : "mechanics",
-              reason: ctx.interrupted ? `interrupted by ${ctx.interrupted}` : `runner step crashed: ${String(err?.message || err)}`,
+              reason: ctx.interrupted ? `interrupted by ${ctx.interrupted}` : `runner task crashed: ${String(err?.message || err)}`,
             });
           }
         } finally {
@@ -2200,6 +2356,35 @@ export async function runChange({
   }
 
   const complete = !ctx.stop && members.every((t) => isDone(t));
+  const changeRecord = (ctx.data.changes ?? []).find((entry) => entry?.id === root.id);
+  let planMutation = changeRecord?.mutation ?? changeRecord?.ext?.process?.mutation ?? null;
+  if (complete && !dry && changeRecord && !planMutation?.status && typeof ctx.effects.planMutationGate === "function") {
+    let outcome;
+    try {
+      outcome = await ctx.effects.planMutationGate({ change: changeRecord, members, cwd, timeoutMs });
+    } catch (error) {
+      outcome = emptyMutation("cannot", `plan mutation gate crashed: ${error?.message || error}`);
+    }
+    if (outcome?.mutation) {
+      planMutation = outcome.mutation;
+      changeRecord.mutation = planMutation;
+      if (outcome.task && !(ctx.data.todos ?? []).some((task) => task?.id === outcome.task.id)) ctx.data.todos.push(outcome.task);
+    } else {
+      const recorded = recordPlanMutation(ctx.data, { changeId: changeRecord.id, mutation: outcome });
+      planMutation = recorded.mutation ?? outcome;
+    }
+    emitRunEvent(ctx, {
+      kind: "mutation_plan",
+      status: planMutation?.status ?? "cannot",
+      levels: planMutation?.levels ?? [],
+      killed: planMutation?.killed ?? 0,
+      survived: planMutation?.survived ?? [],
+      noCoverage: planMutation?.noCoverage ?? [],
+      duration_ms: planMutation?.duration_ms ?? 0,
+      survivor_task: planMutation?.task ?? null,
+      reason: planMutation?.reason ?? null,
+    });
+  }
   const card = await attachDecisionCard(ctx);
   const report = {
     version: 1,
@@ -2212,6 +2397,7 @@ export async function runChange({
       parallel_declared: typeof root.parallel_limit === "number" ? root.parallel_limit : null,
       budget_usd: groupBudget,
       status: root.status,
+      mutation: planMutation,
     },
     members: members.map((t) => ({ ...brief(t), status: t.status, gate: isGate(t) })),
     waves: ctx.waves,
@@ -2279,7 +2465,7 @@ export function formatStop(stop, change) {
     "   next:   yours. the runner does not push a node past its check — --force is a human exception, not the runner's.\n",
   );
   if (stop.card) out.push(stop.card);
-  if (change?.number != null) out.push(`restart: todos run c#${change.number} --go\n`);
+  if (change?.number != null) out.push(`restart: todos run ${formatRef(change)} --go\n`);
   return out.join("");
 }
 
@@ -2293,16 +2479,16 @@ export function formatRunReport(r) {
   const out = [];
   const th = r.change;
   out.push(
-    `change c#${th.number} "${th.subject}" — ${r.members.length} node(s), parallel limit ${th.parallel_limit}` +
+    `plan ${formatRef(th)} "${th.subject}" — ${r.members.length} task(s), parallel limit ${th.parallel_limit}` +
       `${th.parallel_declared === null ? " (undeclared, default 1)" : ""}` +
       `${th.budget_usd === null ? ", budget UNDECLARED" : `, budget $${th.budget_usd}`}\n`,
   );
   if (!th.is_change)
-    out.push("  note: this node is not marked as a change — running its dependency closure anyway\n");
+    out.push("  note: this task is not attached to a plan — running its dependency closure anyway\n");
   out.push(
     r.dry
       ? "plan of the run (dry — no model was started, the board was not touched):\n"
-      : "run (rollback touches only produces and files changed by this step; snapshots are unreferenced local commits, never pushed; unrelated uncommitted work is untouched):\n",
+      : "run (rollback touches only produces and files changed by this task; snapshots are unreferenced local commits, never pushed; unrelated uncommitted work is untouched):\n",
   );
   if (!r.steps.length) out.push("  (nothing to run — the frontier was empty from the start)\n");
   for (const s of r.steps) out.push(formatStepLine(s, r.dry));
@@ -2322,18 +2508,18 @@ export function formatRunReport(r) {
       }\n`
     : `  spent $${r.spend.usd}${
         r.spend.group_budget !== null ? ` of $${r.spend.group_budget}` : ""
-      }${r.spend.unmeasured_steps ? `; ${r.spend.unmeasured_steps} step(s) unmeasured` : ""}\n`;
+      }${r.spend.unmeasured_steps ? `; ${r.spend.unmeasured_steps} task(s) unmeasured` : ""}\n`;
   out.push(spend);
   if (r.dry && r.steps.length)
     out.push(
-      `\nto run it: todos run c#${th.number} --go — it takes minutes per step.\n` +
+      `\nto run it: todos run ${formatRef(th)} --go — it takes minutes per task.\n` +
         "  start it with background execution (`run_in_background: true`) and do not observe or narrate its progress from this session.\n" +
         "  on a stop the process exits; its final stdout lines are the decision card and restart command.\n",
     );
   if (r.stop) out.push(formatStop(r.stop, th));
   else if (r.complete)
     out.push(
-      `\n✓ every node of the change is closed. The change root c#${th.number} stays open — the runner never closes the group.\n`,
+      `\n✓ every task of the plan is closed. Plan ${formatRef(th)} stays open — the runner never closes the group.\n`,
     );
   return out.join("");
 }
@@ -2386,7 +2572,7 @@ export function formatRunHistory(records, summary, { limit = 20 } = {}) {
   out.push(`runs journal — ${records.length} record(s), newest last\n\n`);
   for (const r of records.slice(-limit)) {
     const when = String(r.ts || "").slice(0, 16).replace("T", " ");
-    const ch = r.change ? `c#${r.change.number}` : "(none)";
+    const ch = r.change ? formatRef(r.change) : "(none)";
     if (r.kind === "run") {
       const verdict = r.stop
         ? `parked: ${r.stop.kind}`
@@ -2410,7 +2596,7 @@ export function formatRunHistory(records, summary, { limit = 20 } = {}) {
   const stops = Object.entries(summary.parked);
   out.push(stops.length ? `parked: ${stops.map(([k, n]) => `${k} x${n}`).join(", ")}\n` : "parked: never\n");
   out.push(
-    `spend: $${summary.spend_usd} recorded${summary.unmeasured_steps ? `, ${summary.unmeasured_steps} step(s) unmeasured` : ""}\n`,
+    `spend: $${summary.spend_usd} recorded${summary.unmeasured_steps ? `, ${summary.unmeasured_steps} task(s) unmeasured` : ""}\n`,
   );
   return out.join("");
 }
@@ -2421,7 +2607,7 @@ function cmdHistory(ref, f) {
   if (ref) {
     const data = loadBoard(appDataFile("todos.json"));
     const { root } = collectChange(data, ref);
-    if (!root) fail(`no such change: ${ref}`);
+    if (!root) fail(`no such plan: ${ref}`);
     change = root.number;
   }
   const shown = change ? records.filter((r) => r.change && r.change.number === change) : records;
@@ -2462,45 +2648,45 @@ function parseFlags(args) {
 
 function usage(code) {
   process.stdout.write(
-    "usage: cli todos run <change> [--dry-run | --go] [--inherit] [--parallel N] [--timeout <min>] [--json]\n" +
-      "       cli todos run watch <change> [--from start]\n" +
+    "usage: cli todos run <plan> [--dry-run | --go] [--inherit] [--parallel N] [--timeout <min>] [--json]\n" +
+      "       cli todos run watch <plan> [--from start]\n" +
       "\n" +
-      "  Executes a change's task graph: frontier -> step -> verify -> outcome, one\n" +
-      "  session per step, until the run parks. What it executes is what already\n" +
-      "  stands in the graph — the runner creates no tasks and closes no change.\n\n" +
-      "  <change>       an id, a number, or #N (its dependency closure is the group)\n" +
-      "  --dry-run      DEFAULT: print the plan — the order of steps, what would run,\n" +
+      "  Executes a plan's task graph: frontier -> task -> verify -> outcome, one\n" +
+      "  session per task, until the run parks. What it executes is what already\n" +
+      "  stands in the graph — the runner creates no tasks and closes no plan.\n\n" +
+      "  <plan>         p#N, c#N (legacy alias), an id, a number, or #N\n" +
+      "  --dry-run      DEFAULT: print the run order — the tasks, what would run,\n" +
       "                 where it would hit a gate, what it would cost by the DECLARED\n" +
       "                 budgets. Touches neither the board nor a model.\n" +
-      "  --go           actually run it. Requires a budget declared on the change. Rollback touches only\n" +
-      "                 produces and files changed by this step; snapshots are unreferenced local commits,\n" +
+      "  --go           actually run it. Requires a budget declared on the plan. Rollback touches only\n" +
+      "                 produces and files changed by this task; snapshots are unreferenced local commits,\n" +
       "                 never pushed; unrelated uncommitted work is untouched.\n" +
-      "  --inherit      fork each step from its prerequisite's session instead of\n" +
+      "  --inherit      fork each task from its prerequisite's session instead of\n" +
       "                 starting it cold — cheaper, the prefix is already warm, but\n" +
-      "                 the step then SEES that session while its brief says there\n" +
+      "                 the task then SEES that session while its brief says there\n" +
       "                 is no earlier conversation. Only a node with exactly ONE\n" +
       "                 prerequisite run in this run inherits; a convergence node\n" +
       "                 starts cold, because two contexts cannot be merged and\n" +
       "                 dropping one of them silently is worse than the cost.\n" +
-      "  --parallel N   override the change's declared parallel limit for this run\n" +
-      "  --timeout <min>  ceiling for a step and for a check; without it the step\n" +
+      "  --parallel N   override the plan's declared parallel limit for this run\n" +
+      "  --timeout <min>  ceiling for a task and for a check; without it the task\n" +
       "                 executor's own defaults stand (run-step.mjs)\n" +
       "  --json         the run report, machine-readable\n\n" +
-      "  --history [<change>]  what past runs did, from the journal beside the board\n" +
+      "  --history [<plan>]  what past runs did, from the journal beside the board\n" +
       "                 (runs.jsonl, one line per --go run):\n" +
       "                 what each cost, where it parked, and the share of runs that\n" +
       "                 needed exactly ONE pass over the graph — the number that says\n" +
       "                 whether plans hold up, and which stop eats them when they do not.\n\n" +
-      "  watch <change>       print live events for one change and stop when its run parks or ends;\n" +
-      "                       --from start replays the latest run of the change first\n" +
+      "  watch <plan>         print live events for one plan and stop when its run parks or ends;\n" +
+      "                       --from start replays the latest run of the plan first\n" +
       "    --from start       include existing events; otherwise starts at the current end of the journal\n\n" +
       "  Four stops, all printed the same way (node in review + reason + parked):\n" +
       "    gate            a manual node, or an `auto` one with no declared verify\n" +
       "    retry           the declared limit is spent (M/<=M), or none was declared\n" +
       "                    at all — a missing limit forbids the ?issue transition\n" +
-      "    budget          soft, on a step boundary; nothing is rolled back\n" +
-      "    empty-frontier  the change is open but nothing is workable — the graph lies\n\n" +
-      "  Exit code: 0 when the change finished or parked at a gate, 1 otherwise.\n" +
+      "    budget          soft, on a task boundary; nothing is rolled back\n" +
+      "    empty-frontier  the plan is open but nothing is workable — the graph lies\n\n" +
+      "  Exit code: 0 when the plan finished or parked at a gate, 1 otherwise.\n" +
       "  There is no --force here: overriding a failed check is a human exception.\n\n" +
       "",
   );
@@ -2535,14 +2721,14 @@ export async function run(args) {
   if (!root) {
     const number = String(ref).trim().match(/^#?(\d+)$/)?.[1];
     const change = number ? findChange(data, number) : null;
-    fail(change ? `no graph for ${ref}; did you mean c#${change.number}?` : `no such task: ${ref}`);
+    fail(change ? `no graph for ${ref}; did you mean ${formatRef(change)}?` : `no such task: ${ref}`);
   }
   if (!dry && typeof root.budget_usd !== "number") {
     fail(
-      `refusing to run ${root.address ?? `#${root.number}`} unattended: no budget is declared on the change.\n` +
+      `refusing to run ${root.address ?? `#${root.number}`} unattended: no budget is declared on the plan.\n` +
         "an autonomous run needs a ceiling it can stop itself at — declare one first:\n" +
         (root.record
-          ? `  cli change set budget ${root.address} <usd>`
+          ? `  cli plan set budget ${root.address} <usd>`
           : `  todos set budget ${root.number} <usd>`),
     );
   }

@@ -438,17 +438,12 @@ impl TodoFile {
         self.todos.iter().find(|todo| todo.id == id)
     }
 
-    /// Resolve `c#N`, `cN`, a bare number or an id to a change record.
     pub fn find_change(&self, change_ref: &str) -> Option<&Change> {
         let r = change_ref.trim();
         if let Some(c) = self.changes.iter().find(|c| c.id == r) {
             return Some(c);
         }
-        let digits = r
-            .trim_start_matches(['c', 'C'])
-            .trim_start_matches('#')
-            .trim();
-        let n: u32 = digits.parse().ok()?;
+        let n = crate::board::terms::parse_ref(r)?;
         self.changes.iter().find(|c| c.number == n)
     }
 

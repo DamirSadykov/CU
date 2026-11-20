@@ -168,7 +168,7 @@ describe("buildWorkflowContext", () => {
 
   it("keeps the auto runner explicitly separate from this session", () => {
     const context = buildWorkflowContext({ ...base, critic: "session", planGuard: true });
-    expect(context).toContain("Auto runner — `<cli> todos run <c#N> --go`, its own background process, NOT this session");
+    expect(context).toContain("Auto runner — `<cli> todos run <p#N> --go`, its own background process, NOT this session");
     expect(context).toContain("runner → worker (anthropic/sonnet) → review (anthropic/opus)");
     expect(context).toContain("run_in_background: true");
     expect(context).toContain("do not observe it from this session");
@@ -180,20 +180,20 @@ describe("buildWorkflowContext", () => {
 
   it("lets the architect skip a plan only after sizing a known, branch-free change", () => {
     const context = buildWorkflowContext({ ...base, critic: "session", planGuard: true });
-    expect(context).toContain("locate the files and mark every step S/M/L");
-    expect(context).toContain("all steps S or M, files known, no open branch → no plan");
+    expect(context).toContain("locate the files and mark every task S/M/L");
+    expect(context).toContain("all tasks S or M, files known, no open branch → no plan");
     expect(context).toContain("implement in this session or with agents");
     expect(context).toContain("graph via `<cli> todos apply` only when the auto runner is needed");
-    expect(context).toContain("Any L step or open branch → plan mode → ExitPlanMode");
+    expect(context).toContain("Any L task or open branch → draft plan in plan mode → ExitPlanMode");
   });
 
   it("renders a Codex workflow without promising Claude plan hooks", () => {
     const context = buildWorkflowContext({ ...base, critic: "session", planGuard: false }, "codex");
     expect(context).toContain("WORKFLOW · this Codex session");
-    expect(context).toContain("locate the files and mark every step S/M/L");
-    expect(context).toContain("all steps S or M, files known, no open branch → no plan");
+    expect(context).toContain("locate the files and mark every task S/M/L");
+    expect(context).toContain("all tasks S or M, files known, no open branch → no plan");
     expect(context).toContain("graph via `<cli> todos apply` only when the auto runner is needed");
-    expect(context).toContain("Any L step or open branch → plan");
+    expect(context).toContain("Any L task or open branch → draft plan");
     expect(context).toContain("No tracker ExitPlanMode gate is wired for Codex");
     expect(context).not.toContain("revise and call ExitPlanMode again");
   });
@@ -403,15 +403,15 @@ describe("cli.mjs hook (stdin payload)", () => {
     const out = runHook();
     expect(out).toContain("──────── WORKFLOW · this session");
     expect(out).toContain("0 scout");
-    expect(out).toContain("all steps S or M, files known, no open branch → no plan");
-    expect(out).toContain("Auto runner — `<cli> todos run <c#N> --go`, its own background process, NOT this session");
+    expect(out).toContain("all tasks S or M, files known, no open branch → no plan");
+    expect(out).toContain("Auto runner — `<cli> todos run <p#N> --go`, its own background process, NOT this session");
   });
 
   it("drops the runner from the workflow when the work mode turns it off", () => {
     setup({ workflowContextEnabled: true, runnerEnabled: false });
     const out = runHook();
     expect(out).toContain("──────── WORKFLOW · this session");
-    expect(out).not.toContain("todos run <c#N> --go");
+    expect(out).not.toContain("todos run <p#N> --go");
     expect(out).not.toContain("todos apply");
     expect(out).toContain("Auto runner — off in the tracker's work mode");
     const resumeOut = runHook(undefined, "resume");
@@ -422,8 +422,8 @@ describe("cli.mjs hook (stdin payload)", () => {
     setup({ workflowContextEnabled: true });
     const out = runHook("codex");
     expect(out).toContain("WORKFLOW · this Codex session");
-    expect(out).toContain("all steps S or M, files known, no open branch → no plan");
-    expect(out).toContain("Any L step or open branch → plan");
+    expect(out).toContain("all tasks S or M, files known, no open branch → no plan");
+    expect(out).toContain("Any L task or open branch → draft plan");
     expect(out).toContain("No tracker ExitPlanMode gate is wired for Codex");
     expect(out).not.toContain("plan mode → ExitPlanMode");
   });
@@ -557,11 +557,11 @@ describe("cli.mjs hook (stdin payload)", () => {
     data.todos[0].change_id = "ch-1";
     writeFileSync(path.join(appDir, "todos.json"), JSON.stringify(data));
     const out = runHook();
-    expect(out).toContain("c#7");
+    expect(out).toContain("p#7");
     expect(out).toContain("что меняем в этом заходе");
 
     const resumeOut = runHook(undefined, "resume");
-    expect(resumeOut).toContain("c#7");
+    expect(resumeOut).toContain("p#7");
     expect(resumeOut).toContain("что меняем в этом заходе");
   });
 

@@ -32,7 +32,7 @@ describe("board race — Node CLI writers vs a Rust-shaped app writer (t#578)", 
   const todos = (...args) =>
     execFileSync(process.execPath, [cli, "todos", ...args], {
       encoding: "utf8",
-      env: { ...process.env, APPDATA: dir },
+      env: { ...process.env, APPDATA: dir, CODEX_SESSION_ID: "" },
       windowsHide: true,
     });
   const todosAsync = (...args) =>
@@ -42,7 +42,7 @@ describe("board race — Node CLI writers vs a Rust-shaped app writer (t#578)", 
         [cli, "todos", ...args],
         {
           encoding: "utf8",
-          env: { ...process.env, APPDATA: dir, BOARD_LOCK_WAIT_MS: "30000" },
+          env: { ...process.env, APPDATA: dir, BOARD_LOCK_WAIT_MS: "30000", CODEX_SESSION_ID: "" },
           windowsHide: true,
         },
         (err, stdout, stderr) => resolve({ code: err ? (err.code ?? 1) : 0, stdout, stderr }),
@@ -139,7 +139,7 @@ describe("board race — a Rust-shaped lock file blocks then releases the CLI (t
   const todos = (...args) =>
     execFileSync(process.execPath, [cli, "todos", ...args], {
       encoding: "utf8",
-      env: { ...process.env, APPDATA: dir },
+      env: { ...process.env, APPDATA: dir, CODEX_SESSION_ID: "" },
       windowsHide: true,
     });
   const setStatusAsync = (n, status, extraEnv = {}) =>

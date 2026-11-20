@@ -25,6 +25,8 @@ import {
   stepChanges,
   latestInProgressAt,
   reconcileTodo,
+  codexRolloutHasWorkSince,
+  outsideRepoEvidence,
 } from "./outcome.mjs";
 import { loadBoard } from "../board/todos.mjs";
 
@@ -97,6 +99,20 @@ describe("parseTouchedFiles", () => {
       toolLine("Edit", "D:\\p\\a.mjs", "2026-07-28T10:00:00.000Z"),
     ].join("\n");
     expect(parseTouchedFiles(raw).touches.map((t) => t.path)).toEqual(["D:/p/a.mjs"]);
+  });
+});
+
+describe("Codex rollout work", () => {
+  const fixture = readFileSync(new URL("./fixtures/codex-rollout-work.jsonl", import.meta.url), "utf8");
+
+  it("counts apply_patch and agent launches no earlier than the task start", () => {
+    const [mention, directPatch, wrappedPatch, agent] = fixture.trim().split("\n");
+    expect(codexRolloutHasWorkSince(mention, "2026-10-19T09:00:00.000Z")).toBe(false);
+    expect(codexRolloutHasWorkSince(directPatch, "2026-10-19T10:00:00.000Z")).toBe(true);
+    expect(codexRolloutHasWorkSince(directPatch, "2026-10-19T10:00:00.001Z")).toBe(false);
+    expect(codexRolloutHasWorkSince(wrappedPatch, "2026-10-19T10:01:00.000Z")).toBe(true);
+    expect(codexRolloutHasWorkSince(agent, "2026-10-19T10:03:00.000Z")).toBe(true);
+    expect(codexRolloutHasWorkSince(fixture, "2026-10-19T10:03:00.001Z")).toBe(false);
   });
 });
 
@@ -438,6 +454,21 @@ describe("outcome --write (end to end)", () => {
     }).report;
     expect(report.produces[0]).toMatchObject({ produced: true, evidence: "mtime" });
     expect(report.outcome).toBe("ok");
+  });
+});
+
+describe("outsideRepoEvidence", () => {
+  const since = "2026-01-01T10:00:00.000Z";
+  const until = "2026-01-01T11:00:00.000Z";
+  const at = (mtime) => outsideRepoEvidence({ cwd: os.tmpdir(), since, until, statFile: () => mtime })("ledger.json");
+
+  it("counts a file stamped just after until, as the filesystem clock runs ahead of Date.now on Windows", () => {
+    expect(at("2026-01-01T11:00:00.001Z")).toBe("2026-01-01T11:00:00.001Z");
+  });
+
+  it("drops a file stamped well after until or before since", () => {
+    expect(at("2026-01-01T11:00:02.000Z")).toBeNull();
+    expect(at("2026-01-01T09:59:59.999Z")).toBeNull();
   });
 });
 

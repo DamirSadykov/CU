@@ -23,6 +23,7 @@ import { readFileSync } from "node:fs";
 import { boardPath, loadBoard, isDone, isChangeRoot } from "../board/todos.mjs";
 import { collectChange } from "./run.mjs";
 import { checkGraph, splitFindings } from "./graph-rules.mjs";
+import { formatRef } from "../kernel/terms.mjs";
 import { CLI_LAYERS_VERIFY, needsCliLayersVerify } from "./apply.mjs";
 import { flowLanguages } from "../kernel/settings.mjs";
 
@@ -75,7 +76,7 @@ export function boardGraph(data, tasks, languages = ["cs"]) {
         .map((c) => {
           const members = (data.todos ?? []).filter((t) => t && t.change_id === c.id);
           return {
-            label: `change c#${c.number} "${c.title}"`,
+            label: `change ${formatRef(c)} "${c.title}"`,
             budget: typeof c.budget_usd === "number" ? String(c.budget_usd) : "",
             runnable: members.some((t) => !isDone(t)),
           };

@@ -31,7 +31,7 @@
 // failure is a silent exit 0, which Claude Code reads as "no opinion" and lets
 // the plan through.
 
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -39,6 +39,22 @@ import { DSL_DOC_FIELDS, readDocument, validate } from "./apply.mjs";
 import { boardPath, loadBoard, resolveTask } from "../board/todos.mjs";
 import { resolveDuty } from "../agents/agents.mjs";
 import { resolveSpawn } from "../models/engine.mjs";
+import { appDataDir, writeJsonAtomic } from "../kernel/appdata.mjs";
+import { WAVE_RULES } from "./wave.mjs";
+import {
+  STEP_ANCHOR,
+  downgradeUnchanged,
+  formatRepairPrompt,
+  isBlocking,
+  lastVerdict,
+  malformedLines,
+  parseFindings,
+  priorFindingsBlock,
+  readReviewBar,
+  reviewBarText,
+  stripVerdict,
+  verdictInstruction,
+} from "./review-core.mjs";
 
 export const ARCHITECT_OFF_COMMAND = "cli agents mode architect off";
 
@@ -166,6 +182,15 @@ export function planCandidates(text) {
     out.push(lines.slice(keys[0].at).join("\n"));
   }
   return out;
+}
+
+export function planBrief(text, source) {
+  const raw = String(text ?? "").replace(/\r\n?/g, "\n");
+  for (const m of raw.matchAll(FENCE_RE)) {
+    if (!m[1].includes(source)) continue;
+    return (raw.slice(0, m.index) + raw.slice(m.index + m[0].length)).replace(/\n{3,}/g, "\n\n").trim();
+  }
+  return "";
 }
 
 // --- the way out: a plan that is not about starting work ---------------------
@@ -325,7 +350,7 @@ export function buildRefusal(errors, warnings = []) {
   lines.push(
     "",
     "Fix the plan itself and call ExitPlanMode again. Do not append a corrected",
-    "copy next to the old one — the plan IS the file, and there is one of it.",
+    "block next to the old one — a plan carries exactly one graph block.",
     "Use §1 of the base format for field meanings and §2 for the graph shape:",
     `  ${FORMAT_DOC}`,
   );
@@ -340,13 +365,13 @@ export function buildRefusal(errors, warnings = []) {
 // Exported for the unit tests.
 export function buildFormatRefusal() {
   return [
-    "PLAN REFUSED — it is not written in the process language, so it never reached",
-    "the user. A plan is recorded as the tracker's graph file, not as prose about it.",
+    "PLAN REFUSED — it has no task graph, so it never reached the user. Keep the",
+    "prose brief and add ONE ```yaml block the tracker records.",
     "",
-    "Rewrite the plan itself as the file: `change`, `vision`, `steps` with `title`",
-    "(or `task: <N>` for work already on the board), `why`, `needs`, `produces`,",
-    "`verify`, `kind`. A one-step plan is a file too. The shape, the rules and a",
-    "worked example:",
+    "The block holds `change` and `steps` with `title` (or `task: <N>` for work",
+    "already on the board), `why`, `needs`, `produces`, `verify`, `kind`. Text outside",
+    "the block becomes the plan's `vision`. A one-task draft plan has a block too.",
+    "The shape, the rules and a worked example:",
     `  §1 and §2: ${FORMAT_DOC}`,
     "",
     "If this plan does NOT start work — you are settling a question with the user,",
@@ -386,10 +411,10 @@ export function buildBlankDiscussionRefusal() {
 // resolved. Exported for the unit tests.
 export function buildContradictionRefusal(steps) {
   return [
-    `PLAN REFUSED — it declares \`${DISCUSSION_KEY}:\` and yet carries ${steps} step(s), so it`,
+    `DRAFT PLAN REFUSED — it declares \`${DISCUSSION_KEY}:\` and yet carries ${steps} task(s), so it`,
     "never reached the user. Those are two different plans:",
     "",
-    `  • a discussion records NOTHING — the steps would be dropped in silence;`,
+    `  • a discussion records NOTHING — the tasks would be dropped in silence;`,
     "  • a graph file opens the tasks it declares.",
     "",
     "Drop whichever half is not this plan. If the discussion has already settled on",
@@ -412,7 +437,12 @@ const failOpen = (reason) => ({
   additionalContext: reason,
 });
 
-function invokeAvailableArchitect(gate, prompt, { cwd = process.cwd(), timeoutMs = 90_000 } = {}) {
+const notes = (text) => ({
+  hookEventName: "PreToolUse",
+  additionalContext: text,
+});
+
+function invokeAvailableArchitect(gate, prompt, { cwd = process.cwd(), timeoutMs = 180_000 } = {}) {
   const candidate = gate.candidate?.source;
   if (!candidate) return { ok: false, error: "available candidate details are missing", text: "" };
   const { file, args } = candidate.argv({ bin: gate.candidate.bin, sandbox: "read-only" });
@@ -434,6 +464,114 @@ function invokeAvailableArchitect(gate, prompt, { cwd = process.cwd(), timeoutMs
   const parsed = candidate.provider.engine.parse(run.stdout);
   const text = String(parsed?.answer || "");
   return { ok: !!text && !parsed?.error, error: parsed?.error || (!text ? "empty response" : ""), text };
+}
+
+export function planReviewStore(appData) {
+  const dir = () => path.join(appDataDir(appData), "plan-reviews");
+  const file = (session) => path.join(dir(), `${String(session).replace(/[^\w.-]/g, "_")}.json`);
+  return {
+    read(session) {
+      const state = JSON.parse(readFileSync(file(session), "utf8"));
+      return state && typeof state === "object" ? state : null;
+    },
+    write(session, state) {
+      mkdirSync(dir(), { recursive: true });
+      writeJsonAtomic(file(session), state);
+    },
+    clear(session) {
+      rmSync(file(session), { force: true });
+    },
+  };
+}
+
+function fullestSteps(plan) {
+  let most = [];
+  for (const source of planCandidates(plan)) {
+    const doc = readDocument(source);
+    if (doc.steps.length > most.length) most = doc.steps;
+  }
+  return most;
+}
+
+export function planSteps(plan) {
+  const steps = {};
+  for (const step of fullestSteps(plan)) steps[String(step.id)] = JSON.stringify(step);
+  return steps;
+}
+
+const REJECTION_RE = /^\s*(?:отклонено|rejected)\s*:\s*(.+)$/i;
+
+export function planRejections(plan) {
+  const out = [];
+  for (const step of fullestSteps(plan)) {
+    for (const line of String(step.why || "").split("\n")) {
+      const m = REJECTION_RE.exec(line);
+      if (m) out.push({ step: String(step.id), text: m[1].trim() });
+    }
+  }
+  return out;
+}
+
+const squash = (text) => String(text || "").toLowerCase().replace(/\s+/g, " ").trim();
+
+function dropRejected(findings, rejections) {
+  return findings.filter((f) => {
+    if (isBlocking(f)) return true;
+    const text = squash(f.text);
+    if (!text) return true;
+    return !rejections.some((r) => {
+      if (r.step !== String(f.step ?? "")) return false;
+      const rejected = squash(r.text.split(/\s+(?:—|--)\s+/)[0]);
+      return rejected && (rejected.includes(text) || text.includes(rejected));
+    });
+  });
+}
+
+const formatFinding = (f) =>
+  `- [${f.level}] ${STEP_ANCHOR.format(f)} — ${f.text || "(no detail)"}${f.evidence ? ` — ${f.evidence}` : ""}`;
+
+export function parallelismBlock() {
+  return [
+    "PARALLELISM — the runner builds each wave of a change by these rules:",
+    ...WAVE_RULES.map((r) => `- ${r.rule}`),
+    "A plan that counts on parallelism these rules will not give (for example `parallel` together with `red` steps, or parallel steps sharing a `produces` path), or that lets a step start before the step it builds on (a missing `needs`), is a finding of kind (a) or (b).",
+  ].join("\n");
+}
+
+export function flowBlock() {
+  return [
+    "FLOW — compare each task's declared `flow` with its description and the workspace code:",
+    "- Every name in `insert` must either already exist in the workspace code, or be explicitly named in the task description as a new function the task introduces. `insert` still means a call: a variable, property read or inline expression does not count.",
+    "- Declare `after` only when that execution order is itself a task requirement. Mere source order or a preferred implementation order does not justify it.",
+    "- Every method the task materially changes must be represented by a method delta; when the description decides no honest, checkable named-call delta, use `flow: n/a <concrete reason>` instead of inventing one.",
+    "A violation of any of these flow rules is a finding of kind (a) or (b).",
+  ].join("\n");
+}
+
+export function buildArchitectPrompt(plan, { prior = null, changed = [], rejections = [], bar = null } = {}) {
+  const lines = [
+    "You are the architect hook reviewing a plan before it reaches the user.",
+    "Judge the declared obligations: boundaries, dependency order, produces, verify, retries and review gates.",
+    "Do not edit files.",
+    reviewBarText({ subject: "plan", anchor: STEP_ANCHOR, bar }),
+    parallelismBlock(),
+    flowBlock(),
+    verdictInstruction(STEP_ANCHOR, { repair: true }),
+  ];
+  if (prior) {
+    lines.push(
+      "",
+      "── PRECEDING ROUND OF THIS PLAN ──",
+      priorFindingsBlock(prior.findings, {
+        anchor: STEP_ANCHOR,
+        round: "preceding round of this plan",
+        rejections: rejections.map((r) => `task ${r.step}: ${r.text}`),
+      }),
+      `TASKS CHANGED SINCE THEN: ${changed.length ? changed.join(", ") : "(none)"}`,
+    );
+  }
+  lines.push("", "PLAN:", plan);
+  return lines.join("\n");
 }
 
 // The hookSpecificOutput payload, or null for "no opinion". Exported for the
@@ -489,43 +627,92 @@ export function architectDecision(input, invoke, options = {}) {
       "Then call ExitPlanMode again.",
     ].join("\n"));
   }
-  const prompt = [
-    "You are the architect hook reviewing a plan before it reaches the user.",
-    "Judge the declared obligations: boundaries, dependency order, produces, verify, retries and review gates.",
-    "Do not edit files. Point out only concrete structural risks that make the plan unsafe or incomplete.",
-    "End with exactly `VERDICT: approve` or `VERDICT: issue`.",
-    "",
-    plan,
-  ].join("\n");
-  let result;
-  try {
-    result = typeof invoke === "function"
-      ? invoke("architect", prompt, { cwd: input?.cwd || process.cwd() })
-      : invokeAvailableArchitect(gate, prompt, { cwd: input?.cwd || process.cwd() });
+  const cwd = input?.cwd || process.cwd();
+  const session = typeof input?.session_id === "string" && input.session_id.trim() ? input.session_id.trim() : "";
+  const store = options.store || planReviewStore(options.appData);
+  let prior = null;
+  if (session) {
+    try { prior = store.read(session); } catch { prior = null; }
+    if (prior && (!Array.isArray(prior.findings) || !prior.steps || typeof prior.steps !== "object")) prior = null;
   }
-  catch (error) {
-    result = { ok: false, error: error?.message || String(error) };
-  }
-  // A candidate existed at preflight, so a failure here belongs to the model
-  // call. It remains fail-open, but is visible in hook output rather than being
-  // indistinguishable from a gate that never ran.
-  if (!result || result.skipped || !result.ok) {
+  const steps = planSteps(plan);
+  const changed = prior ? Object.keys(steps).filter((id) => prior.steps[id] !== steps[id]) : [];
+  const rejections = prior ? planRejections(plan) : [];
+  const call = (text) => {
+    try {
+      return typeof invoke === "function"
+        ? invoke("architect", text, { cwd })
+        : invokeAvailableArchitect(gate, text, { cwd });
+    } catch (error) {
+      return { ok: false, error: error?.message || String(error) };
+    }
+  };
+  const failed = (result, label = "") => {
     const detail = String(result?.error || result?.reason || "no result").trim().slice(0, 1000);
     return failOpen([
-      `ARCHITECT CHECK FAILED OPEN — ${gate.candidate.label} was available, but its review failed.`,
+      `ARCHITECT CHECK FAILED OPEN${label} — ${gate.candidate.label} was available, but its review failed.`,
       `Reason: ${detail || "unknown model error"}.`,
       "The deterministic plan-format guard passed; ExitPlanMode continues to the normal user approval.",
     ].join("\n"));
+  };
+  const judge = (text) => {
+    const parsed = parseFindings(lastVerdict(text) ? text : `${text}\nVERDICT: approve`, STEP_ANCHOR);
+    const found = prior
+      ? downgradeUnchanged(parsed.findings, {
+        prior: prior.findings,
+        changed: new Set(changed),
+        anchor: STEP_ANCHOR,
+        note: "task unchanged since the preceding round",
+      })
+      : parsed.findings;
+    const bad = malformedLines(text, STEP_ANCHOR);
+    const findings = dropRejected(bad.length ? found.filter((f) => !(isBlocking(f) && !f.step)) : found, rejections);
+    return { findings, blocking: findings.filter(isBlocking), bad };
+  };
+
+  let result = call(buildArchitectPrompt(plan, { prior, changed, rejections, bar: readReviewBar(cwd) }));
+  if (!result || result.skipped || !result.ok) return failed(result);
+  let text = String(result.text || "");
+  let verdict = judge(text);
+  if (verdict.bad.length && !verdict.blocking.length) {
+    result = call(formatRepairPrompt(text, verdict.bad, STEP_ANCHOR));
+    if (!result || result.skipped || !result.ok) return failed(result, " (format retry)");
+    text = String(result.text || "");
+    verdict = judge(text);
   }
-  const verdicts = [...String(result.text || "").matchAll(/^[\s*_`]*VERDICT:[\s*_`]*(approve|issue)[\s*_`]*$/gim)];
-  if (verdicts.at(-1)?.[1]?.toLowerCase() !== "issue") return null;
-  const reason = String(result.text || "").replace(/^[\s*_`]*VERDICT:.*$/gim, "").trim().slice(0, 4000);
-  return deny([
-    "PLAN REFUSED — the configured architect model found unmet obligations.",
+  const { findings, blocking, bad } = verdict;
+  const answer = stripVerdict(text).slice(0, 4000);
+  if (blocking.length) {
+    if (session) {
+      try { store.write(session, { plan, steps, findings, at: new Date().toISOString() }); } catch {}
+    }
+    return deny([
+      `PLAN REFUSED — the architect found ${blocking.length} blocking finding(s) (critical/high)` +
+        `${blocking.some((f) => f.step) ? `: ${blocking.filter((f) => f.step).map(STEP_ANCHOR.format).join(", ")}` : ""}.`,
+      "",
+      answer || "The architect returned an issue without details.",
+      "",
+      "Revise the plan and call ExitPlanMode again; the next round re-checks these findings first.",
+      "medium/low do not block. To reject one, add a line `отклонено: <finding> — <why>` to that task's why.",
+    ].join("\n"));
+  }
+  if (session) {
+    try { store.clear(session); } catch {}
+  }
+  if (bad.length) {
+    return notes([
+      "ARCHITECT ANSWER NOT IN FORMAT — even after one rewrite; nothing in it blocks, the plan goes on to the user. Raw answer:",
+      "",
+      answer,
+    ].join("\n"));
+  }
+  if (!findings.length) return null;
+  const adjusted = findings.filter((f) => /unchanged since the preceding round/.test(f.evidence || ""));
+  return notes([
+    "ARCHITECT NOTES — medium/low, not blocking; the plan goes on to the user.",
     "",
-    reason || "The architect returned an issue without details.",
-    "",
-    "Revise the plan and call ExitPlanMode again.",
+    answer,
+    ...(adjusted.length ? ["", "Lowered to medium by the gate (task unchanged since the preceding round):", ...adjusted.map(formatFinding)] : []),
   ].join("\n"));
 }
 

@@ -13,6 +13,8 @@ pub struct LanguageSpec {
     pub new_expression_kind: Option<&'static str>,
     pub macro_invocation_kind: Option<&'static str>,
     pub member_access_kind: &'static str,
+    pub arguments_field: &'static str,
+    pub argument_kind: Option<&'static str>,
     pub local_kinds: &'static [&'static str],
     pub identifier_kind: &'static str,
     pub parenthesized_kind: &'static str,
@@ -51,6 +53,8 @@ static C_SHARP: LanguageSpec = LanguageSpec {
     new_expression_kind: None,
     macro_invocation_kind: None,
     member_access_kind: "member_access_expression",
+    arguments_field: "arguments",
+    argument_kind: Some("argument"),
     local_kinds: &[
         "parameter",
         "variable_declarator",

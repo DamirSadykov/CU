@@ -435,7 +435,7 @@ describe("дорожки из записей change'а", () => {
         const index = laneIndex(board, changes);
         const lanes = toLanes(board, new Map(), index, new Map());
         expect(lanes.map((l) => l.id)).toEqual(["ch-1", "ch-2", "free:"]);
-        expect(lanes[0].kicker).toBe("тема · change c#4");
+        expect(lanes[0].kicker).toBe("p#4");
         expect(lanes[0].title).toBe("CHANGE: записи вместо корней");
         expect(lanes[0].note).toBe("что меняем в этом заходе");
         expect(lanes[0].progressLabel).toContain("1 / 2 готово");
@@ -481,7 +481,7 @@ describe("specTree читает записи change'ей наравне со с�
         const tree = specTree(board, changes);
         expect(tree.byId.get("ch-1")?.kind).toBe("theme");
         expect(tree.byId.get("ch-1")?.parent).toBe("tasks#registry");
-        expect(tree.byId.get("ch-1")?.label).toBe("c#4");
+        expect(tree.byId.get("ch-1")?.label).toBe("p#4");
     });
 
     it("задача с change_id висит под темой записи, а не в свободных", () => {
@@ -508,14 +508,14 @@ describe("toSpecLanes считает и записи, и старые корни
         entry: { title: "Реестр" },
     };
 
-    it("счётчик change'ей берёт и записи, и немигрированные корни", () => {
+    it("счётчик планов берёт и записи, и немигрированные корни", () => {
         const lanes = toSpecLanes([section], board, changes);
-        expect(lanes[0].metrics).toContain("2 change'а");
+        expect(lanes[0].metrics).toContain("2 плана");
     });
 
     it("без записей считает только старые корни", () => {
         const lanes = toSpecLanes([section], board);
-        expect(lanes[0].metrics).toContain("1 change'а");
+        expect(lanes[0].metrics).toContain("1 план");
     });
 });
 

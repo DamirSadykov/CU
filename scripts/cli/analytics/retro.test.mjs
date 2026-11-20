@@ -128,7 +128,7 @@ describe("runRetro", () => {
 
   it("stores brief episodes and measure passports with proposed records", () => {
     const test = rig(envelope());
-    const result = runRetro("c#3", test.options);
+    const result = runRetro("p#3", test.options);
     expect(result).toMatchObject({ parsed: true, proposals: [{
       id: "retro-proposal-1",
       type: "process",

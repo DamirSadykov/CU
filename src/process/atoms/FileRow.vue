@@ -32,7 +32,7 @@ withDefaults(
 }
 .file-row-mark {
     flex: none;
-    font-size: 11px;
+    font-size: var(--fs-13);
     line-height: 1;
     color: var(--ok);
 }
@@ -40,7 +40,9 @@ withDefaults(
     flex: 1;
     min-width: 0;
     font-family: var(--mono);
-    font-size: 11.5px;
+    font-size: var(--fs-11);
+    font-weight: 600;
+    line-height: var(--lh-11);
     color: var(--ok);
     white-space: nowrap;
     overflow: hidden;
@@ -49,17 +51,21 @@ withDefaults(
 .file-row-anchor {
     flex: none;
     font-family: var(--mono);
-    font-size: 11px;
-    color: var(--text-4);
+    font-size: var(--fs-11);
+    font-weight: 600;
+    line-height: var(--lh-11);
+    color: var(--text-3);
 }
 .file-row-sep {
     flex: none;
-    font-size: 11px;
-    color: var(--text-4);
+    font-size: var(--fs-12);
+    line-height: var(--lh-12);
+    color: var(--text-3);
 }
 .file-row-note {
     flex: none;
-    font-size: 11px;
+    font-size: var(--fs-12);
+    line-height: var(--lh-12);
     color: var(--crit);
 }
 .file-row.missing {

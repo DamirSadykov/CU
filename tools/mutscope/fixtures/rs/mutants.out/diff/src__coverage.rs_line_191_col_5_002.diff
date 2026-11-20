@@ -1,0 +1,30 @@
+--- src/coverage.rs
++++ replace na_for -> Option<String> with Some("xyzzy".into())
+@@ -183,26 +183,17 @@
+ 
+ fn named(specs: &[Spec], file: &str, key: &str) -> bool {
+     specs 
+         .iter() 
+         .any(|s| s.file == file && s.na.is_none() && !s.method.is_empty() && spec_key(s) == key) 
+ } 
+  
+ fn na_for(specs: &[Spec], file: &str, key: Option<&str>) -> Option<String> { 
+-    specs.iter().find_map(|s| { 
+-        if s.file != file || s.na.is_none() { 
+-            return None; 
+-        } 
+-        if s.method.is_empty() || key.is_some_and(|k| spec_key(s) == k) { 
+-            Some(s.na.clone().unwrap()) 
+-        } else { 
+-            None 
+-        } 
+-    }) 
++    Some("xyzzy".into()) /* ~ changed by cargo-mutants ~ */ 
+ }
+ 
+ pub fn inspect(specs: &[Spec], repo: &Path, base: &str, head: Option<&str>) -> Report {
+     let mut report = Report::default();
+     for spec in specs
+         .iter()
+         .filter(|s| s.na.is_some() && !s.method.is_empty())
+     {
